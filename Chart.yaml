@@ -1,0 +1,7 @@
+apiVersion: v2
+name: datafy-agent
+version: 1.0.0
+home: https://datafy.io
+maintainers:
+  - name: Datafy.io, Inc. All Rights Reserved.
+    url: https://github.com/datafy-io/datafy-agent-helm

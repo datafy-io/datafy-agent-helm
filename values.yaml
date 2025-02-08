@@ -1,0 +1,46 @@
+## @param datafy.token Datafy agent token
+## @param datafy.env Environment variables to add to datafy-agent daemon set
+##
+datafy:
+  token: ""
+  version: latest
+  env: {}
+
+  ## @param datafy.affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ##
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: eks.amazonaws.com/compute-type
+                operator: NotIn
+                values:
+                  - fargate
+                  - auto
+                  - hybrid
+  ## @param datafy.nodeSelector Node labels for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  ##
+  nodeSelector: { }
+  ## @param datafy.tolerations Tolerations for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations:
+    - key: "CriticalAddonsOnly"
+      operator: "Exists"
+    - effect: "NoExecute"
+      operator: "Exists"
+
+csi:
+  namespace:
+  version:
+  iacUrl:
+
+## @param extraLabels Labels to add to all deployed objects
+##
+extraLabels: {}
+## @param extraAnnotations Annotations to add to all deployed objects
+##
+extraAnnotations: {}
