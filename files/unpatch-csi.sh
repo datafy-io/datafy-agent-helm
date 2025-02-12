@@ -1,9 +1,9 @@
 #!/bin/sh
 set -e
 
-if kubectl get deployment -n "$NAMESPACE" ebs-csi-controller > /dev/null 2>&1; then
-  kubectl -n "$NAMESPACE" patch deployment ebs-csi-controller --type='json' -p="[$(
-    DAEMONSET_JSON="$(kubectl -n kube-system get deployment ebs-csi-controller -o json | jq 'del(.metadata.annotations)')"
+if kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/null 2>&1; then
+  kubectl -n "$K8S_CSI_NAMESPACE" patch deployment ebs-csi-controller --type='json' -p="[$(
+    DAEMONSET_JSON="$(kubectl -n "$K8S_CSI_NAMESPACE" get deployment ebs-csi-controller -o json | jq 'del(.metadata.annotations)')"
     DATAFY_CONTAINER_INDEX="$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "datafy-proxy") | index(true)')";
     EBS_PLUGIN_CONTAINER_INDEX="$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "ebs-plugin") | index(true)')";
     EBS_PLUGIN_ENV_INDEX="$(echo "$DAEMONSET_JSON" | jq ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].env | map(.name == \"CSI_ENDPOINT\") | index(true)")";
@@ -25,9 +25,9 @@ EOF
 )]"
 fi
 
-if kubectl get daemonset -n kube-system ebs-csi-node > /dev/null 2>&1; then
-  kubectl -n kube-system patch daemonset ebs-csi-node --type='json' -p="[$(
-    DAEMONSET_JSON="$(kubectl -n kube-system get daemonset ebs-csi-node -o json | jq 'del(.metadata.annotations)')"
+if kubectl get daemonset -n "$K8S_CSI_NAMESPACE" ebs-csi-node > /dev/null 2>&1; then
+  kubectl -n "$K8S_CSI_NAMESPACE" patch daemonset ebs-csi-node --type='json' -p="[$(
+    DAEMONSET_JSON="$(kubectl -n "$K8S_CSI_NAMESPACE" get daemonset ebs-csi-node -o json | jq 'del(.metadata.annotations)')"
     DATAFY_VOLUME_INDEX=$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.volumes | map(.name == "run-datafy-dir") | index(true)');
     DATAFY_CONTAINER_INDEX=$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "datafy-proxy") | index(true)');
     EBS_PLUGIN_CONTAINER_INDEX=$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "ebs-plugin") | index(true)');

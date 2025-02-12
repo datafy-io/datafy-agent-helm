@@ -32,7 +32,8 @@ spec:
         {{- with .Values.datafy.tolerations }}{{ toYaml . | nindent 8 }}{{- end }}
       {{- end }}
       containers:
-        {{- if not .Values.datafy.coreMockEnabled }}
+        {{- $enableCoreMock := or .Values.datafy.coreMockEnabled .Values.datafy.discoveryOnly }}
+        {{- if not $enableCoreMock }}
         - name: core
           args: [ core ]
           image: "{{ .Values.image.registry }}/{{ .Values.image.agent.repository }}:{{ .Values.image.agent.tag }}"
@@ -57,18 +58,22 @@ spec:
             - configMapRef:
                 name: datafy-agent-envvars
           env:
+            - name: DATAFY_GRPC_ENABLED
+              value: "true"
+            - name: DATAFY_GRPC_ADDRESS
+              value: "unix:/run/datafy/datafy-agent.sock"
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: datafy-token
                   key: token
             {{- if .Values.datafy.hqMockEnabled }}
-            - name: ENABLE_HQ_MOCK
-              value: {{ .Values.datafy.hqMockEnabled }}
+            - name: DATAFY_MOCKS_HQ_ENABLED
+              value: {{ .Values.datafy.hqMockEnabled | quote }}
             {{- end }}
-            {{- if .Values.datafy.coreMockEnabled }}
-            - name: ENABLE_HQ_CORE
-              value: {{ .Values.datafy.coreMockEnabled }}
+            {{- if $enableCoreMock }}
+            - name: DATAFY_MOCKS_CORE_ENABLED
+              value: {{ $enableCoreMock | quote }}
             {{- end }}
           resources:
             requests:
