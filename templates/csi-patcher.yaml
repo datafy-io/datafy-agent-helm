@@ -43,7 +43,7 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: datafy-agent-unpatch-csiq
+  name: datafy-agent-unpatch-csi
   namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
