@@ -1,3 +1,4 @@
+{{- if .Values.csi.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -23,7 +24,7 @@ spec:
         - name: csi-patcher
           image: bitnami/kubectl:latest
           env:
-            - name: NAMESPACE
+            - name: K8S_CSI_NAMESPACE
               value: {{ default "kube-system" .Values.csi.namespace }}
             - name: K8S_CSI_VERSION
               value: {{ default "latest" .Values.csi.version }}
@@ -42,8 +43,8 @@ spec:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: datafy-agent-unpatch-csi
-  namespace: {{ .Values.csi.namespace }}
+  name: datafy-agent-unpatch-csiq
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
     app.kubernetes.io/part-of: datafy-agent
@@ -64,7 +65,7 @@ spec:
         - name: csi-unpatcher
           image: bitnami/kubectl:latest
           env:
-            - name: NAMESPACE
+            - name: K8S_CSI_NAMESPACE
               value: {{ default "kube-system" .Values.csi.namespace }}
           command:
             - /bin/sh
@@ -73,3 +74,4 @@ spec:
 {{ .Files.Get "files/unpatch-csi.sh" | indent 14 }}
       restartPolicy: Never
       serviceAccountName: datafy-csi-patcher-sa
+{{- end }}

@@ -1,3 +1,4 @@
+{{- if .Values.csi.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -9,9 +10,10 @@ kind: ClusterRole
 metadata:
   name: datafy-csi-patcher-clusterrole
 rules:
-  - apiGroups: ["apps"]
-    resources: ["deployments", "daemonsets"]
-    verbs: ["get", "list", "patch"]
+  - apiGroups: [ "apps" ]
+    resources: [ "deployments", "daemonsets" ]
+    resourceNames: [ "ebs-csi-controller", "ebs-csi-node" ]
+    verbs: [ "get", "list", "patch" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
@@ -25,3 +27,4 @@ roleRef:
   kind: ClusterRole
   name: datafy-csi-patcher-clusterrole
   apiGroup: rbac.authorization.k8s.io
+{{- end }}

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-if ! kubectl get deployment -n "$NAMESPACE" ebs-csi-controller > /dev/null 2>&1 || ! kubectl get daemonset -n "$NAMESPACE" ebs-csi-node > /dev/null 2>&1; then
+if ! kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/null 2>&1 || ! kubectl get daemonset -n "$K8S_CSI_NAMESPACE" ebs-csi-node > /dev/null 2>&1; then
   echo "Error: EBS CSI driver is not installed." >&2
   exit 1
 fi
@@ -11,8 +11,8 @@ if [ -n "$IAC_URL" ]; then
   IAC_URL_ENV="{\"name\": \"DATAFY_IAC_URL\", \"value\": \"$IAC_URL\"},"
 fi
 
-if ! kubectl -n "$NAMESPACE" patch deployment ebs-csi-controller --type='json' -p="[$(
-DAEMONSET_JSON="$(kubectl -n "$NAMESPACE" get deployment ebs-csi-controller -o json | jq 'del(.metadata.annotations)')"
+if ! kubectl -n "$K8S_CSI_NAMESPACE" patch deployment ebs-csi-controller --type='json' -p="[$(
+DAEMONSET_JSON="$(kubectl -n "$K8S_CSI_NAMESPACE" get deployment ebs-csi-controller -o json | jq 'del(.metadata.annotations)')"
 DATAFY_CONTAINER_INDEX="$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "datafy-proxy") | index(true)')";
 EBS_PLUGIN_CONTAINER_INDEX="$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "ebs-plugin") | index(true)')";
 EBS_PLUGIN_ENV_INDEX="$(echo "$DAEMONSET_JSON" | jq ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].env | map(.name == \"CSI_ENDPOINT\") | index(true)")";
@@ -56,6 +56,15 @@ $REMOVE_OPS
             "key": "token"
           }
         }
+      },
+      {
+        "name": "CSI_VERSION",
+        "valueFrom": {
+          "fieldRef": {
+            "apiVersion": "v1",
+            "fieldPath": "metadata.labels['app.kubernetes.io/version']"
+          }
+        }
       }
     ],
     "livenessProbe": {
@@ -95,8 +104,8 @@ EOF
   exit 1
 fi
 
-if ! kubectl -n "$NAMESPACE" patch daemonset ebs-csi-node --type='json' -p="[$(
-DAEMONSET_JSON="$(kubectl -n "$NAMESPACE" get daemonset ebs-csi-node -o json | jq 'del(.metadata.annotations)')"
+if ! kubectl -n "$K8S_CSI_NAMESPACE" patch daemonset ebs-csi-node --type='json' -p="[$(
+DAEMONSET_JSON="$(kubectl -n "$K8S_CSI_NAMESPACE" get daemonset ebs-csi-node -o json | jq 'del(.metadata.annotations)')"
 DATAFY_VOLUME_INDEX=$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.volumes | map(.name == "run-datafy-dir") | index(true)');
 DATAFY_CONTAINER_INDEX=$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "datafy-proxy") | index(true)');
 EBS_PLUGIN_CONTAINER_INDEX=$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "ebs-plugin") | index(true)');
@@ -151,6 +160,15 @@ $REMOVE_OPS
           "fieldRef": {
             "apiVersion": "v1",
             "fieldPath": "status.hostIP"
+          }
+        }
+      },
+      {
+        "name": "CSI_VERSION",
+        "valueFrom": {
+          "fieldRef": {
+            "apiVersion": "v1",
+            "fieldPath": "metadata.labels['app.kubernetes.io/version']"
           }
         }
       }

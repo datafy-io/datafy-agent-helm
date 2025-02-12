@@ -32,10 +32,10 @@ spec:
         {{- with .Values.datafy.tolerations }}{{ toYaml . | nindent 8 }}{{- end }}
       {{- end }}
       containers:
+        {{- if not .Values.datafy.coreMockEnabled }}
         - name: core
-          args:
-            - core
-          image: "public.ecr.aws/datafy-io/datafy-agent:{{ .Values.datafy.version }}"
+          args: [ core ]
+          image: "{{ .Values.image.registry }}/{{ .Values.image.agent.repository }}:{{ .Values.image.agent.tag }}"
           imagePullPolicy: Always
           securityContext:
             privileged: true
@@ -46,10 +46,10 @@ spec:
             requests:
               cpu: 10m
               memory: 40Mi
+        {{- end }}
         - name: shell
-          args:
-            - shell
-          image: "public.ecr.aws/datafy-io/datafy-agent:{{ .Values.datafy.version }}"
+          args: [ shell ]
+          image: "{{ .Values.image.registry }}/{{ .Values.image.agent.repository }}:{{ .Values.image.agent.tag }}"
           imagePullPolicy: Always
           securityContext:
             privileged: true
@@ -62,6 +62,14 @@ spec:
                 secretKeyRef:
                   name: datafy-token
                   key: token
+            {{- if .Values.datafy.hqMockEnabled }}
+            - name: ENABLE_HQ_MOCK
+              value: {{ .Values.datafy.hqMockEnabled }}
+            {{- end }}
+            {{- if .Values.datafy.coreMockEnabled }}
+            - name: ENABLE_HQ_CORE
+              value: {{ .Values.datafy.coreMockEnabled }}
+            {{- end }}
           resources:
             requests:
               cpu: 10m
@@ -70,6 +78,12 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range $secret := .Values.image.pullSecrets }}
+        - name: {{ $secret }}
+        {{ end }}
+      {{- end }}
       securityContext:
         fsGroup: 0
         runAsGroup: 0

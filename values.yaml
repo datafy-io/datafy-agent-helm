@@ -3,8 +3,11 @@
 ##
 datafy:
   token: ""
-  version: latest
   env: {}
+
+  discoveryOnly: false
+  coreMockEnabled: false
+  hqMockEnabled: false
 
   ## @param datafy.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -34,8 +37,9 @@ datafy:
       operator: "Exists"
 
 csi:
+  enabled: true
+  version: v0.0.3
   namespace:
-  version:
   iacUrl:
 
 ## @param extraLabels Labels to add to all deployed objects
@@ -44,3 +48,22 @@ extraLabels: {}
 ## @param extraAnnotations Annotations to add to all deployed objects
 ##
 extraAnnotations: {}
+
+## Datafy Agent image version
+##
+image:
+  registry: public.ecr.aws/datafy-io
+  agent:
+    repository: datafy-agent
+    tag: h2o-v1
+  csi:
+    repository: ebs-csi-controller
+    tag: v0.0.3
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ## e.g:
+  ## pullSecrets:
+  ##   - myRegistryKeySecretName
+  ##
+  pullSecrets: []
