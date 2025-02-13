@@ -3,6 +3,7 @@
 ##
 datafy:
   token: ""
+  version: ""
   env: {}
 
   discoveryOnly: false
@@ -55,10 +56,10 @@ image:
   registry: public.ecr.aws/datafy-io
   agent:
     repository: datafy-agent
-    tag: h2o-v1
+    tag:
   csi:
     repository: ebs-csi-controller
-    tag: v0.0.3
+    tag:
   ## Optionally specify an array of imagePullSecrets.
   ## Secrets must be manually created in the namespace.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/

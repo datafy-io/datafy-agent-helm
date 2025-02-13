@@ -16,7 +16,7 @@ helm repo update
 The datafy-agent Helm chart is now available for installation. Run the following command to install the agent on your Kubernetes cluster:
 
 ```bash
-helm install datafy-agent datafyio/datafy-agent --namespace <namespace> --create-namespace --set datafy.token=<your_token>
+helm install datafy-agent datafyio/datafy-agent --namespace <namespace> --create-namespace --set datafy.token=<your_token> --set datafy.version=<agent_version>
 ```
 Replace `<namespace>` with the Kubernetes namespace where you want to install the agent, and `<your_token>` with the mandatory token for the Datafy agent.
 

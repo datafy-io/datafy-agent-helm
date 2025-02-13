@@ -1,3 +1,5 @@
+{{- $version := coalesce .Values.image.agent.tag .Values.datafy.version | required "Either 'image.agent.tag' or 'datafy.version' must be defined" }}
+{{- $enableCoreMock := or .Values.datafy.coreMockEnabled .Values.datafy.discoveryOnly }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -32,11 +34,10 @@ spec:
         {{- with .Values.datafy.tolerations }}{{ toYaml . | nindent 8 }}{{- end }}
       {{- end }}
       containers:
-        {{- $enableCoreMock := or .Values.datafy.coreMockEnabled .Values.datafy.discoveryOnly }}
         {{- if not $enableCoreMock }}
         - name: core
           args: [ core ]
-          image: "{{ .Values.image.registry }}/{{ .Values.image.agent.repository }}:{{ .Values.image.agent.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.agent.repository }}:{{ $version }}"
           imagePullPolicy: Always
           securityContext:
             privileged: true
@@ -50,7 +51,7 @@ spec:
         {{- end }}
         - name: shell
           args: [ shell ]
-          image: "{{ .Values.image.registry }}/{{ .Values.image.agent.repository }}:{{ .Values.image.agent.tag }}"
+          image: "{{ .Values.image.registry }}/{{ .Values.image.agent.repository }}:{{ $version }}"
           imagePullPolicy: Always
           securityContext:
             privileged: true
