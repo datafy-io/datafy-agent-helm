@@ -5,3 +5,7 @@ home: https://datafy.io
 maintainers:
   - name: Datafy.io, Inc. All Rights Reserved.
     url: https://github.com/datafy-io/datafy-agent-helm
+dependencies:
+  - name: aws-ebs-csi-driver
+    version: 2.39.3
+    repository: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
