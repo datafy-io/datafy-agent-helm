@@ -6,7 +6,6 @@ if ! kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/nu
   exit 1
 fi
 
-K8S_CSI_VERSION=${K8S_CSI_VERSION:-latest}
 if [ -n "$IAC_URL" ]; then
   IAC_URL_ENV="{\"name\": \"DATAFY_IAC_URL\", \"value\": \"$IAC_URL\"},"
 fi
@@ -35,7 +34,7 @@ $REMOVE_OPS
   "path": "/spec/template/spec/containers/-",
   "value": {
     "name": "datafy-proxy",
-    "image": "public.ecr.aws/datafy-io/ebs-csi-controller:$K8S_CSI_VERSION",
+    "image": "$K8S_CSI_IMAGE",
     "imagePullPolicy": "Always",
     "args": [ "controller" ],
     "env": [
@@ -132,7 +131,7 @@ $REMOVE_OPS
   "path": "/spec/template/spec/containers/-",
   "value": {
     "name": "datafy-proxy",
-    "image": "public.ecr.aws/datafy-io/ebs-csi-controller:$K8S_CSI_VERSION",
+    "image": "$K8S_CSI_IMAGE",
     "imagePullPolicy": "Always",
     "args": [ "node" ],
     "env": [

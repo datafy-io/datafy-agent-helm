@@ -5,14 +5,16 @@ S3_REPO_URL := s3://$(URL)
 HTTP_REPO_NAME := datafyio
 HTTP_REPO_URL := https://$(URL)
 
+DEFAULT_VALUES := --set-string "agent.token=1" --set-string "agent.image.tag=1"
+
 help:		## Show this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n"} /^[\/0-9a-zA-Z_-]+:.*##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
 lint: ## Run lint
-	$(HELM_CMD) lint
+	$(HELM_CMD) lint $(DEFAULT_VALUES)
 
 template: ## Generate templates to stdout
-	$(HELM_CMD) template .  --set-string "datafy.token=1"
+	$(HELM_CMD) template . $(DEFAULT_VALUES)
 
 repos: ## add dataf-agent repositories to helm
 	@$(HELM_CMD) plugin list | grep -q "^s3" || (echo "installing helm s3 plugin" && helm plugin install https://github.com/hypnoglow/helm-s3.git)

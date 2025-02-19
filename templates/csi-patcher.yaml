@@ -1,4 +1,4 @@
-{{- if .Values.csi.enabled }}
+{{- if .Values.ebsCsiProxy.enabled }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -10,7 +10,7 @@ metadata:
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
   annotations:
     "helm.sh/hook": post-install, post-upgrade
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   template:
     metadata:
@@ -25,12 +25,12 @@ spec:
           image: bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
-              value: {{ default "kube-system" .Values.csi.namespace }}
-            - name: K8S_CSI_VERSION
-              value: {{ default "latest" .Values.csi.version }}
-            {{- if .Values.csi.iacUrl }}
+              value: {{ include "ebsCsiProxyNamespace" . }}
+            - name: K8S_CSI_IMAGE
+              value: {{ printf "%s:%s" .Values.ebsCsiProxy.image.repository .Values.ebsCsiProxy.image.tag | quote }}
+            {{- with .Values.ebsCsiProxy.iacUrl }}
             - name: IAC_URL
-              value: {{ .Values.csi.iacUrl }}
+              value: {{ . }}
             {{- end }}
           command:
             - /bin/sh
@@ -51,7 +51,7 @@ metadata:
     helm.sh/chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
   annotations:
     "helm.sh/hook": pre-delete
-    "helm.sh/hook-delete-policy": hook-succeeded
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   template:
     metadata:
@@ -66,7 +66,7 @@ spec:
           image: bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
-              value: {{ default "kube-system" .Values.csi.namespace }}
+              value: {{ include "ebsCsiProxyNamespace" . }}
           command:
             - /bin/sh
             - -c

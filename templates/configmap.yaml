@@ -10,4 +10,4 @@ metadata:
   annotations:
     {{- with .Values.extraAnnotations }}{{ toYaml . | nindent 4 }}{{- end }}
 data:
-  {{- with .Values.datafy.env }}{{ toYaml . | nindent 2 }}{{- end }}
+  {{- with .Values.agent.env }}{{ toYaml . | nindent 2 }}{{- end }}

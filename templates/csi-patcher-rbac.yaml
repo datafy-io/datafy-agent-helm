@@ -1,4 +1,4 @@
-{{- if .Values.csi.enabled }}
+{{- if .Values.ebsCsiProxy.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
