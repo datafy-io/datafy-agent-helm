@@ -1,0 +1,41 @@
+name: Release Chart
+
+on:
+  workflow_dispatch:
+  workflow_call:
+    secrets:
+      PRODUCTION_AWS_ROLE_ARN:
+        required: true
+
+permissions:
+  id-token: write
+  contents: write  # Grant write access to the repository contents
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Configure AWS Management Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+      - name: Add datafyio-s3 Helm repository
+        run: |
+          helm plugin install https://github.com/hypnoglow/helm-s3.git
+          helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
+      - name: Update Helm dependency
+        run: |
+          helm dependency update
+      - name: Push Helm chart
+        run: |
+          CHART_VERSION=$(yq '.version' Chart.yaml)
+          EBS_CSI_DRIVER_VERSION=$(yq '.dependencies[] | select(.name == "aws-ebs-csi-driver") | .version' Chart.yaml)
+          helm package --version "${CHART_VERSION}+ebscsi.${EBS_CSI_DRIVER_VERSION}" .
+          helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+          
