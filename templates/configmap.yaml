@@ -4,10 +4,10 @@ metadata:
   name: datafy-agent-envvars
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service }}
-    app.kubernetes.io/part-of: datafy-agent
-    {{- with .Values.extraLabels }}{{ toYaml . | nindent 4 }}{{- end }}
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
   annotations:
-    {{- with .Values.extraAnnotations }}{{ toYaml . | nindent 4 }}{{- end }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
 data:
   {{- with .Values.agent.env }}{{ toYaml . | nindent 2 }}{{- end }}

@@ -5,27 +5,24 @@ metadata:
   name: datafy-agent-patch-csi
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-    app.kubernetes.io/part-of: datafy-agent
-    helm.sh/chart: {{ .Chart.Name | quote }}
+  {{- include "datafy-agent.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
+  backoffLimit: 2
   template:
     metadata:
       name: datafy-agent-patch-csi
       labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-        app.kubernetes.io/part-of: datafy-agent
-        helm.sh/chart: {{ .Chart.Name | quote }}
+        {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
       containers:
         - name: csi-patcher
           image: bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
-              value: {{ include "ebsCsiProxyNamespace" . }}
+              value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
             - name: K8S_CSI_IMAGE
               value: {{ printf "%s:%s" .Values.ebsCsiProxy.image.repository .Values.ebsCsiProxy.image.tag | quote }}
             {{- with .Values.ebsCsiProxy.iacUrl }}
@@ -46,27 +43,24 @@ metadata:
   name: datafy-agent-unpatch-csi
   namespace: {{ .Release.Namespace }}
   labels:
-    app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-    app.kubernetes.io/part-of: datafy-agent
-    helm.sh/chart: {{ .Chart.Name | quote }}
+  {{- include "datafy-agent.labels" . | nindent 4 }}
   annotations:
     "helm.sh/hook": pre-delete
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
+  backoffLimit: 2
   template:
     metadata:
       name: datafy-agent-unpatch-csi
       labels:
-        app.kubernetes.io/managed-by: {{ .Release.Service | quote }}
-        app.kubernetes.io/part-of: datafy-agent
-        helm.sh/chart: {{ .Chart.Name | quote }}
+        {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
       containers:
         - name: csi-unpatcher
           image: bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
-              value: {{ include "ebsCsiProxyNamespace" . }}
+              value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
           command:
             - /bin/sh
             - -c

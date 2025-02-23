@@ -1,6 +1,6 @@
 
-## @param aws-ebs-csi-driver.enabled to install aws-ebs-csi-driver chart as well
-aws-ebs-csi-driver:
+## @param awsEbsCsiDriver.enabled to install aws-ebs-csi-driver chart as well
+awsEbsCsiDriver:
   enabled: false
 
 ## @param extraLabels Labels to add to all deployed objects
