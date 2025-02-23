@@ -50,7 +50,7 @@ agent:
   securityContext:
     privileged: true
     runAsUser: 1000
-    runAsGroup: 1000
+    runAsGroup: 10000
 
   image:
     pullPolicy: Always
