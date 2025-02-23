@@ -18,7 +18,7 @@ repos: ## add dataf-agent repository to helm
 clean: ## clean
 	@rm -rf dist
 
-build: ## build the helm package
+build: ## build the helm packag e
 build: clean
 	@mkdir -p dist
-	helm package -d dist .
+	helm package -d dist
