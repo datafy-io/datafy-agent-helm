@@ -2,7 +2,7 @@
 Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiProxyNamespace" -}}
-    {{- if index .Values "aws-ebs-csi-driver" "enabled" }}
+    {{- if .Values.awsEbsCsiDriver.enabled }}
         {{- .Release.Namespace -}}
     {{- else }}
         {{- .Values.ebsCsiProxy.namespace | default "kube-system" -}}

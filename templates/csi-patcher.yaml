@@ -10,6 +10,7 @@ metadata:
     "helm.sh/hook": post-install, post-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
+  backoffLimit: 2
   template:
     metadata:
       name: datafy-agent-patch-csi
@@ -47,6 +48,7 @@ metadata:
     "helm.sh/hook": pre-delete
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
+  backoffLimit: 2
   template:
     metadata:
       name: datafy-agent-unpatch-csi

@@ -14,10 +14,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: datafy-agent
+      app: datafy-agent
   template:
     metadata:
       labels:
+        app: datafy-agent
         {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
       {{- if .Values.agent.affinity }}

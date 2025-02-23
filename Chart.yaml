@@ -8,5 +8,5 @@ maintainers:
 dependencies:
   - name: aws-ebs-csi-driver
     version: 2.39.3
-    condition: aws-ebs-csi-driver.enabled
+    condition: awsEbsCsiDriver.enabled
     repository: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
