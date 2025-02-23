@@ -22,9 +22,9 @@ Replace `<namespace>` with the Kubernetes namespace where you want to install th
 
 ### **3. Optional Customizations**
 The datafy-agent chart comes with [aws-ebs-csi-driver chart](https://github.com/kubernetes-sigs/aws-ebs-csi-driver/tree/master/charts/aws-ebs-csi-driver)  
-To enable (or disable) the `aws-ebs-csi-driver` installation use `aws-ebs-csi-driver.enabled=true/false`
+To enable (or disable) the `aws-ebs-csi-driver` installation use `awsEbsCsiDriver.enabled=true/false`
 ```bash
-helm install datafy-agent datafyio/datafy-agent ... --set "aws-ebs-csi-driver.enabled=true/false"
+helm install datafy-agent datafyio/datafy-agent ... --set "awsEbsCsiDriver.enabled=true/false"
 ```
 
 all customizations can also be passed with the prefix `aws-ebs-csi-driver`
@@ -39,9 +39,9 @@ The datafy-agent chart allows customization through values provided in the `valu
 Here are a few key parameters you can customize in your `values.yaml` file:
 
 * Environment Variables for the Daemon Set
-You can add environment variables to the Datafy agent by setting the `datafy.env` parameter:
+You can add environment variables to the Datafy agent by setting the `agent.env` parameter:
 ```yaml
-datafy:
+agent:
   env:
     EXAMPLE_ENV: "example-value"
 ```
@@ -61,7 +61,7 @@ ebsCsiProxy:
   namespace: <your_csi_namespace>  
 ```
 
-### **4. Verify the Installation**
+### **5. Verify the Installation**
 Once installed, verify that the datafy-agent pods are running:
 ```bash
 kubectl get pods -n <namespace>
