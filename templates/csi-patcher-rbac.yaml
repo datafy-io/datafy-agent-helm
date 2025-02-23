@@ -4,11 +4,23 @@ kind: ServiceAccount
 metadata:
   name: datafy-csi-patcher-sa
   namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: datafy-csi-patcher-clusterrole
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
 rules:
   - apiGroups: [ "apps" ]
     resources: [ "deployments", "daemonsets" ]
@@ -19,6 +31,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: datafy-csi-patcher-clusterrolebinding
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
 subjects:
   - kind: ServiceAccount
     name: datafy-csi-patcher-sa
