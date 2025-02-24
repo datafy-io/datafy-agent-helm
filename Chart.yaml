@@ -1,12 +1,12 @@
 apiVersion: v2
 name: datafy-agent
-version: 1.2.2
+version: 1.2.3
 home: https://datafy.io
 maintainers:
   - name: Datafy.io, Inc. All Rights Reserved.
     url: https://github.com/datafy-io/datafy-agent-helm
 dependencies:
   - name: aws-ebs-csi-driver
-    version: 2.39.3
+    version: 2.40.0
     condition: awsEbsCsiDriver.enabled
     repository: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
