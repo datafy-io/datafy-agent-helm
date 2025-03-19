@@ -46,6 +46,14 @@ spec:
           envFrom:
             - configMapRef:
                 name: datafy-agent-envvars
+          env:
+            - name: DATAFY_DSO_URL
+              value: {{ .Values.agent.dsoUrl }}
+            - name: DATAFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: datafy-token
+                  key: token
           resources:
             requests:
               cpu: 10m

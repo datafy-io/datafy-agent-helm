@@ -25,10 +25,8 @@ spec:
               value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
             - name: K8S_CSI_IMAGE
               value: {{ printf "%s:%s" .Values.ebsCsiProxy.image.repository .Values.ebsCsiProxy.image.tag | quote }}
-            {{- with .Values.ebsCsiProxy.iacUrl }}
             - name: IAC_URL
-              value: {{ . }}
-            {{- end }}
+              value: {{ .Values.ebsCsiProxy.iacUrl | default (.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
           command:
             - /bin/sh
             - -c
