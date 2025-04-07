@@ -1,0 +1,28 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["Sensor", "AutoScaler"],
+          "description": "Type of agent to install"
+        },
+        "installStrategy": {
+          "type": "string",
+          "enum": ["DaemonSet", "DaemonSetWithHostInstall"],
+          "description": "Method to install and run the agent"
+        },
+        "token": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The agent authentication token"
+        }
+      },
+      "required": ["type", "installStrategy", "token"]
+    }
+  },
+  "required": ["agent"]
+}
