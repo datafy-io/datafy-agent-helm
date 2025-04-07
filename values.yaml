@@ -10,16 +10,16 @@ extraLabels: {}
 ##
 extraAnnotations: {}
 
+## @param agent.type Type of agent to install. Valid values: "Sensor", "AutoScaler"
 ## @param agent.token Datafy agent token
 ## @param agent.env Environment variables to add to datafy-agent daemon set
 ##
 agent:
+  type: AutoScaler
   token: ""
   dsoUrl: wss://dso.datafy.io
   env: { }
 
-  ## @param agent.discoveryOnlyEnabled to enable only discovery mode
-  discoveryOnlyEnabled: false
   coreMockEnabled: false
   hqMockEnabled: false
 

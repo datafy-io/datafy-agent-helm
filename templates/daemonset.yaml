@@ -1,5 +1,5 @@
 {{- $version := required "ERROR: agent.image.tag is required" .Values.agent.image.tag }}
-{{- $enableCoreMock := or .Values.agent.coreMockEnabled .Values.agent.discoveryOnlyEnabled }}
+{{- $enableCoreMock := or .Values.agent.coreMockEnabled (eq .Values.agent.type "Sensor") }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
