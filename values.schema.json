@@ -5,15 +5,10 @@
     "agent": {
       "type": "object",
       "properties": {
-        "type": {
+        "mode": {
           "type": "string",
           "enum": ["Sensor", "AutoScaler"],
-          "description": "Type of agent to install"
-        },
-        "installStrategy": {
-          "type": "string",
-          "enum": ["DaemonSet", "DaemonSetWithHostInstall"],
-          "description": "Method to install and run the agent"
+          "description": "Mode of agent to install"
         },
         "token": {
           "type": "string",
@@ -21,7 +16,7 @@
           "description": "The agent authentication token"
         }
       },
-      "required": ["type", "installStrategy", "token"]
+      "required": ["mode", "token"]
     }
   },
   "required": ["agent"]
