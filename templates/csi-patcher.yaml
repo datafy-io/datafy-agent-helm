@@ -32,7 +32,9 @@ spec:
             - -c
             - |
 {{ .Files.Get "files/patch-csi.sh" | indent 14 }}
+      priorityClassName: system-node-critical
       restartPolicy: Never
+      schedulerName: default-scheduler
       serviceAccountName: datafy-csi-patcher-sa
 ---
 apiVersion: batch/v1
@@ -64,6 +66,8 @@ spec:
             - -c
             - |
 {{ .Files.Get "files/unpatch-csi.sh" | indent 14 }}
+      priorityClassName: system-node-critical
       restartPolicy: Never
+      schedulerName: default-scheduler
       serviceAccountName: datafy-csi-patcher-sa
 {{- end }}
