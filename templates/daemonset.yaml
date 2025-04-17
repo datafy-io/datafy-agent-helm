@@ -1,4 +1,4 @@
-{{- $enableCoreMock := or .Values.agent.coreMockEnabled (eq .Values.agent.type "Sensor") }}
+{{- $enableCoreMock := or .Values.agent.coreMockEnabled (eq .Values.agent.mode "Sensor") }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
