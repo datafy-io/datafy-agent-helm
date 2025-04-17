@@ -32,3 +32,33 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{ toYaml .Values.extraLabels }}
 {{- end }}
 {{- end -}}
+
+{{/*
+  Builds a single-line string of env variables for datafy-agent-installer:
+  "FOO=bar BAZ=qux ..."
+*/}}
+{{- define "agent.extraInstallEnv" -}}
+{{- $env := dict -}}
+{{- if eq .Values.agent.skipStartAgent true }}
+    {{- $_ := set $env "SKIP_START_AGENT" "true" }}
+{{- end }}
+{{- if eq .Values.agent.skipInstallCore true }}
+    {{- $_ := set $env "SKIP_INSTALL_CORE" "true" }}
+{{- end }}
+{{- if eq .Values.agent.mode "Sensor" }}
+    {{- $_ := set $env "DISCOVERY_ONLY" "true" }}
+{{- end }}
+{{- if eq .Values.agent.k8sCsiEnabled false }}
+    {{- $_ := set $env "DISABLE_K8S_CSI" "true" }}
+{{- end }}
+{{- if eq .Values.agent.coreMockEnabled true }}
+    {{- $_ := set $env "ENABLE_CORE_MOCK" "true" }}
+{{- end }}
+{{- if eq .Values.agent.coreMockEnabled true }}
+    {{- $_ := set $env "ENABLE_HQ_MOCK" "true" }}
+{{- end }}
+{{- range $key, $val := $env }}
+- name: {{ $key }}
+  value: {{ $val | quote }}
+{{- end }}
+{{- end }}
