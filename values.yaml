@@ -11,15 +11,15 @@ extraLabels: {}
 extraAnnotations: {}
 
 ## @param agent.token Datafy agent token
+## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
 ## @param agent.env Environment variables to add to datafy-agent daemon set
 ##
 agent:
   token: ""
+  mode: AutoScaler
   dsoUrl: wss://dso.datafy.io
   env: { }
 
-  ## @param agent.discoveryOnlyEnabled to enable only discovery mode
-  discoveryOnlyEnabled: false
   coreMockEnabled: false
   hqMockEnabled: false
 
@@ -55,7 +55,7 @@ agent:
   image:
     pullPolicy: Always
     repository: public.ecr.aws/datafy-io/datafy-agent
-    tag: ""
+    tag: latest
 
     ## Optionally specify an array of imagePullSecrets.
     ## Secrets must be manually created in the namespace.
@@ -72,4 +72,4 @@ ebsCsiProxy:
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/ebs-csi-controller
-    tag: "v0.0.3"
+    tag: latest

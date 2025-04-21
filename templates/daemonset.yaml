@@ -1,5 +1,4 @@
-{{- $version := required "ERROR: agent.image.tag is required" .Values.agent.image.tag }}
-{{- $enableCoreMock := or .Values.agent.coreMockEnabled .Values.agent.discoveryOnlyEnabled }}
+{{- $enableCoreMock := or .Values.agent.coreMockEnabled (eq .Values.agent.mode "Sensor") }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -37,7 +36,7 @@ spec:
         {{- if not $enableCoreMock }}
         - name: core
           args: [ core ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository $version }}
+          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
@@ -61,7 +60,7 @@ spec:
         {{- end }}
         - name: shell
           args: [ shell ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository $version }}
+          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:

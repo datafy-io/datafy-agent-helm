@@ -1,0 +1,23 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "properties": {
+    "agent": {
+      "type": "object",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["Sensor", "AutoScaler"],
+          "description": "Mode of agent to install"
+        },
+        "token": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The agent authentication token"
+        }
+      },
+      "required": ["mode", "token"]
+    }
+  },
+  "required": ["agent"]
+}
