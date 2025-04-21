@@ -54,7 +54,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- if eq .Values.agent.coreMockEnabled true }}
     {{- $_ := set $env "ENABLE_CORE_MOCK" "true" }}
 {{- end }}
-{{- if eq .Values.agent.coreMockEnabled true }}
+{{- if eq .Values.agent.hqMockEnabled true }}
     {{- $_ := set $env "ENABLE_HQ_MOCK" "true" }}
 {{- end }}
 {{- range $key, $val := $env }}
