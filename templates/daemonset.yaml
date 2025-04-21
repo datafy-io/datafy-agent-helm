@@ -106,4 +106,4 @@ spec:
       {{- end }}
       hostPID: true
       hostNetwork: true
-  {{- end }}
+{{- end }}
