@@ -20,7 +20,7 @@ spec:
     spec:
       containers:
         - name: csi-patcher
-          image: bitnami/kubectl:latest
+          image: public.ecr.aws/bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
               value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
@@ -58,7 +58,7 @@ spec:
     spec:
       containers:
         - name: csi-unpatcher
-          image: bitnami/kubectl:latest
+          image: public.ecr.aws/bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
               value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
