@@ -46,7 +46,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
     {{- $_ := set $env "SKIP_INSTALL_CORE" "true" }}
 {{- end }}
 {{- if eq .Values.agent.mode "Sensor" }}
-    {{- $_ := set $env "DISCOVERY_ONLY" "true" }}
+    {{- $_ := set $env "AGENT_MODE" "sensor" }}
 {{- end }}
 {{- if eq .Values.agent.k8sCsiEnabled false }}
     {{- $_ := set $env "DISABLE_K8S_CSI" "true" }}
