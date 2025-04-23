@@ -1,3 +1,4 @@
+{{- if eq .Values.agent.mode "AutoScaler" }}
 {{- if .Values.ebsCsiProxy.enabled }}
 apiVersion: batch/v1
 kind: Job
@@ -70,4 +71,5 @@ spec:
       restartPolicy: Never
       schedulerName: default-scheduler
       serviceAccountName: datafy-csi-patcher-sa
+{{- end }}
 {{- end }}
