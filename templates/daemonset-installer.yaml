@@ -1,10 +1,9 @@
 {{- if eq .Values.agent.installStrategy "DaemonSetWithHostInstall" }}
 {{- $agentUrl := .Values.agent.dsoUrl | replace "wss://dso" "https://agent" | replace "ws://dso" "http://agent" }}
-{{- $enableCoreMock := or .Values.agent.coreMockEnabled (eq .Values.agent.mode "Sensor") }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: datafy-agent
+  name: datafy-agent-installer
   namespace: {{ .Release.Namespace | quote }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
@@ -15,11 +14,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: datafy-agent
+      app: datafy-agent-installer
   template:
     metadata:
       labels:
-        app: datafy-agent
+        app: datafy-agent-installer
         {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
       {{- if .Values.agent.affinity }}
@@ -34,7 +33,7 @@ spec:
       tolerations:
         {{- with .Values.agent.tolerations }}{{ toYaml . | nindent 8 }}{{- end }}
       {{- end }}
-      initContainers:
+      containers:
         - name: installer
           image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
@@ -61,39 +60,6 @@ spec:
             initialDelaySeconds: 10
             successThreshold: 1
             periodSeconds: 10
-          resources:
-            requests:
-              cpu: 10m
-              memory: 40Mi
-      containers:
-        {{- if not $enableCoreMock }}
-        - name: core
-          args: [ core ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
-          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
-          {{- with .Values.agent.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          env:
-            - name: AGENT_INSTALL_STRATEGY
-              value: {{ .Values.agent.installStrategy }}
-          resources:
-            requests:
-              cpu: 10m
-              memory: 40Mi
-        {{- end }}
-        - name: shell
-          args: [ shell ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
-          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
-          {{- with .Values.agent.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          env:
-            - name: AGENT_INSTALL_STRATEGY
-              value: {{ .Values.agent.installStrategy }}
           resources:
             requests:
               cpu: 10m
