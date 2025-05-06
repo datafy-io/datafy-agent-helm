@@ -20,11 +20,6 @@ agent:
   dsoUrl: wss://dso.datafy.io
   env: { }
 
-  ## @param agent.installStrategy Strategy to install the agent
-  ## "DaemonSet" - run the binary from a container in a DaemonSet
-  ## "DaemonSetWithHostInstall" - use the DaemonSet to install the binary on the host
-  installStrategy: DaemonSetWithHostInstall
-
   coreMockEnabled: false
   hqMockEnabled: false
 

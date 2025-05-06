@@ -1,4 +1,3 @@
-{{- if eq .Values.agent.mode "AutoScaler" }}
 {{- if .Values.ebsCsiProxy.enabled }}
 apiVersion: batch/v1
 kind: Job
@@ -20,7 +19,7 @@ spec:
     spec:
       containers:
         - name: csi-patcher
-          image: public.ecr.aws/bitnami/kubectl:latest
+          image: bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
               value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
@@ -58,7 +57,7 @@ spec:
     spec:
       containers:
         - name: csi-unpatcher
-          image: public.ecr.aws/bitnami/kubectl:latest
+          image: bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
               value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
@@ -71,5 +70,4 @@ spec:
       restartPolicy: Never
       schedulerName: default-scheduler
       serviceAccountName: datafy-csi-patcher-sa
-{{- end }}
 {{- end }}
