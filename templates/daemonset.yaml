@@ -72,8 +72,6 @@ spec:
           env:
             - name: DATAFY_GRPC_ENABLED
               value: "true"
-            - name: DATAFY_GRPC_ADDRESS
-              value: "unix:/run/datafy/datafy-agent.sock"
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_TOKEN

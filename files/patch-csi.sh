@@ -154,15 +154,6 @@ $REMOVE_OPS
         }
       },
       {
-        "name": "CSI_HOST_IP",
-        "valueFrom": {
-          "fieldRef": {
-            "apiVersion": "v1",
-            "fieldPath": "status.hostIP"
-          }
-        }
-      },
-      {
         "name": "CSI_VERSION",
         "valueFrom": {
           "fieldRef": {
