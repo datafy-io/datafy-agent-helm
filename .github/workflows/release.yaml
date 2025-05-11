@@ -18,7 +18,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: master
           fetch-depth: 0
       - name: Configure AWS Management Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -38,4 +37,3 @@ jobs:
           EBS_CSI_DRIVER_VERSION=$(yq '.dependencies[] | select(.name == "aws-ebs-csi-driver") | .version' Chart.yaml)
           helm package --version "${CHART_VERSION}+ebscsi.${EBS_CSI_DRIVER_VERSION}" .
           helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
-          
