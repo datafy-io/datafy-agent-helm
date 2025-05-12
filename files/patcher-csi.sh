@@ -2,6 +2,7 @@
 set -e
 
 patch() {
+  echo "patching..."
   if [ -n "$IAC_URL" ]; then
     IAC_URL_ENV="{\"name\": \"DATAFY_IAC_URL\", \"value\": \"$IAC_URL\"},"
   fi
@@ -227,6 +228,7 @@ EOF
 }
 
 unpatch() {
+  echo "unpatching..."
   if kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/null 2>&1; then
     kubectl -n "$K8S_CSI_NAMESPACE" patch deployment ebs-csi-controller --type='json' -p="[$(
       DAEMONSET_JSON="$(kubectl -n "$K8S_CSI_NAMESPACE" get deployment ebs-csi-controller -o json | jq 'del(.metadata.annotations)')"
@@ -285,6 +287,8 @@ if ! kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/nu
   echo "Error: EBS CSI driver is not installed." >&2
   exit 1
 fi
+
+env
 
 case "$HOOK_EVENT" in
   post-install|post-upgrade)
