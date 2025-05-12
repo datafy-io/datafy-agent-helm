@@ -1,4 +1,4 @@
-{{- $enableCore := or (not .Values.agent.coreMockEnabled) (eq (.Values.agent.mode | lower) "autoscaler") }}
+{{- $enableCore := and (eq (.Values.agent.mode | lower) "autoscaler") (not .Values.agent.coreMockEnabled) }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
