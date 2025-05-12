@@ -2,8 +2,8 @@ name: Update AWS EBS CSI Driver Version
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 0 * * *"  # Runs at 00:00 UTC every day
+#  schedule:
+#    - cron: "0 0 * * *"  # Runs at 00:00 UTC every day
 
 permissions:
   id-token: write
