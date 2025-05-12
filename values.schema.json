@@ -7,7 +7,7 @@
       "properties": {
         "mode": {
           "type": "string",
-          "enum": ["Sensor", "AutoScaler"],
+          "pattern": "^(?i)(Sensor|AutoScaler)$",
           "description": "Mode of agent to install"
         },
         "token": {
