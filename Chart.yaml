@@ -7,6 +7,6 @@ maintainers:
     url: https://github.com/datafy-io/datafy-agent-helm
 dependencies:
   - name: aws-ebs-csi-driver
-    version: 2.40.0
+    version: 2.31.0
     condition: awsEbsCsiDriver.enabled
     repository: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
