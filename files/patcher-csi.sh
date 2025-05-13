@@ -63,7 +63,7 @@ $REMOVE_OPS
         }
       }
     ],
-    "livenessProbe": {
+    "readinessProbe": {
       "failureThreshold": 5,
       "grpc":{
         "port": 50050,
@@ -72,7 +72,7 @@ $REMOVE_OPS
       "initialDelaySeconds": 20,
       "periodSeconds": 60,
       "successThreshold": 1,
-      "timeoutSeconds": 3
+      "timeoutSeconds": 10
     },
     "ports": [
       {
@@ -160,7 +160,7 @@ $REMOVE_OPS
         }
       }
     ],
-    "livenessProbe": {
+    "readinessProbe": {
       "failureThreshold": 5,
       "grpc":{
         "port": 50050,
@@ -169,7 +169,7 @@ $REMOVE_OPS
       "initialDelaySeconds": 10,
       "periodSeconds": 10,
       "successThreshold": 1,
-      "timeoutSeconds": 3
+      "timeoutSeconds": 10
     },
     "ports": [
       {
