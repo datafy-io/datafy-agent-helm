@@ -36,7 +36,7 @@ spec:
         {{- if $enableCore }}
         - name: core
           args: [ core ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
+          image: {{ printf "%s:%s" .Values.agent.image.repository (default (split "_" .Chart.AppVersion)._0 .Values.agent.image.tag) }}
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
@@ -60,7 +60,7 @@ spec:
         {{- end }}
         - name: shell
           args: [ shell ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
+          image: {{ printf "%s:%s" .Values.agent.image.repository (default (split "_" .Chart.AppVersion)._0 .Values.agent.image.tag) }}
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
