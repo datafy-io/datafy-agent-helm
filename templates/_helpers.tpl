@@ -1,4 +1,12 @@
 {{/*
+Check is CSIDriver is supported
+*/}}
+{{- define "isCSIDriverExists" -}}
+    {{- or (.Capabilities.APIVersions.Has "storage.k8s.io/v1/CSIDriver") (.Capabilities.APIVersions.Has "storage.k8s.io/v1beta1/CSIDriver") -}}
+{{/*        {{- fail "This cluster does not support CSIDriver. Aborting install." -}}*/}}
+{{- end -}}
+
+{{/*
 Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiProxyNamespace" -}}
