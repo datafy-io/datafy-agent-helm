@@ -1,0 +1,18 @@
+{{- if .Values.awsEbsCsiDriver.enabled}}
+  {{- if eq (include "isCSIDriverExists" .) "true" }}
+    {{ fail "aws-ebs-csi-driver is already supported in this cluster. Installation aborted." }}
+  {{- end }}
+{{- else }}
+  {{- if eq (include "isCSIDriverExists" .) "false" }}
+    {{ fail "aws-ebs-csi-driver is not supported in this cluster. Installation aborted." }}
+  {{- end }}
+
+  {{- if .Values.ebsCsiProxy.enabled }}
+    {{- $ns := (include "datafy-agent.ebsCsiProxyNamespace" . ) }}
+    {{- $node := lookup "apps/v1" "DaemonSet" $ns "ebs-csi-node" }}
+    {{- $controller := lookup "apps/v1" "Deployment" $ns "ebs-csi-controller" }}
+    {{- if or (not $node) (not $controller) }}
+      {{- fail (printf "CSI driver not found in namespace %q." $ns) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
