@@ -70,8 +70,10 @@ spec:
             - configMapRef:
                 name: datafy-agent-envvars
           env:
+            {{- if (and (eq (.Values.agent.mode | lower) "autoscaler") .Values.ebsCsiProxy.enabled) }}
             - name: DATAFY_GRPC_ENABLED
               value: "true"
+            {{- end }}
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_AGENT_MODE
