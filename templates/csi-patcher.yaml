@@ -1,73 +1,47 @@
 {{- if .Values.ebsCsiProxy.enabled }}
-apiVersion: batch/v1
-kind: Job
-metadata:
-  name: datafy-agent-patch-csi
-  namespace: {{ .Release.Namespace }}
-  labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
-  annotations:
-    "helm.sh/hook": post-install, post-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
-spec:
-  backoffLimit: 2
-  template:
-    metadata:
-      name: datafy-agent-patch-csi
-      labels:
-        {{- include "datafy-agent.labels" . | nindent 8 }}
-    spec:
-      containers:
-        - name: csi-patcher
-          image: bitnami/kubectl:latest
-          env:
-            - name: K8S_CSI_NAMESPACE
-              value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
-            - name: K8S_CSI_IMAGE
-              value: {{ printf "%s:%s" .Values.ebsCsiProxy.image.repository .Values.ebsCsiProxy.image.tag | quote }}
-            - name: IAC_URL
-              value: {{ .Values.ebsCsiProxy.iacUrl | default (.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
-          command:
-            - /bin/sh
-            - -c
-            - |
-{{ .Files.Get "files/patch-csi.sh" | indent 14 }}
-      priorityClassName: system-node-critical
-      restartPolicy: Never
-      schedulerName: default-scheduler
-      serviceAccountName: datafy-csi-patcher-sa
+{{- $ctx := . }}
+{{- range $hook := list "post-install" "post-upgrade" "pre-delete" }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: datafy-agent-unpatch-csi
-  namespace: {{ .Release.Namespace }}
+  name: datafy-agent-patcher-{{ $hook }}
+  namespace: {{ $ctx.Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+    {{- include "datafy-agent.labels" $ctx | nindent 4 }}
   annotations:
-    "helm.sh/hook": pre-delete
+    "helm.sh/hook": "{{ $hook }}"
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 2
   template:
     metadata:
-      name: datafy-agent-unpatch-csi
+      name: datafy-agent-patcher-{{ $hook }}
       labels:
-        {{- include "datafy-agent.labels" . | nindent 8 }}
+        {{- include "datafy-agent.labels" $ctx | nindent 8 }}
     spec:
       containers:
-        - name: csi-unpatcher
+        - name: patcher
           image: bitnami/kubectl:latest
           env:
             - name: K8S_CSI_NAMESPACE
-              value: {{ include "datafy-agent.ebsCsiProxyNamespace" . }}
+              value: {{ include "datafy-agent.ebsCsiProxyNamespace" $ctx }}
+            - name: K8S_CSI_IMAGE
+              value: {{ printf "%s:%s" $ctx.Values.ebsCsiProxy.image.repository $ctx.Values.ebsCsiProxy.image.tag | quote }}
+            - name: IAC_URL
+              value: {{ $ctx.Values.ebsCsiProxy.iacUrl | default ($ctx.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
+            - name: AGENT_MODE
+              value: {{ $ctx.Values.agent.mode | lower | quote }}
+            - name: HOOK_EVENT
+              value: {{ $hook }}
           command:
             - /bin/sh
             - -c
             - |
-{{ .Files.Get "files/unpatch-csi.sh" | indent 14 }}
+{{ $ctx.Files.Get "files/patcher-csi.sh" | indent 14 }}
       priorityClassName: system-node-critical
       restartPolicy: Never
       schedulerName: default-scheduler
       serviceAccountName: datafy-csi-patcher-sa
+{{- end }}
 {{- end }}
