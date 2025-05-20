@@ -1,6 +1,6 @@
 apiVersion: v2
 name: datafy-agent
-version: 1.3.5
+version: 1.3.6
 home: https://datafy.io
 maintainers:
   - name: Datafy.io, Inc. All Rights Reserved.
@@ -8,5 +8,5 @@ maintainers:
 dependencies:
   - name: aws-ebs-csi-driver
     version: 2.31.0
-    condition: awsEbsCsiDriver.enabled
+    condition: awsEbsCsiDriver.enabled && lower(agent.mode) == "autoscaler"
     repository: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
