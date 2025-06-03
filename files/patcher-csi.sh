@@ -69,8 +69,7 @@ $REMOVE_OPS
         "port": 50050,
         "service": ""
       },
-      "initialDelaySeconds": 20,
-      "periodSeconds": 60,
+      "periodSeconds": 30,
       "successThreshold": 1,
       "timeoutSeconds": 10
     },
@@ -166,8 +165,7 @@ $REMOVE_OPS
         "port": 50050,
         "service": ""
       },
-      "initialDelaySeconds": 10,
-      "periodSeconds": 10,
+      "periodSeconds": 30,
       "successThreshold": 1,
       "timeoutSeconds": 10
     },
