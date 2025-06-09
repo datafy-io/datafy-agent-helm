@@ -13,6 +13,11 @@ patch() {
   EBS_PLUGIN_CONTAINER_INDEX="$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "ebs-plugin") | index(true)')";
   EBS_PLUGIN_ENV_INDEX="$(echo "$DAEMONSET_JSON" | jq ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].env | map(.name == \"CSI_ENDPOINT\") | index(true)")";
   CSI_ENDPOINT="$(echo "$DAEMONSET_JSON" | jq -r ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].env[$EBS_PLUGIN_ENV_INDEX].value")";
+  CSI_ENDPOINT_DIR="$(dirname "$(echo "$CSI_ENDPOINT" | sed "s|^unix:/*|/|")")";
+  CSI_ENDPOINT_VOLUME_MOUNT="$(echo "$DAEMONSET_JSON" | jq ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].volumeMounts[] | select(.mountPath | startswith(\"$CSI_ENDPOINT_DIR\"))")";
+  if [ -z "$CSI_ENDPOINT_VOLUME_MOUNT" ]; then
+    CSI_ENDPOINT_VOLUME_MOUNT="$(echo "$DAEMONSET_JSON" | jq ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].volumeMounts[] | select(.name == \"socket-dir\" or .name == \"plugin-dir\")")";
+  fi;
   CSI_ENDPOINT="$(echo "$CSI_ENDPOINT" | sed "s/2\\.sock/.sock/")";
   NEW_CSI_ENDPOINT="$(echo "$CSI_ENDPOINT" | sed "s/\\.sock/2.sock/")";
   REMOVE_OPS="";
@@ -73,21 +78,12 @@ $REMOVE_OPS
       "successThreshold": 1,
       "timeoutSeconds": 10
     },
-    "ports": [
-      {
-        "containerPort": 50050,
-        "name": "healthz"
-      }
-    ],
     "resources": {
       "limits": { "memory": "256Mi" },
       "requests": { "cpu": "10m", "memory": "40Mi" }
     },
     "volumeMounts": [
-      {
-        "mountPath": "/var/lib/csi/sockets/pluginproxy/",
-        "name": "socket-dir"
-      }
+      $CSI_ENDPOINT_VOLUME_MOUNT
     ]
   }
 }
@@ -106,6 +102,11 @@ EOF
   EBS_PLUGIN_CONTAINER_INDEX=$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.containers | map(.name == "ebs-plugin") | index(true)');
   EBS_PLUGIN_ENV_INDEX=$(echo "$DAEMONSET_JSON" | jq ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].env | map(.name == \"CSI_ENDPOINT\") | index(true)");
   CSI_ENDPOINT="$(echo "$DAEMONSET_JSON" | jq -r ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].env[$EBS_PLUGIN_ENV_INDEX].value")";
+  CSI_ENDPOINT_DIR="$(dirname "$(echo "$CSI_ENDPOINT" | sed "s|^unix:/*|/|")")";
+  CSI_ENDPOINT_VOLUME_MOUNT="$(echo "$DAEMONSET_JSON" | jq ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].volumeMounts[] | select(.mountPath | startswith(\"$CSI_ENDPOINT_DIR\"))")";
+  if [ -z "$CSI_ENDPOINT_VOLUME_MOUNT" ]; then
+    CSI_ENDPOINT_VOLUME_MOUNT="$(echo "$DAEMONSET_JSON" | jq ".spec.template.spec.containers[$EBS_PLUGIN_CONTAINER_INDEX].volumeMounts[] | select(.name == \"socket-dir\" or .name == \"plugin-dir\")")";
+  fi;
   CSI_ENDPOINT="$(echo "$CSI_ENDPOINT" | sed "s/2\\.sock/.sock/")";
   NEW_CSI_ENDPOINT="$(echo "$CSI_ENDPOINT" | sed "s/\\.sock/2.sock/")";
   REMOVE_OPS="";
@@ -169,12 +170,6 @@ $REMOVE_OPS
       "successThreshold": 1,
       "timeoutSeconds": 10
     },
-    "ports": [
-      {
-        "containerPort": 50050,
-        "name": "healthz"
-      }
-    ],
     "resources": {
       "limits": { "memory": "256Mi" },
       "requests": { "cpu": "10m", "memory": "40Mi" }
@@ -189,10 +184,7 @@ $REMOVE_OPS
         "mountPropagation": "Bidirectional",
         "name": "kubelet-dir"
       },
-      {
-        "mountPath": "/csi",
-        "name": "plugin-dir"
-      },
+      $CSI_ENDPOINT_VOLUME_MOUNT,
       {
         "mountPath": "/dev",
         "name": "device-dir"
