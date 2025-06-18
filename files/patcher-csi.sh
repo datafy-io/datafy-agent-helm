@@ -109,6 +109,7 @@ EOF
   fi;
   CSI_ENDPOINT="$(echo "$CSI_ENDPOINT" | sed "s/2\\.sock/.sock/")";
   NEW_CSI_ENDPOINT="$(echo "$CSI_ENDPOINT" | sed "s/\\.sock/2.sock/")";
+  KUBELET_DIR_NAME="$(echo "$DAEMONSET_JSON" | jq -r ".spec.template.spec.volumes[] | select(.hostPath.path == \"/var/lib/kubelet\").name")";
   REMOVE_OPS="";
   if [ "$DATAFY_VOLUME_INDEX" != "null" ]; then
     REMOVE_OPS="$REMOVE_OPS"'{"op": "remove", "path": "/spec/template/spec/volumes/'"$DATAFY_VOLUME_INDEX"'"},';
@@ -182,7 +183,7 @@ $REMOVE_OPS
       {
         "mountPath": "/var/lib/kubelet",
         "mountPropagation": "Bidirectional",
-        "name": "kubelet-dir"
+        "name": "$KUBELET_DIR_NAME"
       },
       $CSI_ENDPOINT_VOLUME_MOUNT,
       {
