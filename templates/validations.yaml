@@ -1,3 +1,2 @@
-{{ include "datafy-agent.validation.token" . }}
 {{ include "datafy-agent.validation.mode" . }}
-{{ include "datafy-agent.validation.externalSecret" . }}
+{{ include "datafy-agent.validation.token" . }}

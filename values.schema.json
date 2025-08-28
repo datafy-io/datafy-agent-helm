@@ -16,15 +16,22 @@
           ],
           "description": "The agent authentication token"
         },
-        "tokenSecret": {
+        "externalTokenSecret": {
           "type": "object",
           "properties": {
-            "remoteKey": {
+            "name": {
               "type": [
                 "string",
                 "null"
               ],
-              "description": "The name of the key in the external secret store"
+              "description": "The name of an existing secret that contains the token"
+            },
+            "key": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The key in the secret that contains the token"
             }
           }
         }

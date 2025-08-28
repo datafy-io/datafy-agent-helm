@@ -51,8 +51,8 @@ spec:
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.agent.tokenSecret.name }}
-                  key: {{ .Values.agent.tokenSecret.key }}
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
           resources:
             requests:
               cpu: 10m
@@ -81,8 +81,8 @@ spec:
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ .Values.agent.tokenSecret.name }}
-                  key: {{ .Values.agent.tokenSecret.key }}
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
               value: {{ .Values.agent.hqMockEnabled | quote }}

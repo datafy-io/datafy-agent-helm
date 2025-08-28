@@ -19,27 +19,11 @@ agent:
   dsoUrl: wss://dso.datafy.io
   env: { }
 
-  ## @param agent.tokenSecret.name The name of the secret containing the token
-  ## @param agent.tokenSecret.key The key within the secret that contains the token
-  tokenSecret:
-    name: datafy-token
-    key: token
-
-    ## @param agent.tokenSecret.external Configuration for fetching the token from ExternalSecret
-    ## Ref: https://external-secrets.io/
-    ##
-    ## @param agent.tokenSecret.external.remoteKey The name of the key in the external secret store. If set, the external secret will be used.
-    ## @param agent.tokenSecret.external.create Whether to create ExternalSecret resources
-    ## @param agent.tokenSecret.external.name The name of the ExternalSecret containing the token
-    ## @param agent.tokenSecret.external.secretStoreRef.name The name of the secret store
-    ## @param agent.tokenSecret.external.secretStoreRef.kind The kind of the secret store. Valid values: "SecretStore", "ClusterSecretStore"
-    external:
-      remoteKey:
-      create: false
-      name: datafy-token
-      secretStoreRef:
-        name: aws-secret-store
-        kind: ClusterSecretStore
+  ## @param agent.externalTokenSecret.name The name of an existing secret that contains the token
+  ## @param agent.externalTokenSecret.key The key in the secret that contains the token
+  externalTokenSecret:
+    name:
+    key:
 
   coreMockEnabled: false
   hqMockEnabled: false
