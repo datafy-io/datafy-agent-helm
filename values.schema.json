@@ -7,17 +7,28 @@
       "properties": {
         "mode": {
           "type": "string",
-          "pattern": "^(?i)(Sensor|AutoScaler)$",
           "description": "Mode of agent to install"
         },
         "token": {
-          "type": "string",
-          "minLength": 1,
+          "type": [
+            "string",
+            "null"
+          ],
           "description": "The agent authentication token"
+        },
+        "tokenSecret": {
+          "type": "object",
+          "properties": {
+            "remoteKey": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The name of the key in the external secret store"
+            }
+          }
         }
-      },
-      "required": ["mode", "token"]
+      }
     }
-  },
-  "required": ["agent"]
+  }
 }
