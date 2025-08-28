@@ -51,8 +51,8 @@ spec:
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: datafy-token
-                  key: token
+                  name: {{ .Values.agent.tokenSecret.name }}
+                  key: {{ .Values.agent.tokenSecret.key }}
           resources:
             requests:
               cpu: 10m
@@ -81,8 +81,8 @@ spec:
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: datafy-token
-                  key: token
+                  name: {{ .Values.agent.tokenSecret.name }}
+                  key: {{ .Values.agent.tokenSecret.key }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
               value: {{ .Values.agent.hqMockEnabled | quote }}

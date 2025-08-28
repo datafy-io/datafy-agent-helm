@@ -24,6 +24,10 @@ spec:
         - name: patcher
           image: bitnami/kubectl:latest
           env:
+            - name: DATAFY_TOKEN_SECRET_NAME
+              value: {{ $ctx.Values.agent.tokenSecret.name | quote }}
+            - name: DATAFY_TOKEN_SECRET_KEY
+              value: {{ $ctx.Values.agent.tokenSecret.key | quote }}
             - name: K8S_CSI_NAMESPACE
               value: {{ include "datafy-agent.ebsCsiProxyNamespace" $ctx }}
             - name: K8S_CSI_IMAGE
