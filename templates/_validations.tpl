@@ -32,3 +32,23 @@
     {{- end }}
   {{- end }}
 {{- end }}
+
+{{- define "datafy-agent.validation.csi" }}
+  {{- $hasCsiDriver := or (.Capabilities.APIVersions.Has "storage.k8s.io/v1/CSIDriver") (.Capabilities.APIVersions.Has "storage.k8s.io/v1beta1/CSIDriver") }}
+  {{- if .Values.awsEbsCsiDriver.enabled }}
+    {{- if and $hasCsiDriver .Release.IsInstall }}
+      {{ fail "aws-ebs-csi-driver is already supported in this cluster" }}
+    {{- end }}
+  {{- else }}}}
+    {{- if not $hasCsiDriver }}
+      {{ fail "aws-ebs-csi-driver is not supported in this cluster" }}
+    {{- else if .Values.ebsCsiProxy.enabled }}
+      {{- $ns := (include "datafy-agent.ebsCsiProxyNamespace" . ) }}
+      {{- $node := lookup "apps/v1" "DaemonSet" $ns "ebs-csi-node" }}
+      {{- $controller := lookup "apps/v1" "Deployment" $ns "ebs-csi-controller" }}
+      {{- if or (not $node) (not $controller) }}
+        {{ fail (printf "CSI driver not found in namespace %s." $ns) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

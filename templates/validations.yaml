@@ -1,2 +1,3 @@
 {{ include "datafy-agent.validation.mode" . }}
 {{ include "datafy-agent.validation.token" . }}
+{{ include "datafy-agent.validation.csi" . }}
