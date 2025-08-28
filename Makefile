@@ -1,6 +1,7 @@
 REPO_NAME := datafyio
 REPO_URL := https://helm.datafy.io/datafy-agent
 
+CAPABILITIES_VALUES := -a "external-secrets.io/v1beta1/ClusterSecretStore"
 DEFAULT_VALUES := --set-string "agent.token=1" --set-string "agent.image.tag=1"
 
 help:		## Show this help.
@@ -10,7 +11,7 @@ lint: ## Run lint
 	helm lint $(DEFAULT_VALUES)
 
 template: ## Generate templates to stdout
-	helm template . $(DEFAULT_VALUES)
+	helm template . $(DEFAULT_VALUES) $(CAPABILITIES_VALUES)
 
 repos: ## add dataf-agent repository to helm
 	helm repo add $(REPO_NAME) $(REPO_URL)
