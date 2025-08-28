@@ -1,8 +1,8 @@
 REPO_NAME := datafyio
 REPO_URL := https://helm.datafy.io/datafy-agent
 
-DEFAULT_VALUES := --set-string "agent.token=1" --set-string "agent.image.tag=1"
 CAPABILITIES_VALUES := -a "storage.k8s.io/v1/CSIDriver"
+DEFAULT_VALUES := --set-string "agent.token=1" --set-string "agent.image.tag=1"
 
 help:		## Show this help.
 	@awk 'BEGIN {FS = ":.*##"; printf "Usage: make \033[36m<target>\033[0m\n"} /^[\/0-9a-zA-Z_-]+:.*##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)

@@ -39,7 +39,7 @@
     {{- if and $hasCsiDriver .Release.IsInstall }}
       {{ fail "aws-ebs-csi-driver is already supported in this cluster" }}
     {{- end }}
-  {{- else }}}}
+  {{- else }}
     {{- if not $hasCsiDriver }}
       {{ fail "aws-ebs-csi-driver is not supported in this cluster" }}
     {{- else if .Values.ebsCsiProxy.enabled }}
