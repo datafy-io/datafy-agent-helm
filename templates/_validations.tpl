@@ -1,3 +1,24 @@
+{{/*
+Validate that External Secrets CRDs exist when the feature is enabled
+*/}}
+{{- define "datafy-agent.validation.externalSecret" -}}
+  {{- if .Values.agent.tokenSecret.external.remoteKey -}}
+    {{- $hasV1beta1 := or
+          (.Capabilities.APIVersions.Has "external-secrets.io/v1beta1/ExternalSecret")
+          (.Capabilities.APIVersions.Has "external-secrets.io/v1beta1/SecretStore")
+          (.Capabilities.APIVersions.Has "external-secrets.io/v1beta1/ClusterSecretStore")
+        -}}
+    {{- $hasV1alpha1 := or
+          (.Capabilities.APIVersions.Has "external-secrets.io/v1alpha1/ExternalSecret")
+          (.Capabilities.APIVersions.Has "external-secrets.io/v1alpha1/SecretStore")
+          (.Capabilities.APIVersions.Has "external-secrets.io/v1alpha1/ClusterSecretStore")
+        -}}
+    {{- if not (or $hasV1beta1 $hasV1alpha1) -}}
+      {{- fail "invalid cluster: External Secrets CRDs not found. Install external-secrets.io or remove agent.tokenSecret.external.remoteKey" -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
 {{- define "datafy-agent.validation.mode" -}}
   {{- $mode := lower (trim .Values.agent.mode) -}}
   {{- if not (or (eq $mode "autoscaler") (eq $mode "sensor")) -}}
