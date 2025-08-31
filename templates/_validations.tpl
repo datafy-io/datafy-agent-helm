@@ -35,20 +35,20 @@
 {{- end }}
 
 {{- define "datafy-agent.validation.csi" }}
-  {{- $hasCsiDriver := or (.Capabilities.APIVersions.Has "storage.k8s.io/v1/CSIDriver") (.Capabilities.APIVersions.Has "storage.k8s.io/v1beta1/CSIDriver") }}
+  {{- $driverName := "ebs.csi.aws.com" }}
+  {{- $hasCsiDriver := not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName)) }}
+  {{- if not $hasCsiDriver }}
+    {{- $hasCsiDriver = not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName)) }}
+  {{- end }}
+  {{ fail (printf "CSI driver lookup result: %v" $hasCsiDriver) }}
   {{- if .Values.awsEbsCsiDriver.enabled }}
     {{- if and $hasCsiDriver .Release.IsInstall }}
-      {{ fail "aws-ebs-csi-driver is already supported in this cluster" }}
+      {{ fail (printf "CSI driver '%s' already exists. Disable awsEbsCsiDriver.enabled or uninstall the existing CSI driver." $driverName) }}
     {{- end }}
   {{- else }}
-    {{- if not $hasCsiDriver }}
-      {{ fail "aws-ebs-csi-driver is not supported in this cluster" }}
-    {{- else if .Values.ebsCsiProxy.enabled }}
-      {{- $ns := (include "datafy-agent.ebsCsiProxyNamespace" . ) }}
-      {{- $node := lookup "apps/v1" "DaemonSet" $ns "ebs-csi-node" }}
-      {{- $controller := lookup "apps/v1" "Deployment" $ns "ebs-csi-controller" }}
-      {{- if or (not $node) (not $controller) }}
-        {{ fail (printf "CSI driver not found in namespace %s." $ns) }}
+    {{- if .Values.ebsCsiProxy.enabled }}
+      {{- if not $hasCsiDriver }}
+        {{ fail (printf "CSI driver '%s' not found. Install it (or set awsEbsCsiDriver.enabled) or set ebsCsiProxy.enabled=false." $driverName) }}
       {{- end }}
     {{- end }}
   {{- end }}
