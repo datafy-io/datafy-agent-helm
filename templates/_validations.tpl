@@ -42,10 +42,8 @@
       {{ fail (printf "CSI driver '%s' already exists. Disable awsEbsCsiDriver.enabled or uninstall the existing CSI driver." $driverName) }}
     {{- end }}
   {{- else }}
-    {{- if .Values.ebsCsiProxy.enabled }}
-      {{- if not $hasCsiDriver }}
-        {{ fail (printf "CSI driver '%s' not found. Install it (or set awsEbsCsiDriver.enabled) or set ebsCsiProxy.enabled=false." $driverName) }}
-      {{- end }}
+    {{- if and .Values.ebsCsiProxy.enabled (not $hasCsiDriver) }}
+      {{ fail (printf "CSI driver '%s' not found. Install it (or set awsEbsCsiDriver.enabled) or set ebsCsiProxy.enabled=false." $driverName) }}
     {{- end }}
   {{- end }}
 {{- end }}
