@@ -35,7 +35,7 @@ spec:
             - name: IAC_URL
               value: {{ $ctx.Values.ebsCsiProxy.iacUrl | default ($ctx.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
             - name: AGENT_MODE
-              value: {{ $ctx.Values.agent.mode | lower | quote }}
+              value: {{ (include "datafy-agent.agentModeNormalized" $ctx ) | quote }}
             - name: HOOK_EVENT
               value: {{ $hook }}
           command:

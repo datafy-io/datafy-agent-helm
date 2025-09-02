@@ -1,5 +1,5 @@
 {{- define "datafy-agent.validation.mode" }}
-  {{- $mode := lower (trim .Values.agent.mode) }}
+  {{- $mode := (include "datafy-agent.agentModeNormalized" . ) }}
   {{- if not (or (eq $mode "autoscaler") (eq $mode "sensor")) }}
     {{ fail (printf "invalid value: agent.mode must be either 'autoscaler' or 'sensor', got '%s'" $mode) }}
   {{- end }}
