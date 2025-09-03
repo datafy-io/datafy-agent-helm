@@ -3,7 +3,6 @@ REPO_URL := https://helm.datafy.io/datafy-agent
 
 HELM_CMD := docker run --rm -it -v ~/.kube:/root/.kube -v `pwd`:/datafy-agent-helm -w /datafy-agent-helm alpine/helm:3.18
 
-CAPABILITIES_VALUES := -a "storage.k8s.io/v1/CSIDriver"
 DEFAULT_VALUES := --set-string "agent.token=1" --set-string "agent.image.tag=1"
 
 help:		## Show this help.
@@ -13,7 +12,7 @@ lint: ## Run lint
 	$(HELM_CMD) lint $(DEFAULT_VALUES)
 
 template: ## Generate templates to stdout
-	$(HELM_CMD) template . $(DEFAULT_VALUES) $(CAPABILITIES_VALUES)
+	$(HELM_CMD) template . $(DEFAULT_VALUES) $(CAPABILITIES_VALUES) --set validation.enabled=false
 
 repos: ## add dataf-agent repository to helm
 	$(HELM_CMD) repo add $(REPO_NAME) $(REPO_URL)
