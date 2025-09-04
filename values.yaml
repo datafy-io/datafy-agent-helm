@@ -1,4 +1,3 @@
-
 ## @param awsEbsCsiDriver.enabled to install aws-ebs-csi-driver chart as well
 awsEbsCsiDriver:
   enabled: false
@@ -15,10 +14,16 @@ extraAnnotations: {}
 ## @param agent.env Environment variables to add to datafy-agent daemon set
 ##
 agent:
-  token: ""
+  token:
   mode: AutoScaler
   dsoUrl: wss://dso.datafy.io
   env: { }
+
+  ## @param agent.externalTokenSecret.name The name of an existing secret that contains the token
+  ## @param agent.externalTokenSecret.key The key in the secret that contains the token
+  externalTokenSecret:
+    name:
+    key:
 
   coreMockEnabled: false
   hqMockEnabled: false

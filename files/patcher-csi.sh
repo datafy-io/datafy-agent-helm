@@ -53,8 +53,8 @@ $REMOVE_OPS
         "name": "DATAFY_TOKEN",
         "valueFrom": {
           "secretKeyRef":{
-            "name": "datafy-token",
-            "key": "token"
+            "name": "$DATAFY_TOKEN_SECRET_NAME",
+            "key": "$DATAFY_TOKEN_SECRET_KEY"
           }
         }
       },
@@ -146,8 +146,8 @@ $REMOVE_OPS
         "name": "DATAFY_TOKEN",
         "valueFrom": {
           "secretKeyRef":{
-            "name": "datafy-token",
-            "key": "token"
+            "name": "$DATAFY_TOKEN_SECRET_NAME",
+            "key": "$DATAFY_TOKEN_SECRET_KEY"
           }
         }
       },

@@ -1,4 +1,4 @@
-{{- $enableCore := and (eq (.Values.agent.mode | lower) "autoscaler") (not .Values.agent.coreMockEnabled) }}
+{{- $enableCore := and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") (not .Values.agent.coreMockEnabled) }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -51,8 +51,8 @@ spec:
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: datafy-token
-                  key: token
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
           resources:
             requests:
               cpu: 10m
@@ -70,19 +70,19 @@ spec:
             - configMapRef:
                 name: datafy-agent-envvars
           env:
-            {{- if (and (eq (.Values.agent.mode | lower) "autoscaler") .Values.ebsCsiProxy.enabled) }}
+            {{- if (and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") .Values.ebsCsiProxy.enabled) }}
             - name: DATAFY_GRPC_ENABLED
               value: "true"
             {{- end }}
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_AGENT_MODE
-              value: {{ .Values.agent.mode | lower | quote }}
+              value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: datafy-token
-                  key: token
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
               value: {{ .Values.agent.hqMockEnabled | quote }}

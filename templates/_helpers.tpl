@@ -1,4 +1,11 @@
 {{/*
+Normolized agent mode
+*/}}
+{{- define "datafy-agent.agentModeNormalized" -}}
+    {{- .Values.agent.mode | lower | trim -}}
+{{- end -}}
+
+{{/*
 Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiProxyNamespace" -}}

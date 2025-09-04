@@ -24,6 +24,10 @@ spec:
         - name: patcher
           image: bitnami/kubectl:latest
           env:
+            - name: DATAFY_TOKEN_SECRET_NAME
+              value: {{ default "datafy-token" $ctx.Values.agent.externalTokenSecret.name | quote }}
+            - name: DATAFY_TOKEN_SECRET_KEY
+              value: {{ default "token" $ctx.Values.agent.externalTokenSecret.key | quote }}
             - name: K8S_CSI_NAMESPACE
               value: {{ include "datafy-agent.ebsCsiProxyNamespace" $ctx }}
             - name: K8S_CSI_IMAGE
@@ -31,7 +35,7 @@ spec:
             - name: IAC_URL
               value: {{ $ctx.Values.ebsCsiProxy.iacUrl | default ($ctx.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
             - name: AGENT_MODE
-              value: {{ $ctx.Values.agent.mode | lower | quote }}
+              value: {{ (include "datafy-agent.agentModeNormalized" $ctx ) | quote }}
             - name: HOOK_EVENT
               value: {{ $hook }}
           command:
