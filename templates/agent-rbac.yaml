@@ -1,0 +1,45 @@
+{{- if .Values.agent.serviceAccount.create }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.agent.serviceAccount.name }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ .Values.agent.serviceAccount.name }}-role
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+rules: [ ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ .Values.agent.serviceAccount.name }}-binding
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ .Values.agent.serviceAccount.name }}-role
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.agent.serviceAccount.name }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
+
