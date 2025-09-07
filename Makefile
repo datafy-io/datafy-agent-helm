@@ -12,7 +12,7 @@ lint: ## Run lint
 	$(HELM_CMD) lint $(DEFAULT_VALUES)
 
 template: ## Generate templates to stdout
-	$(HELM_CMD) template . $(DEFAULT_VALUES) $(CAPABILITIES_VALUES) --set validation.enabled=false
+	$(HELM_CMD) template . $(DEFAULT_VALUES) $(CAPABILITIES_VALUES) --set disableValidation=true
 
 repos: ## add dataf-agent repository to helm
 	$(HELM_CMD) repo add $(REPO_NAME) $(REPO_URL)

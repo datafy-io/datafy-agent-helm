@@ -1,4 +1,4 @@
-{{- if .Values.validation.enabled }}
+{{- if not (default false .Values.disableValidation) }}
 {{ include "datafy-agent.validation.csi" . }}
 {{ include "datafy-agent.validation.mode" . }}
 {{ include "datafy-agent.validation.token" . }}
