@@ -14,7 +14,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ .Values.agent.serviceAccount.name }}-role
+  name: datafy-agent-role
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
   {{- with .Values.extraAnnotations }}
@@ -26,7 +26,7 @@ rules: [ ]
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ .Values.agent.serviceAccount.name }}-binding
+  name: datafy-agent-binding
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
   {{- with .Values.extraAnnotations }}
@@ -36,7 +36,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ .Values.agent.serviceAccount.name }}-role
+  name: datafy-agent-role
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.agent.serviceAccount.name }}
