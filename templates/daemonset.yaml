@@ -95,6 +95,9 @@ spec:
             requests:
               cpu: 10m
               memory: 40Mi
+      {{- if .Values.agent.serviceAccount.create }}
+      serviceAccountName: {{ .Values.agent.serviceAccount.name }}
+      {{- end }}
       priorityClassName: system-node-critical
       restartPolicy: Always
       schedulerName: default-scheduler
