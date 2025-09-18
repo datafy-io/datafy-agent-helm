@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: patcher
-          image: bitnami/kubectl:latest
+          image: public.ecr.aws/bitnami/kubectl:latest
           env:
             - name: DATAFY_TOKEN_SECRET_NAME
               value: {{ default "datafy-token" $ctx.Values.agent.externalTokenSecret.name | quote }}
