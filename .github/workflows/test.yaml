@@ -49,13 +49,23 @@ jobs:
         # if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.12.0
 
-      - name: Install aws-ebs-csi-driver dependency
-        # if: steps.list-changed.outputs.changed == 'true'
+      - name: Install aws-ebs-csi-driver (may not become Ready in Kind)
         run: |
-          helm dependency update  
-          kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-2.45"
-          kubectl wait --for=condition=available --timeout=5m deployment -n kube-system ebs-csi-controller-sa --timeout=300s
+          helm install aws-ebs-csi-driver aws-ebs-csi-driver/aws-ebs-csi-driver \
+            --namespace kube-system \
+            --set node.serviceAccount.create=true \
+            --set node.serviceAccount.name=ebs-csi-node-sa \
+            --set controller.serviceAccount.create=true \
+            --set controller.serviceAccount.name=ebs-csi-controller-sa \
+            --wait --timeout 5m
 
+      # Correct rollout waits (resource names are *without* -sa)
+      - name: Wait for controller rollout
+        run: kubectl -n kube-system rollout status deployment/ebs-csi-controller --timeout=300s
+
+      - name: Wait for node DaemonSet rollout
+        run: kubectl -n kube-system rollout status daemonset/ebs-csi-node --timeout=300s
+        
       - name: Run chart-testing (install)
         # if: steps.list-changed.outputs.changed == 'true'
         # run: ct install --target-branch ${{ github.event.repository.default_branch }}
