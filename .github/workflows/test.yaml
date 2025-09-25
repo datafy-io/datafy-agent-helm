@@ -53,7 +53,7 @@ jobs:
           fi
 
       - name: Run chart-testing (lint)
-        run: ct lint  --config .ct.yaml --target-branch ${{ github.event.repository.default_branch }}
+        run: ct lint --chart-dirs . --config .ct.yaml --target-branch ${{ github.event.repository.default_branch }}
 
       - name: Create kind cluster
         if: steps.list-changed.outputs.changed == 'true'
