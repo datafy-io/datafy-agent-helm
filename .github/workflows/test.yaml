@@ -59,9 +59,10 @@ jobs:
         # if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.12.0
 
-      - name: Create stub CSIDriver (kind-safe)
+      - name: Apply fake EBS CSI resources
         if: matrix.mode == 'AutoScaler'
         run: |
+          set -euo pipefail
           cat <<'YAML' | kubectl apply -f -
           apiVersion: storage.k8s.io/v1
           kind: CSIDriver
@@ -70,6 +71,95 @@ jobs:
           spec:
             attachRequired: true
             podInfoOnMount: true
+          ---
+          apiVersion: apps/v1
+          kind: Deployment
+          metadata:
+            name: ebs-csi-controller
+            namespace: kube-system
+            labels:
+              app.kubernetes.io/name: ebs-csi-controller
+              app.kubernetes.io/version: "v0.0.0-fake"
+          spec:
+            replicas: 1
+            selector:
+              matchLabels:
+                app.kubernetes.io/name: ebs-csi-controller
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: ebs-csi-controller
+                  app.kubernetes.io/version: "v0.0.0-fake"
+              spec:
+                containers:
+                  - name: ebs-plugin
+                    image: public.ecr.aws/docker/library/busybox:latest
+                    command: ["sh","-c"]
+                    args:
+                      - |
+                        mkdir -p /csi && mknod /csi/csi.sock p || true
+                        while true; do sleep 3600; done
+                    env:
+                      - name: CSI_ENDPOINT
+                        value: "unix:///csi/csi.sock"
+                    volumeMounts:
+                      - name: socket-dir
+                        mountPath: /csi
+                volumes:
+                  - name: socket-dir
+                    emptyDir: {}
+          ---
+          apiVersion: apps/v1
+          kind: DaemonSet
+          metadata:
+            name: ebs-csi-node
+            namespace: kube-system
+            labels:
+              app.kubernetes.io/name: ebs-csi-node
+              app.kubernetes.io/version: "v0.0.0-fake"
+          spec:
+            selector:
+              matchLabels:
+                app.kubernetes.io/name: ebs-csi-node
+            template:
+              metadata:
+                labels:
+                  app.kubernetes.io/name: ebs-csi-node
+                  app.kubernetes.io/version: "v0.0.0-fake"
+              spec:
+                containers:
+                  - name: ebs-plugin
+                    image: public.ecr.aws/docker/library/busybox:latest
+                    securityContext:
+                      privileged: true
+                      readOnlyRootFilesystem: false
+                    command: ["sh","-c"]
+                    args:
+                      - |
+                        mkdir -p /csi && mknod /csi/csi.sock p || true
+                        while true; do sleep 3600; done
+                    env:
+                      - name: CSI_ENDPOINT
+                        value: "unix:///csi/csi.sock"
+                    volumeMounts:
+                      - name: socket-dir
+                        mountPath: /csi
+                      - name: kubelet-dir
+                        mountPath: /var/lib/kubelet
+                        mountPropagation: Bidirectional
+                      - name: device-dir
+                        mountPath: /dev
+                volumes:
+                  - name: socket-dir
+                    emptyDir: {}
+                  - name: kubelet-dir
+                    hostPath:
+                      path: /var/lib/kubelet
+                      type: Directory
+                  - name: device-dir
+                    hostPath:
+                      path: /dev
+                      type: Directory
           YAML
 
       # - name: Fake AWS identity on kind nodes
