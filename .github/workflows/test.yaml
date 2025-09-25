@@ -49,6 +49,13 @@ jobs:
         # if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.12.0
 
+      - name: Install aws-ebs-csi-driver dependency
+        # if: steps.list-changed.outputs.changed == 'true'
+        run: |
+          helm dependency update  
+          kubectl apply -k "github.com/kubernetes-sigs/aws-ebs-csi-driver/deploy/kubernetes/overlays/stable/?ref=release-2.45"
+          kubectl wait --for=condition=available --timeout=5m deployment -n kube-system ebs-csi-controller-sa --timeout=300s
+
       - name: Run chart-testing (install)
         # if: steps.list-changed.outputs.changed == 'true'
         # run: ct install --target-branch ${{ github.event.repository.default_branch }}
@@ -58,4 +65,4 @@ jobs:
             --config .ct.yaml \
             --charts . \
             --namespace test \
-            --helm-extra-set-args '--debug --create-namespace --set agent.token=value1 --set awsEbsCsiDriver.enabled=true'
+            --helm-extra-set-args '--debug --create-namespace --set agent.token=value1 --set awsEbsCsiDriver.enabled=false'
