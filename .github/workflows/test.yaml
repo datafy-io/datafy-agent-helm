@@ -17,9 +17,12 @@ jobs:
           fetch-depth: 0
 
       - name: Set up Helm
-        uses: azure/setup-helm@v4.2.0
-        with:
-          version: v3.17.0
+        uses: azure/setup-helm@v4.3.1
+        # with:
+        #   version: v3.17.0
+
+      - name: Pull Helm dependencies
+        run: helm dependency update .
 
       - uses: actions/setup-python@v5.3.0
         with:
@@ -40,6 +43,7 @@ jobs:
       - name: Run chart-testing (lint)
         # if: steps.list-changed.outputs.changed == 'true'
         run: ct lint --target-branch ${{ github.event.repository.default_branch }}
+        run: ct lint --chart-dirs . --charts .
 
       - name: Create kind cluster
         # if: steps.list-changed.outputs.changed == 'true'
