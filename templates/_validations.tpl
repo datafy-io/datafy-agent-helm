@@ -35,16 +35,19 @@
 {{- end }}
 
 {{- define "datafy-agent.validation.csi" }}
-  {{- $driverName := "ebs.csi.aws.com" }}
-  {{- $hasCsiDriver := or (not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName))) (not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName))) }}
+  {{- $mode := (include "datafy-agent.agentModeNormalized" . ) }}
+  {{- if ne $mode "sensor" }}
+    {{- $driverName := "ebs.csi.aws.com" }}
+    {{- $hasCsiDriver := or (not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName))) (not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName))) }}
 
-  {{- if .Values.awsEbsCsiDriver.enabled }}
-    {{- if and $hasCsiDriver .Release.IsInstall }}
-      {{ fail (printf "CSI driver '%s' already exists. Disable awsEbsCsiDriver.enabled or uninstall the existing CSI driver." $driverName) }}
-    {{- end }}
-  {{- else }}
-    {{- if and .Values.ebsCsiProxy.enabled (not $hasCsiDriver) }}
-      {{ fail (printf "CSI driver '%s' not found. Install it (or set awsEbsCsiDriver.enabled) or set ebsCsiProxy.enabled=false." $driverName) }}
+    {{- if .Values.awsEbsCsiDriver.enabled }}
+      {{- if and $hasCsiDriver .Release.IsInstall }}
+        {{ fail (printf "CSI driver '%s' already exists. Disable awsEbsCsiDriver.enabled or uninstall the existing CSI driver." $driverName) }}
+      {{- end }}
+    {{- else }}
+      {{- if and .Values.ebsCsiProxy.enabled (not $hasCsiDriver) }}
+        {{ fail (printf "CSI driver '%s' not found. Install it (or set awsEbsCsiDriver.enabled) or set ebsCsiProxy.enabled=false." $driverName) }}
+      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
