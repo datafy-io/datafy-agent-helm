@@ -72,7 +72,7 @@ agent:
     imagePullSecrets: []
 
 ebsCsiProxy:
-  enabled: true
+  enabled: false
   namespace:
   image:
     pullPolicy: IfNotPresent
