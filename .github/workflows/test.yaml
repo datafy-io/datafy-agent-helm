@@ -10,6 +10,15 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mode: Sensor
+            extraArgs: ""
+          - mode: AutoScaler
+            extraArgs: "--set awsEbsCsiDriver.enabled=true"
+    name: Install (${{ matrix.mode }})
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -82,4 +91,5 @@ jobs:
             --config .ct.yaml \
             --charts . \
             --namespace test \
-            --helm-extra-set-args '--debug --create-namespace --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=Sensor'
+            --helm-extra-args "--create-namespace" \
+            --helm-extra-set-args "--debug --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} ${{ matrix.extraArgs }}"
