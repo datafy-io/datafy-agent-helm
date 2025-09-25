@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - mode: Sensor
-            extraArgs: ""
+            extraArgs: "--set ebsCsiProxy.enabled=false"
 
           - mode: AutoScaler
             extraArgs: ""
