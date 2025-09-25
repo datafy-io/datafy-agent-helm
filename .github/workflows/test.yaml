@@ -21,8 +21,10 @@ jobs:
         # with:
         #   version: v3.17.0
 
-      - name: Pull Helm dependencies
-        run: helm dependency update .
+      - name: Add required Helm repos
+        run: |
+          helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+          helm repo update
 
       - uses: actions/setup-python@v5.3.0
         with:
