@@ -82,4 +82,4 @@ jobs:
             --config .ct.yaml \
             --charts . \
             --namespace test \
-            --helm-extra-set-args '--debug --create-namespace --set agent.token=value1 --set agent.mode=Sensor'
+            --helm-extra-set-args '--debug --create-namespace --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=Sensor'
