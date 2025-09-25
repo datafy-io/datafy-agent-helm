@@ -17,7 +17,7 @@ agent:
   token:
   mode: AutoScaler
   dsoUrl: wss://dso.datafy.io
-  env: { }
+  env: {}
 
   ## @param agent.externalTokenSecret.name The name of an existing secret that contains the token
   ## @param agent.externalTokenSecret.key The key in the secret that contains the token
@@ -45,7 +45,7 @@ agent:
   ## @param agent.nodeSelector Node labels for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
   ##
-  nodeSelector: { }
+  nodeSelector: {}
   ## @param agent.tolerations Tolerations for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   ##
