@@ -166,6 +166,7 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         run: ct install \
           ct install \
+            --charts . \
             --target-branch ${{ github.event.repository.default_branch }} \
             --config .ct.yaml \
             --namespace test \
