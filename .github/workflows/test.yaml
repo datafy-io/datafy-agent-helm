@@ -84,4 +84,4 @@ jobs:
             --config .ct.yaml \
             --charts . \
             --namespace test \
-            --helm-extra-set-args '--debug --create-namespace --set agent.token=value1 --set agent.mode=Sensor --set awsEbsCsiDriver.enabled=false'
+            --helm-extra-set-args '--debug --create-namespace --set agent.token=value1 --set agent.mode=Sensor'
