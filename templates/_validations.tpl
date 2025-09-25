@@ -34,38 +34,16 @@
   {{- end }}
 {{- end }}
 
-{{/* Pick the CSIDriver apiVersion available on this cluster */}}
-{{- define "datafy-agent.csi.apiVersion" -}}
-{{- if .Capabilities.APIVersions.Has "storage.k8s.io/v1/CSIDriver" -}}
-storage.k8s.io/v1
-{{- else if .Capabilities.APIVersions.Has "storage.k8s.io/v1beta1/CSIDriver" -}}
-storage.k8s.io/v1beta1
-{{- else -}}
-{{- "" -}}
-{{- end -}}
-{{- end -}}
-
-{{- define "datafy-agent.validation.csi" -}}
-  {{- $driverName := default "ebs.csi.aws.com" .Values.awsEbsCsiDriver.driverName -}}
-  {{- $api := include "datafy-agent.csi.apiVersion" . -}}
-
-  {{- $hasCsiDriver := false -}}
-  {{- if $api -}}
-    {{- $obj := lookup $api "CSIDriver" "" $driverName -}}
-    {{- $hasCsiDriver = not (empty $obj) -}}
-  {{- end -}}
-
-  {{- if .Values.awsEbsCsiDriver.enabled -}}
-    {{- if and $hasCsiDriver .Release.IsInstall -}}
-      {{- fail (printf "CSI driver %q already exists. Disable awsEbsCsiDriver.enabled or uninstall the existing CSI driver." $driverName) -}}
-    {{- end -}}
-  {{- else -}}
-    {{- if and (default false .Values.ebsCsiProxy.enabled) (not $hasCsiDriver) -}}
-      {{- if $api -}}
-        {{- fail (printf "CSI driver %q not found (api=%s). Install it (or set awsEbsCsiDriver.enabled=true) or set ebsCsiProxy.enabled=false." $driverName $api) -}}
-      {{- else -}}
-        {{- fail (printf "Cluster does not expose CSIDriver API (storage.k8s.io). Install a CSI driver or set ebsCsiProxy.enabled=false / awsEbsCsiDriver.enabled=true.") -}}
-      {{- end -}}
-    {{- end -}}
-  {{- end -}}
-{{- end -}}
+{{- define "datafy-agent.validation.csi" }}
+  {{- $driverName := "ebs.csi.aws.com" }}
+  {{- $hasCsiDriver := or (not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName))) (not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName))) }}
+  {{- if .Values.awsEbsCsiDriver.enabled }}
+    {{- if and $hasCsiDriver .Release.IsInstall }}
+      {{ fail (printf "CSI driver '%s' already exists. Disable awsEbsCsiDriver.enabled or uninstall the existing CSI driver." $driverName) }}
+    {{- end }}
+  {{- else }}
+    {{- if and .Values.ebsCsiProxy.enabled (not $hasCsiDriver) }}
+      {{ fail (printf "CSI driver '%s' not found. Install it (or set awsEbsCsiDriver.enabled) or set ebsCsiProxy.enabled=false." $driverName) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
