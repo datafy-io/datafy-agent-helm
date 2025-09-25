@@ -20,6 +20,9 @@ jobs:
           - mode: AutoScaler
             extraArgs: "--set awsEbsCsiDriver.enabled=true"
 
+          - mode: AutoScaler
+            extraArgs: "--set awsEbsCsiDriver.enabled=false"
+
     name: Test (${{ matrix.mode }} with ${{ matrix.extraArgs }})
 
     steps:
