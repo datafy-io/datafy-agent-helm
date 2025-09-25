@@ -36,15 +36,7 @@
 
 {{- define "datafy-agent.validation.csi" }}
   {{- $driverName := "ebs.csi.aws.com" }}
-
-  {{- $hasCsiDriver := false -}}
-  {{- if .Capabilities.APIVersions.Has "storage.k8s.io/v1/CSIDriver" -}}
-    {{- $obj := lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName -}}
-    {{- $hasCsiDriver = not (empty $obj) -}}
-  {{- else if .Capabilities.APIVersions.Has "storage.k8s.io/v1beta1/CSIDriver" -}}
-    {{- $obj := lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName -}}
-    {{- $hasCsiDriver = not (empty $obj) -}}
-  {{- end -}}
+  {{- $hasCsiDriver := or (not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName))) (not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName))) }}
 
   {{- if .Values.awsEbsCsiDriver.enabled }}
     {{- if and $hasCsiDriver .Release.IsInstall }}

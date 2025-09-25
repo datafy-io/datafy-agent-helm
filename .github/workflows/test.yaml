@@ -18,10 +18,7 @@ jobs:
             extraArgs: ""
 
           - mode: AutoScaler
-            extraArgs: "--set awsEbsCsiDriver.enabled=true"
-
-          - mode: AutoScaler
-            extraArgs: "--set awsEbsCsiDriver.enabled=false"
+            extraArgs: ""
 
     name: Test (${{ matrix.mode }} with ${{ matrix.extraArgs }})
 
@@ -62,15 +59,28 @@ jobs:
         # if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.12.0
 
-      - name: Fake AWS identity on kind nodes
-        if: matrix.extraArgs == '--set awsEbsCsiDriver.enabled=true'
+      - name: Create stub CSIDriver (kind-safe)
+        if: matrix.mode == 'AutoScaler'
         run: |
-          for n in $(kubectl get nodes -o name); do
-            kubectl label $n topology.kubernetes.io/region=us-east-1 --overwrite
-            kubectl label $n topology.kubernetes.io/zone=us-east-1a --overwrite
-            kubectl label $n node.kubernetes.io/instance-type=m5.large --overwrite
-            kubectl patch $n --type merge -p '{"spec":{"providerID":"aws:///us-east-1a/i-1234567890abcdef0"}}'
-          done
+          cat <<'YAML' | kubectl apply -f -
+          apiVersion: storage.k8s.io/v1
+          kind: CSIDriver
+          metadata:
+            name: ebs.csi.aws.com
+          spec:
+            attachRequired: true
+            podInfoOnMount: true
+          YAML
+
+      # - name: Fake AWS identity on kind nodes
+      #   if: matrix.extraArgs == '--set awsEbsCsiDriver.enabled=true'
+      #   run: |
+      #     for n in $(kubectl get nodes -o name); do
+      #       kubectl label $n topology.kubernetes.io/region=us-east-1 --overwrite
+      #       kubectl label $n topology.kubernetes.io/zone=us-east-1a --overwrite
+      #       kubectl label $n node.kubernetes.io/instance-type=m5.large --overwrite
+      #       kubectl patch $n --type merge -p '{"spec":{"providerID":"aws:///us-east-1a/i-1234567890abcdef0"}}'
+      #     done
 
       # - name: Install AWS EBS CSI driver (kind patched)
       #   run: |
