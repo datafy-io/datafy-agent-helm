@@ -1,0 +1,6 @@
+validate-maintainers: false
+chart-dirs:
+  - .
+chart-repos:
+  - aws-ebs-csi-driver=https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+  - datafyio-s3=s3://helm.datafy.io/datafy-agent
