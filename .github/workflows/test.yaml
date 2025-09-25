@@ -58,4 +58,6 @@ jobs:
             --config .ct.yaml \
             --charts . \
             --namespace test \
+            --debug \
+            --dry-run \
             --helm-extra-set-args '--set agent.token=value1 --set awsEbsCsiDriver.enabled=true'
