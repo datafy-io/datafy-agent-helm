@@ -47,12 +47,35 @@ jobs:
       - name: Run chart-testing (lint)
         run: ct lint --charts . --config .ct.yaml --target-branch ${{ github.event.repository.default_branch }}
 
+      - name: Detect related PR
+        id: detect_pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -e
+          owner_repo="$REPO"
+          # List open PRs whose head matches owner:branch
+            json=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/$owner_repo/pulls?state=open&head=${owner_repo%%/*}:$BRANCH")
+          count=$(echo "$json" | jq 'length')
+          if [ "$count" -gt 0 ]; then
+            # take first
+            draft=$(echo "$json" | jq '.[0].draft')
+            number=$(echo "$json" | jq '.[0].number')
+            echo "Found open PR #$number (draft=$draft)"
+            echo "has_pr=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No open PR for branch $BRANCH"
+            echo "has_pr=false" >> "$GITHUB_OUTPUT"
+
       - name: Create kind cluster
-        if: ${{ github.event.action == 'opened' || github.event.action == 'converted_to_draft' || github.event.pull_request.draft }}
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         uses: helm/kind-action@v1.12.0
 
       - name: Apply fake EBS CSI resources
-        if: ${{ github.event.action == 'opened' || github.event.action == 'converted_to_draft' || github.event.pull_request.draft }}
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           set -euo pipefail
           cat <<'YAML' | kubectl apply -f -
@@ -155,7 +178,7 @@ jobs:
           YAML
 
       - name: Run chart-testing (install)
-        if: ${{ github.event.action == 'opened' || github.event.action == 'converted_to_draft' || github.event.pull_request.draft }}
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           ct install \
             --charts . \
