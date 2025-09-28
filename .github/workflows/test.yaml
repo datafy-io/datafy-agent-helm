@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - mode: Sensor , AutoScaler
+           - mode: [Sensor, AutoScaler]
     name: Test (${{ matrix.mode }})
 
     steps:
