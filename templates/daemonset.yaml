@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: datafy-agent1
+  name: datafy-agent
   namespace: {{ .Release.Namespace | quote }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
