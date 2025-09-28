@@ -197,7 +197,7 @@ jobs:
             --set agent.mode=${{ matrix.mode }} \
             ${{ matrix.extraArgs }}
           
-      - name: helm upgrade
+      - name: helm upgrade from Sensor to AutoScaler
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
         run: |
           helm upgrade datafy-agent . -n test --wait --timeout 5m \
@@ -205,3 +205,8 @@ jobs:
             --set agent.mode="AutoScaler"
           # Verify rollout
           kubectl rollout status ds/datafy-agent -n test --timeout=120s || true
+
+      - name: helm uninstall
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
+        run: |
+          helm uninstall datafy-agent -n test
