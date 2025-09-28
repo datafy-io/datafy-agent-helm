@@ -1,6 +1,6 @@
 # datafy-agent
 
-![Version: 1.4.2](https://img.shields.io/badge/Version-1.4.2-informational?style=flat-square)
+![Version: 1.4.3](https://img.shields.io/badge/Version-1.4.3-informational?style=flat-square)
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -33,7 +33,7 @@ Set `awsEbsCsiDriver.enabled=true` to deploy it, or `false` to use an existing i
 ```bash
 helm repo add datafyio https://helm.datafy.io/datafy-agent
 helm repo update
-helm install datafy-agent datafyio/datafy-agent \
+helm upgrade --install datafy-agent datafyio/datafy-agent \
   --namespace datafy --create-namespace \
   --set agent.mode="sensor" \
   --set agent.token=$DATAFY_TOKEN
@@ -41,12 +41,10 @@ helm install datafy-agent datafyio/datafy-agent \
 
 ## Quick Start (Autoscaler + Existing CSI)
 ```bash
-helm install datafy-agent datafyio/datafy-agent \
+helm upgrade --install datafy-agent datafyio/datafy-agent \
   -n datafy --create-namespace \
   --set agent.mode="autoscaler" \
   --set agent.token=$DATAFY_TOKEN \
-  --set awsEbsCsiDriver.enabled=false \
-  --set ebsCsiProxy.enabled=true
 ```
 
 ## Modes Matrix
@@ -66,7 +64,7 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent datafyio/datafy-agent --namespace <namespace> --create-namespace \
+helm upgrade --install datafy-agent datafyio/datafy-agent --namespace <namespace> --create-namespace \
   --set agent.mode="sensor/autoscaler" \
   --set agent.token=<your_token> \
   --set agent.image.tag=<image_tag>
@@ -74,7 +72,7 @@ helm install datafy-agent datafyio/datafy-agent --namespace <namespace> --create
 
 ### 3. Enable / Disable aws-ebs-csi-driver
 ```bash
-helm install datafy-agent datafyio/datafy-agent \
+helm upgrade --install datafy-agent datafyio/datafy-agent \
   --set awsEbsCsiDriver.enabled=true
 ```
 
@@ -108,11 +106,11 @@ kubectl get pods -n <namespace> -l app.kubernetes.io/instance=datafy-agent
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade datafy-agent datafyio/datafy-agent -n <namespace> --reuse-values
+helm upgrade --install datafy-agent datafyio/datafy-agent -n <namespace> --reuse-values
 ```
 Switch mode:
 ```bash
-helm upgrade datafy-agent datafyio/datafy-agent -n <ns> --set agent.mode=autoscaler
+helm upgrade --install datafy-agent datafyio/datafy-agent -n <namespace>--set agent.mode=autoscaler
 ```
 Rollback:
 ```bash
