@@ -69,6 +69,7 @@ jobs:
           else
             echo "No open PR for branch $BRANCH"
             echo "has_pr=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create kind cluster
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
