@@ -44,7 +44,6 @@
   {{- else }}
     {{- if and .Values.ebsCsiProxy.enabled (not $hasCsiDriver) }}
       {{ fail (printf "CSI driver '%s' not found. Install it (or set awsEbsCsiDriver.enabled) or set ebsCsiProxy.enabled=false." $driverName) }}
-      {{- end }}
     {{- end }}
   {{- end }}
 {{- end }}
