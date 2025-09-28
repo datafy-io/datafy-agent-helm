@@ -1,4 +1,4 @@
-name: test Chart
+name: Test Chart
 
 on:
   push:
