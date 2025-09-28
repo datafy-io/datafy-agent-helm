@@ -376,7 +376,7 @@ jobs:
             --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=sensor "
 
       - name: Capture ct release name
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true'  }}
         id: capture_release
         run: |
           command -v jq >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y jq
@@ -390,7 +390,7 @@ jobs:
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
 
       - name: Run Helm upgrade to AutoScaler
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           rel="${{ steps.capture_release.outputs.release_name }}"
           helm upgrade --install "$rel" --namespace=test . \
@@ -400,6 +400,7 @@ jobs:
             --set agent.mode=autoscaler
 
       - name: Run helm uninstall
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
           helm uninstall "$rel" --namespace=test || true
