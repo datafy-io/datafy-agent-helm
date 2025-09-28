@@ -16,7 +16,7 @@ jobs:
         include:
            - mode: Sensor
            - mode: AutoScaler
-           
+
     name: Test (${{ matrix.mode }})
 
     steps:
@@ -174,10 +174,6 @@ jobs:
                       path: /dev
                       type: Directory
           YAML
-      - name: helm template
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
-        run: |
-          helm template  .
 
       - name: Run chart-testing (install)
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
@@ -203,7 +199,6 @@ jobs:
           fi
             echo "Found release: $rel"
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
-
 
       - name: Run Helm upgrade to AutoScaler
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
