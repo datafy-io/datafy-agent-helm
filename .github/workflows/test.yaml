@@ -189,10 +189,32 @@ jobs:
             --skip-clean-up \
             --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} ${{ matrix.extraArgs }}"
 
-      
+      - name: Capture ct release name
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
+        id: capture_release
+        run: |
+          command -v jq >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y jq
+          rel=$(helm list -n test -o json | jq -r '.[] | select(.chart | test("^datafy-agent-")) | .name' | head -n1)
+          if [ -z "$rel" ]; then
+            echo "No ct-installed release found in namespace test" >&2
+            helm list -n test
+            exit 1
+          fi
+            echo "Found release: $rel"
+          echo "release_name=$rel" >> "$GITHUB_OUTPUT"
+
+
       - name: Post-install upgrade/idempotency test
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
         run: |
-          helm upgrade --install datafy-agent --namespace=test . \
-            --debug --create-namespace --timeout 5m --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=autoscaler
+          rel="${{ steps.capture_release.outputs.release_name }}"
+          helm upgrade --install "$rel" --namespace=test . \
+            --wait --timeout 5m \
+            --debug --create-namespace \
+            --set agent.token=${{ secrets.STGN_SECRET }} \
+            --set agent.mode=autoscaler
 
+
+
+
+  
