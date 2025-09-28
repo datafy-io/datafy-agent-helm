@@ -177,7 +177,11 @@ jobs:
                       path: /dev
                       type: Directory
           YAML
-
+      - name: helm template
+        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
+        run: |
+          helm template  .
+          
       - name: Run chart-testing (install)
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
@@ -218,8 +222,3 @@ jobs:
         run: |
           rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
           helm uninstall "$rel" --namespace=test || true
-
-
-
-
-  
