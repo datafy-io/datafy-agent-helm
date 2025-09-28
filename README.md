@@ -36,15 +36,17 @@ helm repo update
 helm upgrade --install datafy-agent datafyio/datafy-agent \
   --namespace datafy --create-namespace \
   --set agent.mode="sensor" \
-  --set agent.token=$DATAFY_TOKEN
+  --set agent.token=$DATAFY_TOKEN \
+  --set agent.image.tag=<image_tag>
 ```
 
 ## Quick Start (Autoscaler + Existing CSI)
 ```bash
 helm upgrade --install datafy-agent datafyio/datafy-agent \
-  -n datafy --create-namespace \
+  --namespace datafy --create-namespace \
   --set agent.mode="autoscaler" \
   --set agent.token=$DATAFY_TOKEN \
+  --set agent.image.tag=<image_tag>
 ```
 
 ## Modes Matrix
@@ -106,15 +108,15 @@ kubectl get pods -n <namespace> -l app.kubernetes.io/instance=datafy-agent
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent datafyio/datafy-agent -n <namespace> --reuse-values
+helm upgrade --install datafy-agent datafyio/datafy-agent -n <namespace> --set agent.image.tag=<image_tag> --reuse-values
 ```
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent datafyio/datafy-agent -n <namespace>--set agent.mode=autoscaler
+helm upgrade --install datafy-agent datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler
 ```
 Rollback:
 ```bash
-helm rollback datafy-agent 1 -n <ns>
+helm rollback datafy-agent 1 -n <namespace>
 ```
 
 ---
