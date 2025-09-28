@@ -15,7 +15,7 @@ jobs:
       matrix:
         include:
           - mode: Sensor
-            extraArgs: "--set ebsCsiProxy.enabled=false"
+            extraArgs: ""
 
           - mode: AutoScaler
             extraArgs: ""
@@ -204,7 +204,7 @@ jobs:
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
 
 
-      - name: Post-install upgrade/idempotency test
+      - name: Run Helm upgrade to AutoScaler
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
         run: |
           rel="${{ steps.capture_release.outputs.release_name }}"
@@ -213,6 +213,11 @@ jobs:
             --debug --create-namespace \
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=autoscaler
+
+      - name: Run helm uninstall
+        run: |
+          rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
+          helm uninstall "$rel" --namespace=test || true
 
 
 
