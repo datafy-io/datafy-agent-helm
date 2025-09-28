@@ -186,31 +186,18 @@ jobs:
             --target-branch ${{ github.event.repository.default_branch }} \
             --config .ct.yaml \
             --namespace test \
+            --skip-clean-up \
             --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} ${{ matrix.extraArgs }}"
 
-      - name: Verify helm release
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
-        run: |
-          helm list -n test
-          
+      
       - name: Post-install upgrade/idempotency test
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
         run: |
-          helm upgrade datafy-agent . -n test --wait --timeout 5m \
-            --set agent.token=${{ secrets.STGN_SECRET }} \
-            --set agent.mode=${{ matrix.mode }} \
-            ${{ matrix.extraArgs }}
-          
-      - name: helm upgrade from Sensor to AutoScaler
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' && matrix.mode == 'Sensor' }}
-        run: |
-          helm upgrade datafy-agent . -n test --wait --timeout 5m \
-            --set agent.token=${{ secrets.STGN_SECRET }} \
-            --set agent.mode="AutoScaler"
-          # Verify rollout
-          kubectl rollout status ds/datafy-agent -n test --timeout=120s || true
-
-      - name: helm uninstall
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
-        run: |
-          helm uninstall datafy-agent -n test
+          ct install \
+            --upgrade \
+            --charts . \
+            --target-branch ${{ github.event.repository.default_branch }} \
+            --config .ct.yaml \
+            --namespace test \
+            --skip-clean-up \
+            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode='Autoscaler'"
