@@ -1,0 +1,4 @@
+templateFiles:
+  - README.md.gotmpl
+outputFiles:
+  - README.md

@@ -1,0 +1,5 @@
+validate-maintainers: false
+chart-dirs:
+  - .
+chart-repos:
+  - aws-ebs-csi-driver=https://kubernetes-sigs.github.io/aws-ebs-csi-driver
