@@ -24,13 +24,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Helm version
-        id: current_version
-        run: |
-          HELM_VERSION=$(grep '^version:' Chart.yaml | head -1 | awk '{print $2}')
-          echo $HELM_VERSION
-          echo "HELM_VERSION=$HELM_VERSION" >> $GITHUB_OUTPUT
-
       - name: Bump version and push tag
         uses: mathieudutour/github-tag-action@v6.2
         id: tag_version
@@ -52,7 +45,7 @@ jobs:
 
       - name: Update Chart.yaml (only if bumped)
         run: |
-          VER="${{ steps.tag_version.outputs.new_tag }}"
+          VER="${{ needs.version.tag_version.outputs.new_tag }}"
           sed -i -E "s/^version: .*/version: ${VER}/" Chart.yaml
           if grep -q '^appVersion:' Chart.yaml; then
             sed -i -E "s/^appVersion: .*/appVersion: ${VER}/" Chart.yaml
