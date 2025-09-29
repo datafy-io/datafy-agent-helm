@@ -17,7 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       HELM_VERSION: ${{ steps.tag_version.outputs.new_tag }}
-      CURRENT_VERSION: ${{ steps.current_version.outputs.HELM_VERSION }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,8 +43,9 @@ jobs:
           fetch-depth: 0
 
       - name: Update Chart.yaml (only if bumped)
+        if: ${{ needs.version.outputs.HELM_VERSION != '' }}
         run: |
-          VER="${{ needs.version.tag_version.outputs.new_tag }}"
+          VER="${{ needs.version.outputs.HELM_VERSION }}"
           echo $VER
           sed -i -E "s/^version: .*/version: ${VER}/" Chart.yaml
           if grep -q '^appVersion:' Chart.yaml; then
