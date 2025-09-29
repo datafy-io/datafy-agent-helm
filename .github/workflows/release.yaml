@@ -16,7 +16,7 @@ jobs:
   version:
     runs-on: ubuntu-latest
     outputs:
-      HELM_VERSION: ${{ steps.tag_version.outputs.new_tag }}
+      HELM_VERSION: ${{ steps.tag_version.outputs.new_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
