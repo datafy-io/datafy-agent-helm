@@ -27,7 +27,7 @@ jobs:
       - name: Helm version
         id: sidebranch_version
         run: |
-          export HELM_VERSION=$(grep ^version ./Chart.yaml | cut -d ' ' -f 2)
+          export HELM_VERSION=$(grep '^version:' Chart.yaml | head -1 | awk '{print $2}')
           echo "HELM_VERSION=$HELM_VERSION" >> $GITHUB_OUTPUT
 
       - name: Bump version and push tag
