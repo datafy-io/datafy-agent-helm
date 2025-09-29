@@ -46,6 +46,7 @@ jobs:
       - name: Update Chart.yaml (only if bumped)
         run: |
           VER="${{ needs.version.tag_version.outputs.new_tag }}"
+          echo $VER
           sed -i -E "s/^version: .*/version: ${VER}/" Chart.yaml
           if grep -q '^appVersion:' Chart.yaml; then
             sed -i -E "s/^appVersion: .*/appVersion: ${VER}/" Chart.yaml
