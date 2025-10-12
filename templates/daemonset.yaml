@@ -1,8 +1,9 @@
 {{- $enableCore := and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") (not .Values.agent.coreMockEnabled) }}
+
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: datafy-agent
+  name: {{ include "datafy-agent.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
@@ -13,12 +14,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: datafy-agent
+      {{ include "datafy-agent.selectorLabels" . | indent 6 }}
   template:
     metadata:
       labels:
-        app: datafy-agent
-        {{- include "datafy-agent.labels" . | nindent 8 }}
+        {{ include "datafy-agent.labels" . | indent 8 }}
     spec:
       {{- if .Values.agent.affinity }}
       affinity:
@@ -36,7 +36,7 @@ spec:
         {{- if $enableCore }}
         - name: core
           args: [ core ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
+          image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
@@ -60,7 +60,7 @@ spec:
         {{- end }}
         - name: shell
           args: [ shell ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
+          image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
