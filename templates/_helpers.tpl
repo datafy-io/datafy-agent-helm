@@ -93,7 +93,8 @@ Common labels for all resources
 {{- if ne .Release.Name "kustomize" -}}
 helm.sh/chart: {{ include "datafy-agent.chart" . }}
 {{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
+# Kubernetes labels cannot contain '+', so sanitize it.
+app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" | quote }}
 {{- end }}
 app.kubernetes.io/component: datafy-agent
 app.kubernetes.io/managed-by: {{ .Release.Service }}
