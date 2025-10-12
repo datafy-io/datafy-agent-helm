@@ -1,12 +1,18 @@
 
 {{/*
-Return the full name of the release, using fullnameOverride if set, otherwise chart name and release name
+Return the full name of the release, using fullnameOverride if set,
+otherwise combine chart and release names (only if different)
 */}}
 {{- define "datafy-agent.fullname" -}}
 {{- if and (hasKey .Values "fullnameOverride") (not (empty (default "" .Values.fullnameOverride))) }}
 {{- default "" .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else }}
-{{- printf "%s-%s" (include "datafy-agent.name" .) .Release.Name | trunc 63 | trimSuffix "-" -}}
+  {{- $name := include "datafy-agent.name" . -}}
+  {{- if eq $name .Release.Name }}
+    {{- $name | trunc 63 | trimSuffix "-" -}}
+  {{- else }}
+    {{- printf "%s-%s" $name .Release.Name | trunc 63 | trimSuffix "-" -}}
+  {{- end }}
 {{- end }}
 {{- end -}}
 
@@ -18,23 +24,15 @@ Return the chart name, using nameOverride if set, otherwise .Chart.Name
 {{- end -}}
 
 {{/*
-Split .Chart.AppVersion into parts separated by '+'
-Example: "1.31.1+0.3.1" -> ["1.31.1", "0.3.1"]
-*/}}
-{{- define "datafy-agent.appVersionParts" -}}
-{{- splitList "+" .Chart.AppVersion -}}
-{{- end -}}
-
-{{/*
 Return the agent image tag:
 use .Values.agent.image.tag if set,
-otherwise take the first version (before '+') from .Chart.AppVersion
+otherwise take the first version (before '_') from .Chart.AppVersion
 */}}
 {{- define "datafy-agent.agentImageTag" -}}
 {{- if .Values.agent.image.tag }}
 {{ .Values.agent.image.tag }}
 {{- else }}
-  {{- $parts := include "datafy-agent.appVersionParts" . | fromYamlArray -}}
+ {{- $parts := splitList "_" .Chart.AppVersion -}}
   {{- index $parts 0 -}}
 {{- end }}
 {{- end -}}
@@ -42,14 +40,14 @@ otherwise take the first version (before '+') from .Chart.AppVersion
 {{/*
 Return the ebsCsiProxy (k8s-csi-controller) image tag:
 use .Values.ebsCsiProxy.image.tag if set,
-otherwise take the first version (before '+') from .Chart.AppVersion
+otherwise take the first version (before '_') from .Chart.AppVersion
 */}}
 {{- define "datafy-agent.ebsCsiProxyImageTag" -}}
 {{- if .Values.ebsCsiProxy.image.tag }}
 {{ .Values.ebsCsiProxy.image.tag }}
 {{- else }}
-  {{- $parts := include "datafy-agent.appVersionParts" . | fromYamlArray -}}
-  {{- index $parts 1 -}}
+ {{- $parts := splitList "_" .Chart.AppVersion -}}
+  v{{ index $parts 1 }}
 {{- end }}
 {{- end -}}
 
@@ -94,7 +92,7 @@ Common labels for all resources
 helm.sh/chart: {{ include "datafy-agent.chart" . }}
 {{- if .Chart.AppVersion }}
 # Kubernetes labels cannot contain '+', so sanitize it.
-app.kubernetes.io/version: {{ .Chart.AppVersion | replace "+" "_" | quote }}
+app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/component: datafy-agent
 app.kubernetes.io/managed-by: {{ .Release.Service }}

@@ -60,7 +60,7 @@ agent:
   image:
     pullPolicy: Always
     repository: public.ecr.aws/datafy-io/datafy-agent
-    tag: latest
+    tag:
 
     ## Optionally specify an array of imagePullSecrets.
     ## Secrets must be manually created in the namespace.
@@ -76,5 +76,5 @@ ebsCsiProxy:
   namespace:
   image:
     pullPolicy: IfNotPresent
-    repository: public.ecr.aws/datafy-io/ebs-csi-controller
-    tag: latest
+    repository: public.ecr.aws/datafy-io/
+    tag:

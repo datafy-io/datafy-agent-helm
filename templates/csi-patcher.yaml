@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: patcher
-          image: public.ecr.aws/bitnami/kubectl:latest
+          image: public.ecr.aws/datafy-io/kubectl
           env:
             - name: DATAFY_TOKEN_SECRET_NAME
               value: {{ default "datafy-token" $ctx.Values.agent.externalTokenSecret.name | quote }}
@@ -31,7 +31,7 @@ spec:
             - name: K8S_CSI_NAMESPACE
               value: {{ include "datafy-agent.ebsCsiProxyNamespace" $ctx }}
             - name: K8S_CSI_IMAGE
-              value: {{ printf "%s:%s" $ctx.Values.ebsCsiProxy.image.repository $ctx.Values.ebsCsiProxy.image.tag | quote }}
+              value: {{ printf "%s:%s" $ctx.Values.ebsCsiProxy.image.repository (include "datafy-agent.ebsCsiProxyImageTag" $ctx) | quote }}
             - name: IAC_URL
               value: {{ $ctx.Values.ebsCsiProxy.iacUrl | default ($ctx.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
             - name: AGENT_MODE
