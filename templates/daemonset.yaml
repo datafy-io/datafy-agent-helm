@@ -13,11 +13,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      {{ include "datafy-agent.selectorLabels" . | indent 6 }}
+      {{- include "datafy-agent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "datafy-agent.labels" . | nindent 4 }}
+        {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
       {{- if .Values.agent.affinity }}
       affinity:
