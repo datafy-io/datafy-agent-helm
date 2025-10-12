@@ -2,7 +2,9 @@
 {{ template "chart.badgesSection" . }}
 {{ template "chart.description" . }}
 
-**App Version:** `{{ .Chart.AppVersion }}`
+**App Version:**
+
+{{ template "chart.appVersion" . }}
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 

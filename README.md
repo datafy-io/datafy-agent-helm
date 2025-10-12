@@ -1,6 +1,10 @@
 # datafy-agent
 
-![Version: 1.4.3](https://img.shields.io/badge/Version-1.4.3-informational?style=flat-square)
+![Version: 1.4.1](https://img.shields.io/badge/Version-1.4.1-informational?style=flat-square) ![AppVersion: 1.31.1_0.3.1](https://img.shields.io/badge/AppVersion-1.31.1_0.3.1-informational?style=flat-square)
+
+**App Version:**
+
+1.31.1_0.3.1
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -187,7 +191,7 @@ helm-docs
 | agent.image.imagePullSecrets | list | `[]` |  |
 | agent.image.pullPolicy | string | `"Always"` |  |
 | agent.image.repository | string | `"public.ecr.aws/datafy-io/datafy-agent"` |  |
-| agent.image.tag | string | `"latest"` |  |
+| agent.image.tag | string | `nil` |  |
 | agent.mode | string | `"AutoScaler"` |  |
 | agent.nodeSelector | object | `{}` |  |
 | agent.securityContext.privileged | bool | `true` |  |
@@ -198,8 +202,8 @@ helm-docs
 | awsEbsCsiDriver.enabled | bool | `false` |  |
 | ebsCsiProxy.enabled | bool | `true` |  |
 | ebsCsiProxy.image.pullPolicy | string | `"IfNotPresent"` |  |
-| ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |
-| ebsCsiProxy.image.tag | string | `"latest"` |  |
+| ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/"` |  |
+| ebsCsiProxy.image.tag | string | `nil` |  |
 | ebsCsiProxy.namespace | string | `nil` |  |
 | extraAnnotations | object | `{}` |  |
 | extraLabels | object | `{}` |  |
