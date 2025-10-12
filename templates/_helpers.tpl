@@ -49,7 +49,7 @@ otherwise take the first version (before '+') from .Chart.AppVersion
 {{ .Values.ebsCsiProxy.image.tag }}
 {{- else }}
   {{- $parts := include "datafy-agent.appVersionParts" . | fromYamlArray -}}
-  {{- index $parts 0 -}}
+  {{- index $parts 1 -}}
 {{- end }}
 {{- end -}}
 
