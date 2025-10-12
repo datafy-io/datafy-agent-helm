@@ -17,7 +17,8 @@ spec:
   template:
     metadata:
       labels:
-        {{ include "datafy-agent.labels" . | indent 8 }}
+        {{- include "datafy-agent.selectorLabels" . | nindent 8 }}
+        {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
       {{- if .Values.agent.affinity }}
       affinity:
