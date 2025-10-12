@@ -18,10 +18,17 @@ This guide explains how to add the Datafy Helm repo and install the `datafy-agen
 ---
 
 ## Dependencies
+The chart **requires** deploying a CSI proxy patcher sidecar.  
+The patcher image **version** is set via `ebsCsiProxy.image.tag` (default: `latest`).
+
+**Optional:**  
 The chart can optionally install the AWS EBS CSI driver.
 Set `awsEbsCsiDriver.enabled=true` to deploy it, or `false` to use an existing install.
 
+
 {{ template "chart.requirementsSection" . }}
+| (your CSI proxy patcher repo, if public)                 | csi-proxy-patcher  | latest    |
+
 
 ---
 
