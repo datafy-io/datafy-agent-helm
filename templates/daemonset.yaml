@@ -1,5 +1,4 @@
 {{- $enableCore := and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") (not .Values.agent.coreMockEnabled) }}
-
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -14,7 +13,7 @@ metadata:
 spec:
   selector:
     matchLabels:
-      {{ include "datafy-agent.selectorLabels" . | indent 6 }}
+      {{ include "datafy-agent.selectorLabels" . | indent 4 }}
   template:
     metadata:
       labels:
