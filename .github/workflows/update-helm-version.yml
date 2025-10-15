@@ -1,0 +1,71 @@
+name: Update Helm Chart App Version
+
+on:
+  workflow_call:
+    inputs:
+      agent_version:
+        description: "New agent version (optional)"
+        required: false
+        type: string
+      csi_version:
+        description: "New CSI proxy version (optional)"
+        required: false
+        type: string
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+permissions:
+  contents: write
+  
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PUSH_TOKEN }}
+
+      - name: Read current appVersion
+        id: read_version
+        run: |
+          current=$(yq '.appVersion' Chart.yaml)
+          echo "current=$current" >> $GITHUB_OUTPUT
+
+      - name: Compute new appVersion
+        id: new_version
+        run: |
+          current="${{ steps.read_version.outputs.current }}"
+          agent="${{ inputs.agent_version }}"
+          csi="${{ inputs.csi_version }}"
+
+          agent_part=$(echo "$current" | cut -d'_' -f1)
+          csi_part=$(echo "$current" | cut -d'_' -f2)
+
+          if [ -n "$agent" ]; then agent_part="$agent"; fi
+          if [ -n "$csi" ]; then csi_part="$csi"; fi
+
+          new="${agent_part}_${csi_part}"
+          echo "new=$new" >> $GITHUB_OUTPUT
+          echo "$new"
+
+      - name: Update Chart.yaml appVersion
+        run: |
+          yq -i ".appVersion = \"${{ steps.new_version.outputs.new }}\"" Chart.yaml
+
+      - name: Install helm-docs
+        run: |
+          curl -sSL https://github.com/norwoodj/helm-docs/releases/latest/download/helm-docs_Linux_x86_64.tar.gz | tar -xz
+          sudo mv helm-docs /usr/local/bin/
+
+      - name: Regenerate Helm docs
+        run: helm-docs
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Chart.yaml README.md || true
+          git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
+          git push
