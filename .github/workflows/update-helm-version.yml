@@ -25,6 +25,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          repository: datafy-io/datafy-agent-helm
+          ref: master
           token: ${{ secrets.GH_PUSH_TOKEN }}
 
       - name: Read current appVersion
