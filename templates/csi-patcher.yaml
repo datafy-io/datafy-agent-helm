@@ -16,7 +16,7 @@ spec:
   backoffLimit: 2
   template:
     metadata:
-      name: {{ include "datafy-agent.fullname" . }}-patcher-{{ $hook }}
+      name: {{ include "datafy-agent.fullname" $ctx }}-patcher-{{ $hook }}
       labels:
         {{- include "datafy-agent.labels" $ctx | nindent 8 }}
     spec:
