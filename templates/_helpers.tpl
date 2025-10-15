@@ -1,12 +1,73 @@
+
 {{/*
-Normolized agent mode
+Return the full name of the release, using fullnameOverride if set,
+otherwise combine chart and release names (only if different)
+*/}}
+{{- define "datafy-agent.fullname" -}}
+{{- if and (hasKey .Values "fullnameOverride") (not (empty (default "" .Values.fullnameOverride))) }}
+{{- default "" .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
+{{- else }}
+  {{- $name := include "datafy-agent.name" . -}}
+  {{- if eq $name .Release.Name }}
+    {{- $name | trunc 63 | trimSuffix "-" -}}
+  {{- else }}
+    {{- printf "%s-%s" $name .Release.Name | trunc 63 | trimSuffix "-" -}}
+  {{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Return the chart name, using nameOverride if set, otherwise .Chart.Name
+*/}}
+{{- define "datafy-agent.name" -}}
+{{- default .Chart.Name (default "" .Values.nameOverride) | trunc 63 | trimSuffix "-" -}}
+{{- end -}}
+
+{{/*
+Return the agent image tag:
+use .Values.agent.image.tag if set,
+otherwise take the first version (before '_') from .Chart.AppVersion
+*/}}
+{{- define "datafy-agent.agentImageTag" -}}
+{{- if .Values.agent.image.tag }}
+{{ .Values.agent.image.tag }}
+{{- else }}
+ {{- $parts := splitList "_" .Chart.AppVersion -}}
+  {{- index $parts 0 -}}
+{{- end }}
+{{- end -}}
+
+{{/*
+Return the ebsCsiProxy (k8s-csi-controller) image tag:
+use .Values.ebsCsiProxy.image.tag if set,
+otherwise take the first version (before '_') from .Chart.AppVersion
+*/}}
+{{- define "datafy-agent.ebsCsiProxyImageTag" -}}
+{{- if .Values.ebsCsiProxy.image.tag }}
+{{ .Values.ebsCsiProxy.image.tag }}
+{{- else }}
+ {{- $parts := splitList "_" .Chart.AppVersion -}}
+  v{{ index $parts 1 }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Return selector labels for the app
+*/}}
+{{- define "datafy-agent.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "datafy-agent.name" . }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+{{- end -}}
+
+{{/*
+Normalize agent mode (lowercase and trimmed)
 */}}
 {{- define "datafy-agent.agentModeNormalized" -}}
     {{- .Values.agent.mode | lower | trim -}}
 {{- end -}}
 
 {{/*
-Determine ebs csi installed namespace
+Determine the namespace for ebsCsiProxy: use release namespace if awsEbsCsiDriver.enabled, else .Values.ebsCsiProxy.namespace or "kube-system"
 */}}
 {{- define "datafy-agent.ebsCsiProxyNamespace" -}}
     {{- if .Values.awsEbsCsiDriver.enabled }}
@@ -24,12 +85,13 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
-Common labels
+Common labels for all resources
 */}}
 {{- define "datafy-agent.labels" -}}
 {{- if ne .Release.Name "kustomize" -}}
 helm.sh/chart: {{ include "datafy-agent.chart" . }}
 {{- if .Chart.AppVersion }}
+# Kubernetes labels cannot contain '+', so sanitize it.
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/component: datafy-agent

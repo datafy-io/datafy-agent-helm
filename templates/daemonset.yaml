@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: datafy-agent
+  name: {{ include "datafy-agent.fullname" . }}
   namespace: {{ .Release.Namespace | quote }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
@@ -13,11 +13,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: datafy-agent
+      {{- include "datafy-agent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: datafy-agent
+        {{- include "datafy-agent.selectorLabels" . | nindent 8 }}
         {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
       {{- if .Values.agent.affinity }}
@@ -36,7 +36,7 @@ spec:
         {{- if $enableCore }}
         - name: core
           args: [ core ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
+          image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
@@ -44,14 +44,14 @@ spec:
           {{- end }}
           envFrom:
             - configMapRef:
-                name: datafy-agent-envvars
+                name: {{ include "datafy-agent.fullname" . }}-cm
           env:
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  name: {{ default (printf "%s-token" (include "datafy-agent.fullname" .)) .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
           resources:
             requests:
@@ -60,7 +60,7 @@ spec:
         {{- end }}
         - name: shell
           args: [ shell ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
+          image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
@@ -68,7 +68,7 @@ spec:
           {{- end }}
           envFrom:
             - configMapRef:
-                name: datafy-agent-envvars
+                name: {{ include "datafy-agent.fullname" . }}-cm
           env:
             {{- if (and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") .Values.ebsCsiProxy.enabled) }}
             - name: DATAFY_GRPC_ENABLED
@@ -81,7 +81,7 @@ spec:
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  name: {{ default (printf "%s-token" (include "datafy-agent.fullname" .)) .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
