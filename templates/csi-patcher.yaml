@@ -5,7 +5,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: datafy-agent-patcher-{{ $hook }}
+  name: {{ include "datafy-agent.fullname" . }}-patcher-{{ $hook }}
   namespace: {{ $ctx.Release.Namespace }}
   labels:
     {{- include "datafy-agent.labels" $ctx | nindent 4 }}
@@ -16,7 +16,7 @@ spec:
   backoffLimit: 2
   template:
     metadata:
-      name: datafy-agent-patcher-{{ $hook }}
+      name: {{ include "datafy-agent.fullname" . }}-patcher-{{ $hook }}
       labels:
         {{- include "datafy-agent.labels" $ctx | nindent 8 }}
     spec:
@@ -25,7 +25,7 @@ spec:
           image: public.ecr.aws/datafy-io/kubectl
           env:
             - name: DATAFY_TOKEN_SECRET_NAME
-              value: {{ default "datafy-token" $ctx.Values.agent.externalTokenSecret.name | quote }}
+              value: {{ default (printf "%s-token" (include "datafy-agent.fullname" $ctx)) $ctx.Values.agent.externalTokenSecret.name | quote }}
             - name: DATAFY_TOKEN_SECRET_KEY
               value: {{ default "token" $ctx.Values.agent.externalTokenSecret.key | quote }}
             - name: K8S_CSI_NAMESPACE
