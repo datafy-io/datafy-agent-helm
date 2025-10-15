@@ -5,7 +5,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ include "datafy-agent.fullname" . }}-patcher-{{ $hook }}
+  name: {{ include "datafy-agent.fullname" $ctx }}-patcher-{{ $hook }}
   namespace: {{ $ctx.Release.Namespace }}
   labels:
     {{- include "datafy-agent.labels" $ctx | nindent 4 }}
