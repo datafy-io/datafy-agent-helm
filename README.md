@@ -1,6 +1,6 @@
 # datafy-agent
 
-![Version: 1.4.1](https://img.shields.io/badge/Version-1.4.1-informational?style=flat-square) ![AppVersion: 1.31.1_0.3.1](https://img.shields.io/badge/AppVersion-1.31.1_0.3.1-informational?style=flat-square)
+![Version: 1.4.2](https://img.shields.io/badge/Version-1.4.2-informational?style=flat-square) ![AppVersion: 1.31.1_0.3.1](https://img.shields.io/badge/AppVersion-1.31.1_0.3.1-informational?style=flat-square)
 
 **App Version:**
 
