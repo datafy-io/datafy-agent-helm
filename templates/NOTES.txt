@@ -7,7 +7,6 @@ Agent Mode:    {{ include "datafy-agent.agentModeNormalized" . }}
 Namespace: {{ .Release.Namespace }}
 Release:   {{ .Release.Name }}
 
-
 To see logs:
   kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }}
 

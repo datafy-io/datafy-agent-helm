@@ -45,6 +45,8 @@ helm upgrade --install datafy-agent datafyio/datafy-agent \
 
 ## Quick Start (Autoscaler + Existing CSI)
 ```bash
+helm repo add datafyio https://helm.datafy.io/datafy-agent
+helm repo update
 helm upgrade --install datafy-agent datafyio/datafy-agent \
   --namespace datafy --create-namespace \
   --set agent.mode="autoscaler" \
@@ -64,33 +66,11 @@ helm repo update
 helm upgrade --install datafy-agent datafyio/datafy-agent --namespace <namespace> --create-namespace \
   --set agent.mode="sensor/autoscaler" \
   --set agent.token=<your_token> \
-  --set agent.image.tag=<image_tag>
+ 
 ```
-
-### 3. Enable / Disable aws-ebs-csi-driver
-```bash
-helm upgrade --install datafy-agent datafyio/datafy-agent \
-  --set awsEbsCsiDriver.enabled=true
-```
-
 Override subchart values:
 ```yaml
-aws-ebs-csi-driver:
-  controller:
-    replicaCount: 2
-```
-
-### 4. Optional Customizations
-```yaml
-agent:
-  mode: autoscaler
-  env:
-    LOG_LEVEL: info
-image:
-  imagePullSecrets:
-    - myRegistrySecret
-ebsCsiProxy:
-  namespace: kube-system
+--set agent.image.tag=<image_tag>
 ```
 
 ### 5. Verify
@@ -123,44 +103,11 @@ helm uninstall datafy-agent --namespace <namespace>
 
 ---
 
-## Highlighted Values
-| Key | Description | Example |
-|-----|-------------|---------|
-| agent.mode | Deployment mode | autoscaler |
-| agent.token | Auth token | abc123 |
-| awsEbsCsiDriver.enabled | Install bundled driver | true |
-| ebsCsiProxy.enabled | Use proxy with existing driver | true |
-| agent.env | Extra env vars | LOG_LEVEL=info |
-| agent.image.tag | Image tag override | v1.2.3 |
-
----
-
-## Troubleshooting
-| Symptom | Cause | Resolution |
-|---------|-------|-----------|
-| CSI validation failure | Driver missing | Install driver or disable proxy |
-| Pods Pending | Taints | Add tolerations |
-| CrashLoop (token) | Secret missing | Create secret or set agent.token |
-| Mode switch not applied | Old pods | Rollout restart / upgrade |
-
----
-
-## Security Recommendations
-- runAsNonRoot, drop ALL capabilities
-- readOnlyRootFilesystem=true
-- Limit hostNetwork / hostPID
-- Scope token secret
-- Use imagePullSecrets for private registries
-
----
-
 ## Development
 ```bash
 helm lint .
-helm template test .
 helm-docs
 ```
-
 ---
 
 ## Parameters
