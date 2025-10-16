@@ -40,7 +40,7 @@ helm repo update
 helm upgrade --install datafy-agent datafyio/datafy-agent \
   --namespace datafy --create-namespace \
   --set agent.mode="sensor" \
-  --set agent.token=$DATAFY_TOKEN \
+  --set agent.token=$DATAFY_TOKEN
 ```
 
 ## Quick Start (Autoscaler + Existing CSI)
@@ -50,7 +50,7 @@ helm repo update
 helm upgrade --install datafy-agent datafyio/datafy-agent \
   --namespace datafy --create-namespace \
   --set agent.mode="autoscaler" \
-  --set agent.token=$DATAFY_TOKEN \
+  --set agent.token=$DATAFY_TOKEN
 ```
 ---
 
@@ -65,12 +65,7 @@ helm repo update
 ```bash
 helm upgrade --install datafy-agent datafyio/datafy-agent --namespace <namespace> --create-namespace \
   --set agent.mode="sensor/autoscaler" \
-  --set agent.token=<your_token> \
- 
-```
-Override subchart values:
-```yaml
---set agent.image.tag=<image_tag>
+  --set agent.token=<your_token>
 ```
 
 ### 5. Verify
@@ -85,10 +80,12 @@ kubectl get pods -n <namespace> -l app.kubernetes.io/instance=datafy-agent
 helm repo update
 helm upgrade --install datafy-agent datafyio/datafy-agent -n <namespace> --set agent.image.tag=<image_tag> --reuse-values
 ```
+
 Switch mode:
 ```bash
 helm upgrade --install datafy-agent datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler
 ```
+
 Rollback:
 ```bash
 helm rollback datafy-agent 1 -n <namespace>
