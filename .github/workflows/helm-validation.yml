@@ -18,7 +18,6 @@ jobs:
            - mode: AutoScaler
 
     name: Test (${{ matrix.mode }})
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,7 +36,6 @@ jobs:
         with:
           python-version: '3.13.x'
           check-latest: true
-          
 
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.7.0
@@ -185,7 +183,7 @@ jobs:
             --config .ct.yaml \
             --namespace test \
             --skip-clean-up \
-            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} "
+            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} "
 
       - name: Capture ct release name
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
@@ -374,7 +372,7 @@ jobs:
             --config .ct.yaml \
             --namespace test \
             --skip-clean-up \
-            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=sensor "
+            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=sensor "
 
       - name: Capture ct release name
         if: ${{ steps.detect_pr.outputs.has_pr == 'true'  }}
@@ -398,6 +396,7 @@ jobs:
             --wait --timeout 5m \
             --debug --create-namespace \
             --set agent.token=${{ secrets.STGN_SECRET }} \
+            --set agent.dsoUrl="wss://dso-stg.datafy.io" \
             --set agent.mode=autoscaler
 
       - name: Run helm uninstall
