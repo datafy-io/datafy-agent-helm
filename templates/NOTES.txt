@@ -1,0 +1,18 @@
+✅ Installation {{ .Chart.Name }} Complete!
+
+Chart Version: {{ .Chart.Version }}
+App Version:   {{ .Chart.AppVersion }}
+Agent Mode:    {{ include "datafy-agent.agentModeNormalized" . }}
+
+Namespace: {{ .Release.Namespace }}
+Release:   {{ .Release.Name }}
+
+
+To see logs:
+  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }}
+
+You can verify your deployment with:
+  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }}
+
+Need to uninstall?
+  helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}

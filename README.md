@@ -41,7 +41,6 @@ helm upgrade --install datafy-agent datafyio/datafy-agent \
   --namespace datafy --create-namespace \
   --set agent.mode="sensor" \
   --set agent.token=$DATAFY_TOKEN \
-  --set agent.image.tag=<image_tag>
 ```
 
 ## Quick Start (Autoscaler + Existing CSI)
@@ -50,15 +49,7 @@ helm upgrade --install datafy-agent datafyio/datafy-agent \
   --namespace datafy --create-namespace \
   --set agent.mode="autoscaler" \
   --set agent.token=$DATAFY_TOKEN \
-  --set agent.image.tag=<image_tag>
 ```
-
-## Modes Matrix
-| agent.mode | Core sidecar | Needs CSI Driver | Uses CSI Proxy | Notes |
-|-----------|--------------|------------------|----------------|-------|
-| sensor    | No           | No               | No             | Minimal footprint |
-| autoscaler| Yes (core)   | Recommended      | Optional       | Scaling logic enabled |
-
 ---
 
 ## Installation Guide
@@ -202,7 +193,7 @@ helm-docs
 | awsEbsCsiDriver.enabled | bool | `false` |  |
 | ebsCsiProxy.enabled | bool | `true` |  |
 | ebsCsiProxy.image.pullPolicy | string | `"IfNotPresent"` |  |
-| ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/"` |  |
+| ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |
 | ebsCsiProxy.image.tag | string | `nil` |  |
 | ebsCsiProxy.namespace | string | `nil` |  |
 | extraAnnotations | object | `{}` |  |

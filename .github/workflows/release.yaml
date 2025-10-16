@@ -66,10 +66,8 @@ jobs:
 
           echo "📦 Packaging base chart..."
           helm package --version "${CHART_VERSION}" .
+          helm s3 push "datafy-agent-${CHART_VERSION}.tgz" datafyio-s3 --relative
 
           echo "📦 Packaging with EBS CSI dependency version..."
           helm package --version "${CHART_VERSION}+ebscsi.${EBS_CSI_DRIVER_VERSION}" .
-
-          # echo "🚀 Pushing both charts to S3 repo..."
-          # helm s3 push "datafy-agent-${CHART_VERSION}.tgz" datafyio-s3 --relative
-          # helm s3 push "datafy-agent-${CHART_VERSION}+ebscsi.${EBS_CSI_DRIVER_VERSION}.tgz" datafyio-s3 --relative
+          helm s3 push "datafy-agent-${CHART_VERSION}+ebscsi.${EBS_CSI_DRIVER_VERSION}.tgz" datafyio-s3 --relative
