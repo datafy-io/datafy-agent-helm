@@ -31,29 +31,6 @@ Set `awsEbsCsiDriver.enabled=true` to deploy it, or `false` to use an existing i
 |------------|------|---------|
 | https://kubernetes-sigs.github.io/aws-ebs-csi-driver | aws-ebs-csi-driver | 2.45.1 |
 
----
-
-## Quick Start (Sensor)
-```bash
-helm repo add datafyio https://helm.datafy.io/datafy-agent
-helm repo update
-helm upgrade --install datafy-agent datafyio/datafy-agent \
-  --namespace datafy --create-namespace \
-  --set agent.mode="sensor" \
-  --set agent.token=$DATAFY_TOKEN
-```
-
-## Quick Start (Autoscaler + Existing CSI)
-```bash
-helm repo add datafyio https://helm.datafy.io/datafy-agent
-helm repo update
-helm upgrade --install datafy-agent datafyio/datafy-agent \
-  --namespace datafy --create-namespace \
-  --set agent.mode="autoscaler" \
-  --set agent.token=$DATAFY_TOKEN
-```
----
-
 ## Installation Guide
 ### 1. Add Repo
 ```bash
@@ -63,9 +40,10 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm upgrade --install datafy-agent datafyio/datafy-agent --namespace <namespace> --create-namespace \
-  --set agent.mode="sensor/autoscaler" \
-  --set agent.token=<your_token>
+helm install datafy-agent --version 1.4.2 datafyio/datafy-agent \
+--namespace datafy-agent --create-namespace \
+--set agent.mode="sensor/autoscaler" \
+--set agent.token=<your_token>
 ```
 
 ### 5. Verify

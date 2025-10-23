@@ -203,7 +203,7 @@ jobs:
         if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
-          helm uninstall "$rel" --namespace=test || true
+          helm uninstall "$rel" --namespace=test
 
   test-to-autoscaler:
     runs-on: ubuntu-latest
