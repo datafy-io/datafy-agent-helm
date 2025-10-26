@@ -16,6 +16,7 @@ extraAnnotations: {}
 agent:
   token:
   mode: AutoScaler
+  channel: production
   dsoUrl: wss://dso.datafy.io
   env: { }
 
