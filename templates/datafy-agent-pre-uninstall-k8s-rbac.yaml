@@ -1,0 +1,53 @@
+{{- if .Values.ebsCsiProxy.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: datafy-agent-pre-uninstall-k8s-sa
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: datafy-agent-pre-uninstall-k8s-clusterrole
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+rules:
+  - apiGroups: [ "apps" ]
+    resources: [ "deployments", "daemonsets" ]
+    resourceNames: [ "datafy-agent" ]
+    verbs: [ "get", "list", "patch" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    resourceNames: 
+      - {{ default "datafy-token" .Values.agent.externalTokenSecret.name | quote }}
+    verbs: [ "get" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: datafy-agent-pre-uninstall-k8s-clusterrolebinding
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+subjects:
+  - kind: ServiceAccount
+    name: datafy-agent-pre-uninstall-k8s-sa
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: datafy-agent-pre-uninstall-k8s-clusterrole
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}

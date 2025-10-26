@@ -1,0 +1,47 @@
+{{- if .Values.ebsCsiProxy.enabled }}
+{{- $ctx := . }}
+{{- range $hook := list "pre-delete" }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: datafy-agent-pre-uninstall-k8s-{{ $hook }}
+  namespace: {{ $ctx.Release.Namespace }}
+  labels:
+    {{- include "datafy-agent.labels" $ctx | nindent 4 }}
+  annotations:
+    "helm.sh/hook": "{{ $hook }}"
+    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 2
+  template:
+    metadata:
+      name: datafy-agent-pre-uninstall-k8s-{{ $hook }}
+      labels:
+        {{- include "datafy-agent.labels" $ctx | nindent 8 }}
+    spec:
+      containers:
+        - name: pre-uninstall
+          image: public.ecr.aws/bitnami/kubectl:latest
+          env:
+            - name: DATAFY_TOKEN_SECRET_NAME
+              value: {{ default "datafy-token" $ctx.Values.agent.externalTokenSecret.name | quote }}
+            - name: DATAFY_TOKEN_SECRET_KEY
+              value: {{ default "token" $ctx.Values.agent.externalTokenSecret.key | quote }}
+            - name: CHANNEL
+              value: {{ default "production" $ctx.Values.agent.channel | quote }}
+            - name: K8S_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command:
+            - /bin/sh
+            - -c
+            - |
+{{ $ctx.Files.Get "files/datafy-agent-pre-uninstall-k8s.sh" | indent 14 }}
+      priorityClassName: system-node-critical
+      restartPolicy: Never
+      schedulerName: default-scheduler
+      serviceAccountName: datafy-agent-pre-uninstall-k8s-sa
+{{- end }}
+{{- end }}

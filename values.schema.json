@@ -9,6 +9,15 @@
           "type": "string",
           "description": "Mode of agent to install"
         },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "production",
+            "staging",
+            "development"
+          ],
+          "description": "Deployment channel/environment for the agent"
+        },
         "token": {
           "type": [
             "string",
