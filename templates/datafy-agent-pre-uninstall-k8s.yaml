@@ -1,4 +1,4 @@
-{{- if .Values.ebsCsiProxy.enabled }}
+{{- if and .Values.ebsCsiProxy.enabled (ne (include "datafy-agent.agentModeNormalized" .) "sensor") }}
 {{- $ctx := . }}
 {{- range $hook := list "pre-delete" }}
 ---
