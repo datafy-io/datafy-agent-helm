@@ -1,6 +1,9 @@
 dependencies:
+- name: csi-volume-snapshot-crds
+  repository: file://./dependencie/csi-crd
+  version: 1.0.0
 - name: aws-ebs-csi-driver
   repository: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
   version: 2.45.1
-digest: sha256:853beb15f8e823fa070172c417134fadbd8043da3ba130776c7c915eafb81aa8
-generated: "2025-07-24T14:55:23.038227+03:00"
+digest: sha256:0c888d6040061d06c855faf2a119dc408d70d967f8973c7dad0ec6cf683cb718
+generated: "2025-10-26T22:46:46.338405+02:00"

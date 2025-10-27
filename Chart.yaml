@@ -6,7 +6,14 @@ maintainers:
   - name: Datafy.io, Inc. All Rights Reserved.
     url: https://github.com/datafy-io/datafy-agent-helm
 dependencies:
+  - name: csi-volume-snapshot-crds
+    version: 1.0.0
+    condition: awsEbsCsiDriver.enabled
+    repository: file://./dependencie/csi-crd
   - name: aws-ebs-csi-driver
     version: 2.45.1
     condition: awsEbsCsiDriver.enabled
     repository: https://kubernetes-sigs.github.io/aws-ebs-csi-driver
+    dependsOn:
+      - csi-volume-snapshot-crds
+

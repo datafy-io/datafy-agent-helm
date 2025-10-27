@@ -1,0 +1,11 @@
+apiVersion: v2
+name: csi-volume-snapshot-crds
+description: VolumeSnapshot CRDs for CSI drivers (VolumeSnapshot, VolumeSnapshotContent, VolumeSnapshotClass)
+type: application
+version: 1.0.0
+appVersion: "6.4.0"
+home: https://github.com/kubernetes-csi/external-snapshotter
+maintainers:
+  - name: Datafy.io
+    url: https://datafy.io
+
