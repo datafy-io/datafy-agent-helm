@@ -77,6 +77,11 @@ agent:
 controller:
   serviceAccountName: datafy-controller-sa
 
+  image:
+    pullPolicy: Always
+    repository: public.ecr.aws/datafy-io/datafy-controller
+    tag: latest
+
 ebsCsiProxy:
   enabled: true
   namespace:
