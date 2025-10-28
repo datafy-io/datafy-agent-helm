@@ -24,6 +24,20 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Agent image tag
+*/}}
+{{- define "datafy-agent.agentImageTag" -}}
+{{- (default (split "_" .Chart.AppVersion)._2 .Values.agent.image.tag) -}}
+{{- end -}}
+
+{{/*
+CSI Controller image tag
+*/}}
+{{- define "datafy-agent.csiImageTag" -}}
+{{- (default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
+{{- end -}}
+
+{{/*
 Common labels
 */}}
 {{- define "datafy-agent.labels" -}}
