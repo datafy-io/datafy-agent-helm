@@ -32,7 +32,7 @@ agent:
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ##
   affinity:
-    nodeAffinity:
+    nodeAffinity: # @ignored
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
           - matchExpressions:

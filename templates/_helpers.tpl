@@ -60,7 +60,7 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
 {{/*
-Normalize agent mode (lowercase and trimmed)
+Normalized agent mode
 */}}
 {{- define "datafy-agent.agentModeNormalized" -}}
     {{- .Values.agent.mode | lower | trim -}}
@@ -91,7 +91,6 @@ Common labels for all resources
 {{- if ne .Release.Name "kustomize" -}}
 helm.sh/chart: {{ include "datafy-agent.chart" . }}
 {{- if .Chart.AppVersion }}
-# Kubernetes labels cannot contain '+', so sanitize it.
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/component: datafy-agent
