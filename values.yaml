@@ -26,14 +26,14 @@ agent:
     key:
 
   # @ignored
-  coreMockEnabled: false   
+  coreMockEnabled: false
   # @ignored
-  hqMockEnabled: false      
+  hqMockEnabled: false
 
   ## @param agent.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ##
-  affinity: 
+  affinity:
     # @ignored
     nodeAffinity:
       requiredDuringSchedulingIgnoredDuringExecution:
