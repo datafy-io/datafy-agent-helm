@@ -25,16 +25,17 @@ agent:
     name:
     key:
 
-  coreMockEnabled: false
-  hqMockEnabled: false
-
+  #helm-docs: @ignored
+  coreMockEnabled: false   
+  #helm-docs: @ignored
+  hqMockEnabled: false      
+  
   ## @param agent.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ##
   affinity: 
     # helm-docs: @ignored
     nodeAffinity:
-      # helm-docs: @optional
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
           - matchExpressions:
