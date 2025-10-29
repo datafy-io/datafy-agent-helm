@@ -31,8 +31,10 @@ agent:
   ## @param agent.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ##
-  affinity:
-    nodeAffinity: # @ignored
+  affinity: 
+    # helm-docs: @ignored
+    nodeAffinity:
+      # helm-docs: @optional
       requiredDuringSchedulingIgnoredDuringExecution:
         nodeSelectorTerms:
           - matchExpressions:

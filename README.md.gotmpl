@@ -43,6 +43,21 @@ helm install datafy-agent --version {{ template "chart.version" . }} datafyio/da
 --set agent.token=<your_token> 
 ```
 
+## Upgrade
+```bash
+helm repo update
+helm upgrade --install datafy-agent --version {{ template "chart.version" . }} datafyio/datafy-agent -n <namespace> --reuse-values
+```
+
+Switch mode:
+```bash
+helm upgrade --install datafy-agent --version {{ template "chart.version" . }} datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler
+```
+
+Rollback:
+```bash
+helm rollback datafy-agent 1 -n <namespace>
+```
 
 ### 5. Verify
 ```bash
@@ -55,7 +70,6 @@ kubectl get pods -n <namespace> -l app.kubernetes.io/instance=datafy-agent
 helm uninstall datafy-agent --namespace <namespace>
 ```
 ---
-
 
 {{ template "chart.valuesSection" . }}
 
