@@ -60,6 +60,18 @@ agent:
     runAsUser: 1000
     runAsGroup: 1000
 
+  ## @param agent.readinessProbe.enabled Enable readiness probe for agent containers
+  ## @param agent.readinessProbe.initialDelaySeconds Initial delay before probe starts
+  ## @param agent.readinessProbe.periodSeconds How often to perform the probe
+  ## @param agent.readinessProbe.timeoutSeconds Timeout for probe
+  ## @param agent.readinessProbe.failureThreshold Number of failures before marking unhealthy
+  readinessProbe:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+
   image:
     pullPolicy: Always
     repository: public.ecr.aws/datafy-io/datafy-agent

@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 1.4.2](https://img.shields.io/badge/Version-1.4.2-informational?style=flat-square) ![AppVersion: 1.31.1_0.3.1](https://img.shields.io/badge/AppVersion-1.31.1_0.3.1-informational?style=flat-square)
+![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-informational?style=flat-square) ![AppVersion: 1.31.8_0.3.1](https://img.shields.io/badge/AppVersion-1.31.8_0.3.1-informational?style=flat-square)
 
 **App Version:**
 
-1.31.1_0.3.1
+1.31.8_0.3.1
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -40,21 +40,22 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent --version 1.4.2 datafyio/datafy-agent \
+helm install datafy-agent --version 2.0.0 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
---set agent.token=<your_token>
+--set agent.token=<your_token> \
+--wait --timeout 5m
 ```
 
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 1.4.2 datafyio/datafy-agent -n <namespace> --reuse-values
+helm upgrade --install datafy-agent --version 2.0.0 datafyio/datafy-agent -n <namespace> --reuse-values --wait --timeout 5m
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 1.4.2 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler
+helm upgrade --install datafy-agent --version 2.0.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --wait --timeout 5m
 ```
 
 Rollback:
@@ -89,6 +90,11 @@ helm uninstall datafy-agent --namespace <namespace>
 | agent.image.tag | string | `nil` |  |
 | agent.mode | string | `"AutoScaler"` |  |
 | agent.nodeSelector | object | `{}` |  |
+| agent.readinessProbe.enabled | bool | `true` |  |
+| agent.readinessProbe.failureThreshold | int | `3` |  |
+| agent.readinessProbe.initialDelaySeconds | int | `10` |  |
+| agent.readinessProbe.periodSeconds | int | `10` |  |
+| agent.readinessProbe.timeoutSeconds | int | `5` |  |
 | agent.securityContext.privileged | bool | `true` |  |
 | agent.securityContext.runAsGroup | int | `1000` |  |
 | agent.securityContext.runAsUser | int | `1000` |  |

@@ -40,18 +40,19 @@ helm repo update
 helm install datafy-agent --version {{ template "chart.version" . }} datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
---set agent.token=<your_token> 
+--set agent.token=<your_token> \
+--wait --timeout 5m
 ```
 
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version {{ template "chart.version" . }} datafyio/datafy-agent -n <namespace> --reuse-values
+helm upgrade --install datafy-agent --version {{ template "chart.version" . }} datafyio/datafy-agent -n <namespace> --reuse-values --wait --timeout 5m
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version {{ template "chart.version" . }} datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler
+helm upgrade --install datafy-agent --version {{ template "chart.version" . }} datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --wait --timeout 5m
 ```
 
 Rollback:

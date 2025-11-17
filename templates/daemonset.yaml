@@ -57,6 +57,18 @@ spec:
             requests:
               cpu: 10m
               memory: 40Mi
+          {{- if .Values.agent.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - datafy-agent
+            initialDelaySeconds: {{ .Values.agent.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.agent.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.agent.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.agent.readinessProbe.failureThreshold }}
+          {{- end }}
         {{- end }}
         - name: shell
           args: [ shell ]
@@ -95,6 +107,18 @@ spec:
             requests:
               cpu: 10m
               memory: 40Mi
+          {{- if .Values.agent.readinessProbe.enabled }}
+          readinessProbe:
+            exec:
+              command:
+                - pgrep
+                - -f
+                - datafy-agent
+            initialDelaySeconds: {{ .Values.agent.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.agent.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.agent.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.agent.readinessProbe.failureThreshold }}
+          {{- end }}
       priorityClassName: system-node-critical
       restartPolicy: Always
       schedulerName: default-scheduler
