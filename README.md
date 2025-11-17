@@ -79,7 +79,7 @@ helm uninstall datafy-agent --namespace <namespace>
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| agent.affinity | object | `{}` |  |
+| agent.affinity.nodeAffinity | object | `{}` |  |
 | agent.dsoUrl | string | `"wss://dso.datafy.io"` |  |
 | agent.env | object | `{}` |  |
 | agent.externalTokenSecret.key | string | `nil` |  |
