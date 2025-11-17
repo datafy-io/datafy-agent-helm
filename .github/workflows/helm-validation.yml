@@ -5,7 +5,7 @@ on:
 
 permissions:
   id-token: write
-  contents: write  # Grant write access to the repository contents
+  contents: write
 
 jobs:
   test:
@@ -13,9 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-           - mode: Sensor
-           - mode: AutoScaler
+        mode: [Sensor, AutoScaler]
 
     name: Test (${{ matrix.mode }})
     steps:
@@ -205,9 +203,8 @@ jobs:
           rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
           helm uninstall "$rel" --namespace=test
 
-  test-to-autoscaler:
+  test-sensor-to-autoscaler:
     runs-on: ubuntu-latest
-
     name: Test (Sensor to AutoScaler)
 
     steps:
