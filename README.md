@@ -44,18 +44,18 @@ helm install datafy-agent --version 2.0.0 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
 --set agent.token=<your_token> \
---wait --timeout 5m
+--atomic
 ```
 
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 2.0.0 datafyio/datafy-agent -n <namespace> --reuse-values --wait --timeout 5m
+helm upgrade --install datafy-agent --version 2.0.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 2.0.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --wait --timeout 5m
+helm upgrade --install datafy-agent --version 2.0.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
 ```
 
 Rollback:
