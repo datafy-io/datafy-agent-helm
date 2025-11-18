@@ -90,11 +90,6 @@ helm uninstall datafy-agent --namespace <namespace>
 | agent.image.tag | string | `nil` |  |
 | agent.mode | string | `"AutoScaler"` |  |
 | agent.nodeSelector | object | `{}` |  |
-| agent.readinessProbe.enabled | bool | `true` |  |
-| agent.readinessProbe.failureThreshold | int | `3` |  |
-| agent.readinessProbe.initialDelaySeconds | int | `10` |  |
-| agent.readinessProbe.periodSeconds | int | `10` |  |
-| agent.readinessProbe.timeoutSeconds | int | `5` |  |
 | agent.securityContext.privileged | bool | `true` |  |
 | agent.securityContext.runAsGroup | int | `1000` |  |
 | agent.securityContext.runAsUser | int | `1000` |  |
