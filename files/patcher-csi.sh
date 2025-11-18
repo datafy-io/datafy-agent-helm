@@ -282,7 +282,7 @@ fi
 env
 
 case "$HOOK_EVENT" in
-  post-install|post-upgrade)
+  post-install|post-upgrade|post-rollback)
     AGENT_MODE=$(echo "${AGENT_MODE}" | tr '[:upper:]' '[:lower:]')
     case "$AGENT_MODE" in
       sensor) unpatch ;;

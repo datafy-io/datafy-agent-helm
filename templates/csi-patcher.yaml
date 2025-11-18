@@ -1,7 +1,7 @@
 {{- $mode := (include "datafy-agent.agentModeNormalized" . ) }}
 {{- if and .Values.ebsCsiProxy.enabled (eq $mode "autoscaler") }}
 {{- $ctx := . }}
-{{- range $hook := list "post-install" "post-upgrade" "pre-delete" }}
+{{- range $hook := list "post-install" "post-upgrade" "pre-delete" "post-rollback" }}
 ---
 apiVersion: batch/v1
 kind: Job
