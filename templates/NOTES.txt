@@ -1,17 +1,8 @@
 ✅ Installation {{ .Chart.Name }} Complete!
 
 Chart Version: {{ .Chart.Version }}
-App Version:   {{ .Chart.AppVersion }}
+App Version:   {{ include "datafy-agent.agentImageTag" . }}_{{ include "datafy-agent.ebsCsiProxyImageTag" . }}
 Agent Mode:    {{ include "datafy-agent.agentModeNormalized" . }}
 
 Namespace: {{ .Release.Namespace }}
 Release:   {{ .Release.Name }}
-
-Logs:
-  kubectl logs -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }}
-
-Verify deployment:
-  kubectl get pods -n {{ .Release.Namespace }} -l app.kubernetes.io/name={{ .Chart.Name }}
-
-Uninstall?
-  helm uninstall {{ .Release.Name }} -n {{ .Release.Namespace }}
