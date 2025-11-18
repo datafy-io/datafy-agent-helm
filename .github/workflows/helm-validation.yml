@@ -1,7 +1,11 @@
 name: Test Chart
 
 on:
-  push:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 permissions:
   id-token: write
@@ -41,36 +45,10 @@ jobs:
       - name: Run chart-testing (lint)
         run: ct lint --charts . --config .ct.yaml --target-branch ${{ github.event.repository.default_branch }}
 
-      - name: Detect related PR
-        id: detect_pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          BRANCH: ${{ github.ref_name }}
-        run: |
-          set -e
-          owner_repo="$REPO"
-          # List open PRs whose head matches owner:branch
-            json=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-              "https://api.github.com/repos/$owner_repo/pulls?state=open&head=${owner_repo%%/*}:$BRANCH")
-          count=$(echo "$json" | jq 'length')
-          if [ "$count" -gt 0 ]; then
-            # take first
-            draft=$(echo "$json" | jq '.[0].draft')
-            number=$(echo "$json" | jq '.[0].number')
-            echo "Found open PR #$number (draft=$draft)"
-            echo "has_pr=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No open PR for branch $BRANCH"
-            echo "has_pr=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Create kind cluster
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         uses: helm/kind-action@v1.12.0
 
       - name: Apply fake EBS CSI resources
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           set -euo pipefail
           cat <<'YAML' | kubectl apply -f -
@@ -173,7 +151,6 @@ jobs:
           YAML
 
       - name: Run chart-testing (install)
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           ct install \
             --charts . \
@@ -184,7 +161,6 @@ jobs:
             --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} "
 
       - name: Capture ct release name
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         id: capture_release
         run: |
           command -v jq >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y jq
@@ -198,7 +174,6 @@ jobs:
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
 
       - name: Run helm uninstall
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
           helm uninstall "$rel" --namespace=test
@@ -206,7 +181,6 @@ jobs:
   test-sensor-to-autoscaler:
     runs-on: ubuntu-latest
     name: Test (Sensor to AutoScaler)
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -229,36 +203,10 @@ jobs:
       - name: Set up chart-testing
         uses: helm/chart-testing-action@v2.7.0
 
-      - name: Detect related PR
-        id: detect_pr
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          BRANCH: ${{ github.ref_name }}
-        run: |
-          set -e
-          owner_repo="$REPO"
-          # List open PRs whose head matches owner:branch
-            json=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
-              "https://api.github.com/repos/$owner_repo/pulls?state=open&head=${owner_repo%%/*}:$BRANCH")
-          count=$(echo "$json" | jq 'length')
-          if [ "$count" -gt 0 ]; then
-            # take first
-            draft=$(echo "$json" | jq '.[0].draft')
-            number=$(echo "$json" | jq '.[0].number')
-            echo "Found open PR #$number (draft=$draft)"
-            echo "has_pr=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "No open PR for branch $BRANCH"
-            echo "has_pr=false" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Create kind cluster
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
-        uses: helm/kind-action@v1.12.0
 
+        uses: helm/kind-action@v1.12.0
       - name: Apply fake EBS CSI resources
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           set -euo pipefail
           cat <<'YAML' | kubectl apply -f -
@@ -361,7 +309,6 @@ jobs:
           YAML
 
       - name: Run chart-testing (install)
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           ct install \
             --charts . \
@@ -372,7 +319,6 @@ jobs:
             --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=sensor "
 
       - name: Capture ct release name
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true'  }}
         id: capture_release
         run: |
           command -v jq >/dev/null 2>&1 || sudo apt-get update && sudo apt-get install -y jq
@@ -386,7 +332,6 @@ jobs:
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
 
       - name: Run Helm upgrade to AutoScaler
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           rel="${{ steps.capture_release.outputs.release_name }}"
           helm upgrade --install "$rel" --namespace=test . \
@@ -397,7 +342,6 @@ jobs:
             --set agent.mode=autoscaler
 
       - name: Run helm uninstall
-        if: ${{ steps.detect_pr.outputs.has_pr == 'true' }}
         run: |
           rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
           helm uninstall "$rel" --namespace=test || true
