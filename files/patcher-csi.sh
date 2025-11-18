@@ -95,10 +95,6 @@ EOF
     exit 1
   fi
 
-  if ! kubectl get daemonset -n "$K8S_CSI_NAMESPACE" ebs-csi-node > /dev/null 2>&1; then
-    return 0
-  fi
-
   if ! kubectl -n "$K8S_CSI_NAMESPACE" patch daemonset ebs-csi-node --type='json' -p="[$(
   DAEMONSET_JSON="$(kubectl -n "$K8S_CSI_NAMESPACE" get daemonset ebs-csi-node -o json | jq 'del(.metadata.annotations)')"
   DATAFY_VOLUME_INDEX=$(echo "$DAEMONSET_JSON" | jq '.spec.template.spec.volumes | map(.name == "run-datafy-dir") | index(true)');
@@ -225,7 +221,7 @@ EOF
 unpatch() {
   echo "unpatching..."
   if ! kubectl get daemonset -n "$K8S_CSI_NAMESPACE" ebs-csi-node > /dev/null 2>&1; then
-    return 0
+    exit 0
   fi
 
   if kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/null 2>&1; then
