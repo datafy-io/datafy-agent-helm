@@ -1,5 +1,4 @@
-{{- $mode := (include "datafy-agent.agentModeNormalized" . ) }}
-{{- if and .Values.ebsCsiProxy.enabled (eq $mode "autoscaler") }}
+{{- if .Values.ebsCsiProxy.enabled }}
 {{- $ctx := . }}
 {{- range $hook := list "post-install" "post-upgrade" "pre-delete" "post-rollback" }}
 ---
