@@ -29,12 +29,7 @@ use .Values.agent.image.tag if set,
 otherwise take the first version (before '_') from .Chart.AppVersion
 */}}
 {{- define "datafy-agent.agentImageTag" -}}
-{{- if .Values.agent.image.tag -}}
-{{- .Values.agent.image.tag -}}
-{{- else -}}
-{{- $parts := splitList "_" .Chart.AppVersion -}}
-{{- index $parts 0 -}}
-{{- end -}}
+{{- (default (split "_" .Chart.AppVersion)._2 .Values.agent.image.tag) -}}
 {{- end -}}
 
 {{/*
@@ -42,13 +37,8 @@ Return the ebsCsiProxy (k8s-csi-controller) image tag:
 use .Values.ebsCsiProxy.image.tag if set,
 otherwise take the first version (before '_') from .Chart.AppVersion
 */}}
-{{- define "datafy-agent.ebsCsiProxyImageTag" -}}
-{{- if .Values.ebsCsiProxy.image.tag -}}
-{{- .Values.ebsCsiProxy.image.tag -}}
-{{- else -}}
-{{- $parts := splitList "_" .Chart.AppVersion -}}
-v{{- index $parts 1 -}}
-{{- end -}}
+{{- define "datafy-agent.csiImageTag" -}}
+{{- (default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
 {{- end -}}
 
 {{/*
