@@ -1,7 +1,6 @@
 
 {{/*
-Return the full name of the release, using fullnameOverride if set,
-otherwise combine chart and release names (only if different)
+Return the full name of the release, using fullnameOverride if set
 */}}
 {{- define "datafy-agent.fullname" -}}
 {{- if and (hasKey .Values "fullnameOverride") (not (empty (default "" .Values.fullnameOverride))) }}
@@ -25,17 +24,13 @@ Return the chart name, using nameOverride if set, otherwise .Chart.Name
 
 {{/*
 Return the agent image tag:
-use .Values.agent.image.tag if set,
-otherwise take the first version (before '_') from .Chart.AppVersion
 */}}
 {{- define "datafy-agent.agentImageTag" -}}
 {{- (default (split "_" .Chart.AppVersion)._2 .Values.agent.image.tag) -}}
 {{- end -}}
 
 {{/*
-Return the ebsCsiProxy (k8s-csi-controller) image tag:
-use .Values.ebsCsiProxy.image.tag if set,
-otherwise take the first version (before '_') from .Chart.AppVersion
+Return the k8s-csi-controller) image tag:
 */}}
 {{- define "datafy-agent.ebsCsiProxyImageTag" -}}
 {{- (default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
@@ -45,8 +40,7 @@ otherwise take the first version (before '_') from .Chart.AppVersion
 Return selector labels for the app
 */}}
 {{- define "datafy-agent.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "datafy-agent.name" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app: datafy-agent
 {{- end -}}
 
 {{/*
@@ -84,7 +78,9 @@ helm.sh/chart: {{ include "datafy-agent.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/component: datafy-agent
-app.kubernetes.io/managed-by: {{ .Release.Service }}
+app: datafy-agent
+app.agent.version: {{ include "datafy-agent.agentImageTag" . }}
+app.agent.csi.version: {{ include "datafy-agent.ebsCsiProxyImageTag" . }}
 {{- end }}
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels }}
