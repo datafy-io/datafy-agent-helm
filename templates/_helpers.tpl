@@ -26,7 +26,7 @@ Return the chart name, using nameOverride if set, otherwise .Chart.Name
 Return the agent image tag:
 */}}
 {{- define "datafy-agent.agentImageTag" -}}
-{{- (default (split "_" .Chart.AppVersion)._2 .Values.agent.image.tag) -}}
+{{- (default (split "_" .Chart.AppVersion).0 .Values.agent.image.tag) -}}
 {{- end -}}
 
 {{/*
