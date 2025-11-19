@@ -37,7 +37,7 @@ Return the ebsCsiProxy (k8s-csi-controller) image tag:
 use .Values.ebsCsiProxy.image.tag if set,
 otherwise take the first version (before '_') from .Chart.AppVersion
 */}}
-{{- define "datafy-agent.csiImageTag" -}}
+{{- define "datafy-agent.ebsCsiProxyImageTag" -}}
 {{- (default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
 {{- end -}}
 
