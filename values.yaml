@@ -67,6 +67,9 @@ agent:
     ##
     imagePullSecrets: []
 
+controller:
+  serviceAccountName: datafy-controller-sa
+
 ebsCsiProxy:
   enabled: true
   namespace:
