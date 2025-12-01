@@ -77,7 +77,6 @@ controller:
 
 ebsCsiProxy:
   enabled: true
-  namespace:
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/ebs-csi-controller
