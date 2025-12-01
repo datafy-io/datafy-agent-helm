@@ -42,9 +42,6 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          envFrom:
-            - configMapRef:
-                name: datafy-agent-envvars
           env:
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
@@ -66,9 +63,6 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          envFrom:
-            - configMapRef:
-                name: datafy-agent-envvars
           env:
             {{- if (and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") .Values.ebsCsiProxy.enabled) }}
             - name: DATAFY_GRPC_ENABLED
