@@ -6,3 +6,14 @@ Agent Mode:    {{ include "datafy-agent.agentModeNormalized" . }}
 
 Namespace: {{ .Release.Namespace }}
 Release:   {{ .Release.Name }}
+
+{{- $csiNamespace := ( include "datafy-agent.ebsCsiNamespace" .) -}}
+{{- if eq $csiNamespace "" -}}
+WARNING: AWS EBS CSI driver was not detected in the cluster.
+To install it:
+  1. Follow AWS docs: https://docs.aws.amazon.com/eks/latest/userguide/ebs-csi.html
+  2. Or apply the addon (EKS):
+     eksctl create addon --name aws-ebs-csi-driver --cluster <cluster-name> --force
+  3. Verify:
+     kubectl get csidriver "ebs.csi.aws.com"
+{{- end -}}

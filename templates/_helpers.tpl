@@ -29,12 +29,24 @@ Normalized agent mode
 {{/*
 Determine the namespace for ebsCsiProxy: use release namespace if awsEbsCsiDriver.enabled, else .Values.ebsCsiProxy.namespace or "kube-system"
 */}}
-{{- define "datafy-agent.ebsCsiProxyNamespace" -}}
-    {{- if .Values.awsEbsCsiDriver.enabled }}
-        {{- .Release.Namespace -}}
-    {{- else }}
-        {{- .Values.ebsCsiProxy.namespace | default "kube-system" -}}
-    {{- end }}
+{{- define "datafy-agent.ebsCsiNamespace" -}}
+    {{- $driverName := "ebs.csi.aws.com" -}}
+    {{- $driverFound := or (not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName))) (not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName))) -}}
+    {{- $namespace := "" -}}
+    {{- if $driverFound }}
+        {{- $namespaces := lookup "v1" "Namespace" "" "" -}}
+        {{- if $namespaces }}
+            {{- range $ns := $namespaces.items }}
+                {{- if eq $namespace "" }}
+                    {{- $ds := lookup "apps/v1" "DaemonSet" $ns.metadata.name "ebs-csi-node" -}}
+                    {{- if $ds }}
+                        {{- $namespace = $ns.metadata.name -}}
+                    {{- end -}}
+                {{- end -}}
+            {{- end -}}
+        {{- end -}}
+    {{- end -}}
+    {{- $namespace -}}
 {{- end -}}
 
 {{/*

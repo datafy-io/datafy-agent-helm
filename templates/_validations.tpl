@@ -24,11 +24,11 @@
     {{- if not $hasExternalSecret }}
       {{ fail (printf "invalid value: external secret '%s' not found in namespace '%s'" .Values.agent.externalTokenSecret.name .Release.Namespace) }}
     {{- end }}
-    {{- $csiNamespace := (include "datafy-agent.ebsCsiProxyNamespace" . ) }}
-    {{- if ne .Release.Namespace $csiNamespace }}
-      {{- $hasCsiExternalSecret := lookup "v1" "Secret" $csiNamespace .Values.agent.externalTokenSecret.name }}
+    {{- $ebsCsiNamespace := (include "datafy-agent.ebsCsiNamespace" . ) }}
+    {{- if ne .Release.Namespace $ebsCsiNamespace }}
+      {{- $hasCsiExternalSecret := lookup "v1" "Secret" $ebsCsiNamespace .Values.agent.externalTokenSecret.name }}
       {{- if not $hasCsiExternalSecret }}
-        {{ fail (printf "invalid value: external secret '%s' not found in namespace '%s'" .Values.agent.externalTokenSecret.name $csiNamespace) }}
+        {{ fail (printf "invalid value: external secret '%s' not found in namespace '%s'" .Values.agent.externalTokenSecret.name $ebsCsiNamespace) }}
       {{- end }}
     {{- end }}
   {{- end }}
