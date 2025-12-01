@@ -71,6 +71,9 @@ agent:
     create: true
     name: datafy-agent-sa
 
+controller:
+  serviceAccountName: datafy-controller-sa
+
 ebsCsiProxy:
   enabled: true
   namespace:
