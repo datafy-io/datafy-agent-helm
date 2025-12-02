@@ -179,48 +179,6 @@ jobs:
             echo "Found release: $rel"
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
 
-      - name: Run helm uninstall
-        run: |
-          rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
-          helm uninstall "$rel" --namespace=test --no-hooks || true
-
-      - name: Debug - Print hook logs and status
-        if: always()
-        run: |
-          set +e
-          echo "=== Debugging uninstall hook issues ==="
-          echo ""
-          echo "--- Checking for patcher jobs ---"
-          kubectl get jobs -n test | grep -E "NAME|patcher" || echo "No patcher jobs found"
-          echo ""
-          echo "--- Getting logs from patcher jobs ---"
-          for job in $(kubectl get jobs -n test -o name 2>/dev/null | grep patcher || true); do
-            echo ""
-            echo "=== Logs for $job ==="
-            kubectl logs -n test $job --tail=200 || true
-            echo ""
-            echo "=== Job description for $job ==="
-            kubectl describe -n test $job || true
-            echo ""
-          done
-          echo ""
-          echo "--- Getting logs from patcher pods ---"
-          for pod in $(kubectl get pods -n test -o name 2>/dev/null | grep patcher || true); do
-            echo ""
-            echo "=== Logs for $pod ==="
-            kubectl logs -n test $pod --tail=200 || true
-            echo ""
-            echo "=== Pod description for $pod ==="
-            kubectl describe -n test $pod || true
-            echo ""
-          done
-          echo ""
-          echo "--- Recent events in test namespace ---"
-          kubectl get events -n test --sort-by='.lastTimestamp' | tail -30 || true
-          echo ""
-          echo "--- All jobs in test namespace ---"
-          kubectl get jobs -n test || true
-
   test-sensor-to-autoscaler:
     runs-on: ubuntu-latest
     name: Test (Sensor to AutoScaler)
@@ -389,9 +347,3 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.dsoUrl="wss://dso-stg.datafy.io" \
             --set agent.mode=autoscaler
-
-      - name: Run helm uninstall
-        run: |
-          rel="${{ steps.capture_release.outputs.release_name || 'datafy-agent' }}"
-          helm uninstall "$rel" --namespace=test || true
-
