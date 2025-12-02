@@ -2,7 +2,7 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "datafy-agent.fullname" . }}
+  name: datafy-agent
   namespace: {{ .Release.Namespace | quote }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
@@ -44,14 +44,14 @@ spec:
           {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ include "datafy-agent.fullname" . }}-cm
+                name:  datafy-agent-cm
           env:
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (printf "%s-token" (include "datafy-agent.fullname" .)) .Values.agent.externalTokenSecret.name }}
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
           resources:
             requests:
@@ -68,7 +68,7 @@ spec:
           {{- end }}
           envFrom:
             - configMapRef:
-                name: {{ include "datafy-agent.fullname" . }}-cm
+                name: datafy-agent-cm
           env:
             {{- if (and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") .Values.ebsCsiProxy.enabled) }}
             - name: DATAFY_GRPC_ENABLED
@@ -81,7 +81,7 @@ spec:
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ default (printf "%s-token" (include "datafy-agent.fullname" .)) .Values.agent.externalTokenSecret.name }}
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED

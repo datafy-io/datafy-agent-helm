@@ -1,27 +1,3 @@
-
-{{/*
-Return the full name of the release, using fullnameOverride if set
-*/}}
-{{- define "datafy-agent.fullname" -}}
-{{- if and (hasKey .Values "fullnameOverride") (not (empty (default "" .Values.fullnameOverride))) }}
-{{- default "" .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
-{{- else }}
-  {{- $name := include "datafy-agent.name" . -}}
-  {{- if eq $name .Release.Name }}
-    {{- $name | trunc 63 | trimSuffix "-" -}}
-  {{- else }}
-    {{- printf "%s-%s" $name .Release.Name | trunc 63 | trimSuffix "-" -}}
-  {{- end }}
-{{- end }}
-{{- end -}}
-
-{{/*
-Return the chart name, using nameOverride if set, otherwise .Chart.Name
-*/}}
-{{- define "datafy-agent.name" -}}
-{{- default .Chart.Name (default "" .Values.nameOverride) | trunc 63 | trimSuffix "-" -}}
-{{- end -}}
-
 {{/*
 Return the agent image tag:
 */}}
