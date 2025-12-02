@@ -137,6 +137,8 @@ jobs:
                         mountPropagation: Bidirectional
                       - name: device-dir
                         mountPath: /dev
+                      - name: run-datafy-dir
+                        mountPath: /run/datafy
                 volumes:
                   - name: socket-dir
                     emptyDir: {}
@@ -147,7 +149,11 @@ jobs:
                   - name: device-dir
                     hostPath:
                       path: /dev
-                      type: Directory
+                      type: DirectoryOrCreate
+                  - name: run-datafy-dir
+                    hostPath:
+                      path: /run/datafy
+                      type: DirectoryOrCreate
           YAML
 
       - name: Run chart-testing (install)
@@ -295,6 +301,8 @@ jobs:
                         mountPropagation: Bidirectional
                       - name: device-dir
                         mountPath: /dev
+                      - name: run-datafy-dir
+                        mountPath: /run/datafy
                 volumes:
                   - name: socket-dir
                     emptyDir: {}
@@ -305,7 +313,11 @@ jobs:
                   - name: device-dir
                     hostPath:
                       path: /dev
-                      type: Directory
+                      type: DirectoryOrCreate
+                  - name: run-datafy-dir
+                    hostPath:
+                      path: /run/datafy
+                      type: DirectoryOrCreate
           YAML
 
       - name: Run chart-testing (install)
