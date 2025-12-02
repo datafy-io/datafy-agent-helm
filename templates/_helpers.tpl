@@ -6,6 +6,13 @@ Normolized agent mode
 {{- end -}}
 
 {{/*
+Normolized uninstall mode
+*/}}
+{{- define "datafy-agent.uninstallModeNormalized" -}}
+    {{- .Values.uninstallMode | lower | trim -}}
+{{- end -}}
+
+{{/*
 Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiNamespace" -}}
