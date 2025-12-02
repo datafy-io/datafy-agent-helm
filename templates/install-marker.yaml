@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  # This ConfigMap indicates to the controller that the chart is installed.
+  # The controller should watch this ConfigMap for deletion.
+  # When Helm uninstalls the chart, this resource will be deleted, which
+  # should trigger the controller to edit its behavior accordingly.
+  name: datafy-install-marker
+  namespace: {{ .Release.Namespace }}
+  {{- with .Values.extraLabels }}
+  labels:
+  {{ toYaml . | nindent 4 }}
+  {{- end }}
+  annotations:
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
