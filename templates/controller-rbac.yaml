@@ -1,30 +1,72 @@
+{{- $roleName := "datafy-controller-role" -}}
+{{- $roleBindingName := "datafy-controller-binding" -}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: {{ .Values.controller.serviceAccountName }}
   namespace: {{ .Release.Namespace }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: datafy-controller-role
+  name: {{ $roleName }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
 rules:
   - apiGroups: [ "apps" ]
     resources: [ "deployments", "daemonsets" ]
-    resourceNames: [ "ebs-csi-controller", "ebs-csi-node" ]
+    resourceNames: [ "ebs-csi-controller", "ebs-csi-node", "datafy-controller" ]
     verbs: [ "get", "update", "patch" ]
-  - apiGroups: [ "apps" ]
-    resources: [ "deployments", "daemonsets" ]
+  - apiGroups: [ "", "apps" ]
+    resources: [ "configmaps", "deployments", "daemonsets" ]
     verbs: [ "list", "watch" ]
+  - apiGroups: [ "" ]
+    resources: [ "configmaps" ]
+    resourceNames: [ "datafy-install-marker" ]
+    verbs: [ "get", "list" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: datafy-controller-binding
+  name: {{ $roleBindingName }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: datafy-controller-role
+  name: {{ $roleName }}
 subjects:
   - kind: ServiceAccount
     name: {{ .Values.controller.serviceAccountName }}
