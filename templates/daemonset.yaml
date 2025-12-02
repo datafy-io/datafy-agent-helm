@@ -44,7 +44,7 @@ spec:
           {{- end }}
           envFrom:
             - configMapRef:
-                name:  datafy-agent-cm
+                name: datafy-agent-cm
           env:
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
