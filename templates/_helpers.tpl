@@ -1,12 +1,12 @@
 {{/*
-Return the agent image tag:
+agent image tag
 */}}
 {{- define "datafy-agent.agentImageTag" -}}
 {{- (default (split "_" .Chart.AppVersion)._0 .Values.agent.image.tag) -}}
 {{- end -}}
 
 {{/*
-Return the k8s-csi-controller) image tag:
+k8s-csi-controller image tag
 */}}
 {{- define "datafy-agent.ebsCsiProxyImageTag" -}}
 {{- (default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
@@ -27,7 +27,14 @@ Normalized agent mode
 {{- end -}}
 
 {{/*
-Determine the namespace for ebsCsiProxy: use release namespace if awsEbsCsiDriver.enabled, else .Values.ebsCsiProxy.namespace or "kube-system"
+Normolized uninstall mode
+*/}}
+{{- define "datafy-agent.uninstallModeNormalized" -}}
+    {{- .Values.uninstallMode | lower | trim -}}
+{{- end -}}
+
+{{/*
+Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiNamespace" -}}
     {{- $driverName := "ebs.csi.aws.com" -}}
@@ -69,7 +76,6 @@ app.kubernetes.io/component: datafy-agent
 app.kubernetes.io/managed-by: {{ .Release.Service }}
 app: datafy-agent
 app.agent.version: {{ include "datafy-agent.agentImageTag" . }}
-app.agent.csi.version: {{ include "datafy-agent.ebsCsiProxyImageTag" . }}
 {{- end }}
 {{- if .Values.extraLabels }}
 {{ toYaml .Values.extraLabels }}

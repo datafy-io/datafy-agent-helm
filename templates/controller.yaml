@@ -7,9 +7,17 @@ metadata:
   labels:
   {{ toYaml . | nindent 4 }}
   {{- end }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
   {{- with .Values.extraAnnotations }}
   annotations:
   {{- toYaml . | nindent 4 }}
+  {{- end }}
   {{- end }}
 spec:
   replicas: 1
@@ -27,13 +35,22 @@ spec:
           image: {{ printf "%s:%s" .Values.controller.image.repository .Values.controller.image.tag }}
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           env:
+            - name: TRANSPARENT_MODE_ENABLED
+              value: {{ false | quote }}
             - name: TOKEN_SECRET_NAME
               value: {{ default "datafy-token" .Values.agent.externalTokenSecret.name | quote }}
             - name: TOKEN_SECRET_KEY
               value: {{ default "token" .Values.agent.externalTokenSecret.key | quote }}
+            - name: TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
             - name: IAC_URL
               value: {{ .Values.ebsCsiProxy.iacUrl | default (.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
             - name: DATAFY_PROXY_IMAGE
               value: {{ printf "%s:%s" .Values.ebsCsiProxy.image.repository .Values.ebsCsiProxy.image.tag | quote }}
+            - name: UNINSTALL_MODE
+              value: {{ (include "datafy-agent.uninstallModeNormalized" . ) | quote }}
             - name: AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}

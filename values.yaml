@@ -74,6 +74,14 @@ agent:
     create: true
     name: datafy-agent-sa
 
+## @param uninstallMode The uninstall mode for the Helm chart
+## for the value to take effect, the chart must be re-installed/updated with the new value
+## Valid values:
+## - full: Will remove ALL Datafy resources on uninstall
+## - transparent: The controller will stay running in transparent mode until it is no longer needed
+##
+uninstallMode: transparent
+
 controller:
   serviceAccountName: datafy-controller-sa
 
