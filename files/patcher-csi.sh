@@ -219,7 +219,7 @@ EOF
 }
 
 unpatch() {
-
+  echo "unpatching..."
 
   if kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/null 2>&1; then
     kubectl -n "$K8S_CSI_NAMESPACE" patch deployment ebs-csi-controller --type='json' -p="[$(

@@ -54,6 +54,7 @@ helm.sh/chart: {{ include "datafy-agent.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/component: datafy-agent
+app.kubernetes.io/managed-by: {{ .Release.Service }}
 app: datafy-agent
 app.agent.version: {{ include "datafy-agent.agentImageTag" . }}
 app.agent.csi.version: {{ include "datafy-agent.ebsCsiProxyImageTag" . }}

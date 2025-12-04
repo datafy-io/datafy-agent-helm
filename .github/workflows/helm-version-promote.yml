@@ -1,4 +1,4 @@
-name: Update Helm Chart App Version
+name: Helm Chart App Version
 
 on:
   workflow_call:
