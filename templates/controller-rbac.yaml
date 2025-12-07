@@ -35,17 +35,17 @@ metadata:
   {{- end }}
   {{- end }}
 rules:
+  - apiGroups: [ "", "apps" ] # core API group (like configmaps) is ""
+    resources: [ "configmaps", "deployments", "daemonsets", ]
+    verbs: [ "list", "watch" ]
   - apiGroups: [ "apps" ]
     resources: [ "deployments", "daemonsets" ]
-    resourceNames: [ "ebs-csi-controller", "ebs-csi-node", "datafy-controller" ]
+    resourceNames: [ "ebs-csi-controller", "ebs-csi-node" ]
     verbs: [ "get", "update", "patch" ]
-  - apiGroups: [ "", "apps" ]
-    resources: [ "configmaps", "deployments", "daemonsets" ]
-    verbs: [ "list", "watch" ]
-  - apiGroups: [ "" ]
-    resources: [ "configmaps" ]
-    resourceNames: [ "datafy-install-marker" ]
-    verbs: [ "get", "list" ]
+  - apiGroups: [ "apps" ]
+    resources: [ "deployments"]
+    resourceNames: [ "datafy-controller" ]
+    verbs: [ "get", "update", "patch", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
