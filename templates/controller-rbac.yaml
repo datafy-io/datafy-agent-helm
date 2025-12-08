@@ -46,6 +46,10 @@ rules:
     resources: [ "deployments"]
     resourceNames: [ "datafy-controller" ]
     verbs: [ "get", "update", "patch", "delete" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets" ]
+    resourceNames: [ "datafy-token" ]
+    verbs: [ "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
