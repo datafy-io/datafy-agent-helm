@@ -35,6 +35,10 @@ spec:
           image: {{ printf "%s:%s" .Values.controller.image.repository .Values.controller.image.tag }}
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           env:
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
             - name: TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
             - name: TOKEN_SECRET_NAME
@@ -50,7 +54,5 @@ spec:
               value: {{ .Values.ebsCsiProxy.iacUrl | default (.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
             - name: DATAFY_PROXY_IMAGE
               value: {{ printf "%s:%s" .Values.ebsCsiProxy.image.repository .Values.ebsCsiProxy.image.tag | quote }}
-            - name: UNINSTALL_MODE
-              value: {{ (include "datafy-agent.uninstallModeNormalized" . ) | quote }}
             - name: AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
