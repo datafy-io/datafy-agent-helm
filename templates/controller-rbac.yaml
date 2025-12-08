@@ -36,7 +36,7 @@ metadata:
   {{- end }}
 rules:
   - apiGroups: [ "", "apps" ] # core API group (like configmaps) is ""
-    resources: [ "configmaps", "deployments", "daemonsets", ]
+    resources: [ "configmaps", "secrets", "deployments", "daemonsets",  ]
     verbs: [ "list", "watch" ]
   - apiGroups: [ "apps" ]
     resources: [ "deployments", "daemonsets" ]
@@ -49,10 +49,13 @@ rules:
   - apiGroups: [ "" ]
     resources: [ "secrets" ]
     resourceNames: [ "datafy-token" ]
-    verbs: [ "get", "update", "patch", "delete", "create" ]
-{{/*  - apiGroups: [ "" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.*/}}
-{{/*    resources: [ "secrets" ]*/}}
-{{/*    verbs: [ "create" ]*/}}
+    verbs: [ "get", "update", "patch", "delete" ]
+  - apiGroups: [ "" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
+    resources: [ "secrets" ]
+    verbs: [ "create" ]
+  - apiGroups: [ "datafy.io" ]
+    resources: [ "resourceanchors" ]
+    verbs: [ "list", "watch", "get" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
