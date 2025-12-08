@@ -74,6 +74,10 @@ agent:
     ##
     imagePullSecrets: []
 
+  serviceAccount:
+    create: true
+    name: datafy-agent-sa
+
 ebsCsiProxy:
   enabled: true
   namespace:
