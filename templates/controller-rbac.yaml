@@ -49,7 +49,10 @@ rules:
   - apiGroups: [ "" ]
     resources: [ "secrets" ]
     resourceNames: [ "datafy-token" ]
-    verbs: [ "delete" ]
+    verbs: [ "get", "update", "patch", "delete", "create" ]
+{{/*  - apiGroups: [ "" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.*/}}
+{{/*    resources: [ "secrets" ]*/}}
+{{/*    verbs: [ "create" ]*/}}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
