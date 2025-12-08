@@ -39,6 +39,8 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            - name: TOKEN_SYNC_ENABLED
+              value: {{ ternary true false (not (empty .Values.agent.token)) | quote }}
             - name: TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
             - name: TOKEN_SECRET_NAME
