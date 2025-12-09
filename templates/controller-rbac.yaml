@@ -47,15 +47,15 @@ rules:
     resourceNames: [ "datafy-controller" ]
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
-    resources: [ "secrets" ]
-    resourceNames: [ "datafy-token" ]
+    resources: [ "secrets", "configmaps" ]
+    resourceNames: [ "datafy-token", "datafy-volume-mapping" ]
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
-    resources: [ "secrets" ]
+    resources: [ "secrets", "configmaps" ]
     verbs: [ "create" ]
   - apiGroups: [ "datafy.io" ]
     resources: [ "resourceanchors" ]
-    verbs: [ "list", "watch", "get" ]
+    verbs: [ "list", "watch", "get", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
