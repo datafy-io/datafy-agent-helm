@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: datafy-volume-mapping
+  name: datafy-volume-replacements
   namespace: {{ .Release.Namespace }}
   {{- with .Values.extraLabels }}
   labels:
@@ -11,3 +11,5 @@ metadata:
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
   {{- end }}
+data:
+  replacements: ""
