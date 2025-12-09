@@ -96,9 +96,9 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
-      {{- if .Values.agent.image.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- range .Values.agent.image.imagePullSecrets }}
+        {{- range .Values.imagePullSecrets }}
         - name: {{ . }}
         {{ end }}
       {{- end }}

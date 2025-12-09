@@ -30,6 +30,12 @@ spec:
       serviceAccountName: {{ .Values.controller.serviceAccountName }}
       priorityClassName: system-node-critical
       schedulerName: default-scheduler
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.imagePullSecrets }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
       containers:
         - name: controller
           image: {{ printf "%s:%s" .Values.controller.image.repository .Values.controller.image.tag }}
