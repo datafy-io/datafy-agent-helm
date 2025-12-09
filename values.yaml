@@ -106,7 +106,6 @@ controller:
     runAsUser: 1001
 
 ebsCsiProxy:
-  enabled: true
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/ebs-csi-controller
