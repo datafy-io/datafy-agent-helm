@@ -5,6 +5,15 @@ extraLabels: {}
 ##
 extraAnnotations: {}
 
+## Optionally specify an array of imagePullSecrets used by all pods in this chart.
+## Secrets must be manually created in the namespace.
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+## e.g:
+## imagePullSecrets:
+##   - myRegistryKeySecretName
+##
+imagePullSecrets: []
+
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
 ## @param agent.env Environment variables to add to datafy-agent daemon set
@@ -58,15 +67,6 @@ agent:
     repository: public.ecr.aws/datafy-io/datafy-agent
     tag: latest
 
-    ## Optionally specify an array of imagePullSecrets.
-    ## Secrets must be manually created in the namespace.
-    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-    ## e.g:
-    ## imagePullSecrets:
-    ##   - myRegistryKeySecretName
-    ##
-    imagePullSecrets: []
-
   serviceAccount:
     create: true
     name: datafy-agent-sa
@@ -86,6 +86,24 @@ controller:
     pullPolicy: Always
     repository: public.ecr.aws/datafy-io/datafy-controller
     tag: latest
+
+  ## @param controller.affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ##
+  affinity:
+  ## @param controller.nodeSelector Node labels for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  ##
+  nodeSelector: {}
+  ## @param controller.tolerations Tolerations for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations:
+    - operator: "Exists"
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
 
 ebsCsiProxy:
   enabled: true
