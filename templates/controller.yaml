@@ -58,3 +58,8 @@ spec:
               value: {{ printf "%s:%s" .Values.ebsCsiProxy.image.repository .Values.ebsCsiProxy.image.tag | quote }}
             - name: AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
+            - name: VOLUME_REPLACEMENTS
+              valueFrom:
+                configMapKeyRef:
+                  name: datafy-volume-replacements
+                  key: replacements

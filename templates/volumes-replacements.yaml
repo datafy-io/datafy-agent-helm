@@ -11,3 +11,5 @@ metadata:
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
   {{- end }}
+data:
+  replacements: ""

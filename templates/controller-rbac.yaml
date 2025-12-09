@@ -36,7 +36,7 @@ metadata:
   {{- end }}
 rules:
   - apiGroups: [ "", "apps" ] # core API group (like configmaps) is ""
-    resources: [ "configmaps", "secrets", "deployments", "daemonsets",  ]
+    resources: [ "configmaps", "secrets", "deployments", "daemonsets", "persistentvolumes" ]
     verbs: [ "list", "watch" ]
   - apiGroups: [ "apps" ]
     resources: [ "deployments", "daemonsets" ]
