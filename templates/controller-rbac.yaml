@@ -36,7 +36,7 @@ metadata:
   {{- end }}
 rules:
   - apiGroups: [ "", "apps" ] # core API group (like configmaps) is ""
-    resources: [ "configmaps", "secrets", "deployments", "daemonsets",  ]
+    resources: [ "configmaps", "secrets", "deployments", "daemonsets", "persistentvolumes" ]
     verbs: [ "list", "watch" ]
   - apiGroups: [ "apps" ]
     resources: [ "deployments", "daemonsets" ]
@@ -48,7 +48,7 @@ rules:
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "secrets", "configmaps" ]
-    resourceNames: [ "datafy-token", "datafy-volume-mapping" ]
+    resourceNames: [ "datafy-token", "datafy-volume-replacements" ]
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
     resources: [ "secrets", "configmaps" ]
