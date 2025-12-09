@@ -55,7 +55,7 @@ rules:
     verbs: [ "create" ]
   - apiGroups: [ "datafy.io" ]
     resources: [ "resourceanchors" ]
-    verbs: [ "list", "watch", "get" ]
+    verbs: [ "list", "watch", "get", "delete" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
