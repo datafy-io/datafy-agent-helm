@@ -22,7 +22,6 @@ agent:
   token:
   mode: AutoScaler
   dsoUrl: wss://dso.datafy.io
-  env: { }
 
   ## @param agent.externalTokenSecret.name The name of an existing secret that contains the token
   ## @param agent.externalTokenSecret.key The key in the secret that contains the token
