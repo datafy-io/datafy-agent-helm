@@ -64,7 +64,7 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
-            {{- if (and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") .Values.ebsCsiProxy.enabled) }}
+            {{- if (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") }}
             - name: DATAFY_GRPC_ENABLED
               value: "true"
             {{- end }}
@@ -96,9 +96,9 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
-      {{- if .Values.agent.image.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- range .Values.agent.image.imagePullSecrets }}
+        {{- range .Values.imagePullSecrets }}
         - name: {{ . }}
         {{ end }}
       {{- end }}
