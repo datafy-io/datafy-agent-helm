@@ -3,10 +3,8 @@ kind: Deployment
 metadata:
   name: datafy-controller
   namespace: {{ .Release.Namespace }}
-  {{- with .Values.extraLabels }}
   labels:
-  {{ toYaml . | nindent 4 }}
-  {{- end }}
+  {{- include "datafy-agent.labels" . | nindent 4 }}
   {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
@@ -22,14 +20,19 @@ metadata:
 spec:
   replicas: {{ .Values.controller.replicas }}
   selector:
-    matchLabels: { app.kubernetes.io/name: datafy-controller }
+    matchLabels:
+      app.kubernetes.io/name: datafy-controller
   template:
     metadata:
-      labels: { app.kubernetes.io/name: datafy-controller }
+      labels:
+        app.kubernetes.io/name: datafy-controller
+      annotations:
+        checksum/controller-config: {{ include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.controller.serviceAccountName }}
       priorityClassName: system-node-critical
       schedulerName: default-scheduler
+      restartPolicy: Always
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- range .Values.imagePullSecrets }}
@@ -57,31 +60,44 @@ spec:
             {{- toYaml .Values.controller.securityContext | nindent 12 }}
           {{- end }}
           env:
-            - name: NAMESPACE
+            - name: DATAFY_NAMESPACE
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: TOKEN_SYNC_ENABLED
+            - name: DATAFY_TOKEN_SYNC_ENABLED
               value: {{ ternary true false (not (empty .Values.agent.token)) | quote }}
-            - name: TRANSPARENT_MODE_ENABLED
+            - name: DATAFY_TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
-            - name: TOKEN_SECRET_NAME
+            - name: DATAFY_TOKEN_SECRET_NAME
               value: {{ default "datafy-token" .Values.agent.externalTokenSecret.name | quote }}
-            - name: TOKEN_SECRET_KEY
+            - name: DATAFY_TOKEN_SECRET_KEY
               value: {{ default "token" .Values.agent.externalTokenSecret.key | quote }}
-            - name: TOKEN
+            - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
-            - name: IAC_URL
+            - name: DATAFY_IAC_URL
               value: {{ .Values.ebsCsiProxy.iacUrl | default (.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
-            - name: DATAFY_PROXY_IMAGE
-              value: {{ printf "%s:%s" .Values.ebsCsiProxy.image.repository .Values.ebsCsiProxy.image.tag | quote }}
-            - name: AGENT_MODE
+            - name: DATAFY_AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
-            - name: VOLUME_REPLACEMENTS
+            - name: DATAFY_VOLUME_REPLACEMENTS
               valueFrom:
                 configMapKeyRef:
                   name: datafy-volume-replacements
                   key: replacements
+            - name: DATAFY_CONFIG_FILE_PATH
+              value: /etc/datafy-controller/config.yaml
+          resources:
+            requests:
+              cpu: 10m
+              memory: 40Mi
+          volumeMounts:
+            - name: datafy-controller-config
+              mountPath: /etc/datafy-controller
+              readOnly: true
+      volumes:
+        - name: datafy-controller-config
+          configMap:
+            name: datafy-controller-config
+

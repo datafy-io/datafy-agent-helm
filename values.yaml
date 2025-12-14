@@ -113,3 +113,17 @@ ebsCsiProxy:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/ebs-csi-controller
     tag:
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 10m
+      memory: 40Mi
+
+  livenessProbe:
+  readinessProbe:
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+    successThreshold: 1

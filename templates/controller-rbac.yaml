@@ -5,6 +5,8 @@ kind: ServiceAccount
 metadata:
   name: {{ .Values.controller.serviceAccountName }}
   namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
   {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
@@ -22,6 +24,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   name: {{ $roleName }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
   {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
@@ -48,7 +52,7 @@ rules:
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "secrets", "configmaps" ]
-    resourceNames: [ "datafy-token", "datafy-volume-replacements" ]
+    resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config" ]
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "", "coordination.k8s.io" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
     resources: [ "secrets", "configmaps", "leases" ]
@@ -68,6 +72,8 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
   name: {{ $roleBindingName }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
   {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
