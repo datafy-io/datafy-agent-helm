@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-informational?style=flat-square) ![AppVersion: 1.31.8_0.3.1](https://img.shields.io/badge/AppVersion-1.31.8_0.3.1-informational?style=flat-square)
+![Version: 2.0.0](https://img.shields.io/badge/Version-2.0.0-informational?style=flat-square) ![AppVersion: 1.31.15_1.1.0](https://img.shields.io/badge/AppVersion-1.31.15_1.1.0-informational?style=flat-square)
 
 **App Version:**
 
-1.31.8_0.3.1
+1.31.15_1.1.0
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -93,6 +93,8 @@ helm uninstall datafy-agent --namespace <namespace>
 | agent.securityContext.privileged | bool | `true` |  |
 | agent.securityContext.runAsGroup | int | `1000` |  |
 | agent.securityContext.runAsUser | int | `1000` |  |
+| agent.serviceAccount.create | bool | `true` |  |
+| agent.serviceAccount.name | string | `"datafy-agent-sa"` |  |
 | agent.token | string | `nil` |  |
 | agent.tolerations[0].operator | string | `"Exists"` |  |
 | awsEbsCsiDriver.enabled | bool | `false` |  |
