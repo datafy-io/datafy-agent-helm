@@ -13,11 +13,11 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app: datafy-agent
+      {{- include "datafy-agent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app: datafy-agent
+        {{- include "datafy-agent.selectorLabels" . | nindent 8 }}
         {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
       {{- if .Values.agent.affinity }}
@@ -36,7 +36,7 @@ spec:
         {{- if $enableCore }}
         - name: core
           args: [ core ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
+          image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
@@ -44,7 +44,7 @@ spec:
           {{- end }}
           envFrom:
             - configMapRef:
-                name: datafy-agent-envvars
+                name: datafy-agent-cm
           env:
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
@@ -60,7 +60,7 @@ spec:
         {{- end }}
         - name: shell
           args: [ shell ]
-          image: {{ printf "%s:%s" .Values.agent.image.repository .Values.agent.image.tag }}
+          image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- with .Values.agent.securityContext }}
           securityContext:
@@ -68,7 +68,7 @@ spec:
           {{- end }}
           envFrom:
             - configMapRef:
-                name: datafy-agent-envvars
+                name: datafy-agent-cm
           env:
             {{- if (and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") .Values.ebsCsiProxy.enabled) }}
             - name: DATAFY_GRPC_ENABLED

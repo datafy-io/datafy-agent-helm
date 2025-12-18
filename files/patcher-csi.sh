@@ -220,6 +220,7 @@ EOF
 
 unpatch() {
   echo "unpatching..."
+
   if kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/null 2>&1; then
     kubectl -n "$K8S_CSI_NAMESPACE" patch deployment ebs-csi-controller --type='json' -p="[$(
       DAEMONSET_JSON="$(kubectl -n "$K8S_CSI_NAMESPACE" get deployment ebs-csi-controller -o json | jq 'del(.metadata.annotations)')"
@@ -274,7 +275,11 @@ EOF
   fi
 }
 
+AGENT_MODE=$(echo "${AGENT_MODE}" | tr '[:upper:]' '[:lower:]')
 if ! kubectl get deployment -n "$K8S_CSI_NAMESPACE" ebs-csi-controller > /dev/null 2>&1 || ! kubectl get daemonset -n "$K8S_CSI_NAMESPACE" ebs-csi-node > /dev/null 2>&1; then
+  if [ "$AGENT_MODE" = "sensor" ]; then
+    exit 0
+  fi
   echo "Error: EBS CSI driver is not installed." >&2
   exit 1
 fi
@@ -282,7 +287,7 @@ fi
 env
 
 case "$HOOK_EVENT" in
-  post-install|post-upgrade)
+  post-install|post-upgrade|post-rollback)
     AGENT_MODE=$(echo "${AGENT_MODE}" | tr '[:upper:]' '[:lower:]')
     case "$AGENT_MODE" in
       sensor) unpatch ;;
