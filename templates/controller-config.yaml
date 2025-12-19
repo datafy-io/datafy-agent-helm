@@ -22,6 +22,9 @@ data:
     csi_proxy:
       {{- with .Values.ebsCsiProxy.image }}
       image:
+        pullPolicy: {{ .pullPolicy }}
+        repository: {{ .repository }}
+        tag: {{ include "datafy-agent.ebsCsiProxyImageTag" . }}
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.ebsCsiProxy.livenessProbe }}
@@ -32,7 +35,6 @@ data:
       readinessProbe:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
       {{- with .Values.ebsCsiProxy.resources }}
       resources:
         {{- toYaml . | nindent 8 }}
