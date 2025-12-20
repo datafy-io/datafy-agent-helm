@@ -86,9 +86,9 @@ controller:
   replicas: 2
 
   image:
-    pullPolicy: Always
+    pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/datafy-controller
-    tag: latest
+    tag:
 
   ## @param controller.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity

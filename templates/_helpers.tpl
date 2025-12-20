@@ -13,6 +13,13 @@ k8s-csi-controller image tag
 {{- end -}}
 
 {{/*
+datafy-contorller image tag
+*/}}
+{{- define "datafy-agent.controllerImageTag" -}}
+{{- (default (split "_" .Chart.AppVersion)._2 .Values.controller.image.tag) -}}
+{{- end -}}
+
+{{/*
 Return selector labels for the app
 */}}
 {{- define "datafy-agent.selectorLabels" -}}

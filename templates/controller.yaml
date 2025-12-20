@@ -53,7 +53,7 @@ spec:
       {{- end }}
       containers:
         - name: controller
-          image: {{ printf "%s:%s" .Values.controller.image.repository .Values.controller.image.tag }}
+          image: "{{ .Values.controller.image.repository }}:{{ include "datafy-agent.controllerImageTag" . }}"
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- if .Values.controller.securityContext }}
           securityContext:
