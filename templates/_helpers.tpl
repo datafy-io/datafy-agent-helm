@@ -9,7 +9,7 @@ agent image tag
 k8s-csi-controller image tag
 */}}
 {{- define "datafy-agent.ebsCsiProxyImageTag" -}}
-{{- (default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
+{{- (default v(split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
 {{- end -}}
 
 {{/*
@@ -37,7 +37,7 @@ Normalized agent mode
 Normolized uninstall mode
 */}}
 {{- define "datafy-agent.uninstallModeNormalized" -}}
-    {{- .Values.uninstallMode | lower | trim -}}
+    {{- (default "transparent" .Values.uninstallMode) | lower | trim -}}
 {{- end -}}
 
 {{/*

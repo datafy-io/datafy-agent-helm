@@ -24,8 +24,7 @@ data:
       image:
         pullPolicy: {{ .pullPolicy }}
         repository: {{ .repository }}
-        tag: {{ include "datafy-agent.ebsCsiProxyImageTag" . }}
-        {{- toYaml . | nindent 8 }}
+        tag: {{ include "datafy-agent.ebsCsiProxyImageTag" $ }}
       {{- end }}
       {{- with .Values.ebsCsiProxy.livenessProbe }}
       livenessProbe:
