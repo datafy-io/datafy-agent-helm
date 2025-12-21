@@ -1,6 +1,6 @@
 apiVersion: v2
 name: datafy-agent
-version: 2.0.0
+version: 2.0.1
 appVersion: 1.31.15_1.1.0
 home: https://datafy.io
 maintainers:
