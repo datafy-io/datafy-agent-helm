@@ -36,5 +36,5 @@ jobs:
           CHART_VERSION=$(yq '.version' Chart.yaml)
           EBS_CSI_DRIVER_VERSION=$(yq '.dependencies[] | select(.name == "aws-ebs-csi-driver") | .version' Chart.yaml)
           echo "📦 Packaging base chart..."
-          helm package --version "${CHART_VERSION}+ebscsi.${EBS_CSI_DRIVER_VERSION}" .
-          helm s3 push "datafy-agent-${CHART_VERSION}+ebscsi.${EBS_CSI_DRIVER_VERSION}.tgz" datafyio-s3 --relative
+          helm package --version "${CHART_VERSION}" .
+          helm s3 push "datafy-agent-${CHART_VERSION}.tgz" datafyio-s3 --relative
