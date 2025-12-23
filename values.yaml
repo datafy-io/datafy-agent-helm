@@ -1,13 +1,18 @@
-## @param awsEbsCsiDriver.enabled to install aws-ebs-csi-driver chart as well
-awsEbsCsiDriver:
-  enabled: false
-
 ## @param extraLabels Labels to add to all deployed objects
 ##
 extraLabels: {}
 ## @param extraAnnotations Annotations to add to all deployed objects
 ##
 extraAnnotations: {}
+
+## Optionally specify an array of imagePullSecrets used by all pods in this chart.
+## Secrets must be manually created in the namespace.
+## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+## e.g:
+## imagePullSecrets:
+##   - myRegistryKeySecretName
+##
+imagePullSecrets: []
 
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
@@ -17,7 +22,6 @@ agent:
   token:
   mode: AutoScaler
   dsoUrl: wss://dso.datafy.io
-  env: {}
 
   ## @param agent.externalTokenSecret.name The name of an existing secret that contains the token
   ## @param agent.externalTokenSecret.key The key in the secret that contains the token
@@ -65,23 +69,53 @@ agent:
     repository: public.ecr.aws/datafy-io/datafy-agent
     tag:
 
-    ## Optionally specify an array of imagePullSecrets.
-    ## Secrets must be manually created in the namespace.
-    ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-    ## e.g:
-    ## imagePullSecrets:
-    ##   - myRegistryKeySecretName
-    ##
-    imagePullSecrets: []
-
   serviceAccount:
     create: true
     name: datafy-agent-sa
 
+controller:
+  serviceAccountName: datafy-controller-sa
+  replicas: 2
+
+  image:
+    pullPolicy: IfNotPresent
+    repository: public.ecr.aws/datafy-io/datafy-controller
+    tag:
+
+  ## @param controller.affinity Affinity for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  ##
+  affinity:
+  ## @param controller.nodeSelector Node labels for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
+  ##
+  nodeSelector: {}
+  ## @param controller.tolerations Tolerations for pod assignment
+  ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  ##
+  tolerations:
+    - operator: "Exists"
+
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1001
+
 ebsCsiProxy:
-  enabled: true
-  namespace:
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/ebs-csi-controller
     tag:
+
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 10m
+      memory: 40Mi
+
+  livenessProbe:
+  readinessProbe:
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 5
+    successThreshold: 1

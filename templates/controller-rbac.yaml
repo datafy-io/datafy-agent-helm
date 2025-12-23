@@ -1,0 +1,96 @@
+{{- $roleName := "datafy-controller-role" -}}
+{{- $roleBindingName := "datafy-controller-binding" -}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Values.controller.serviceAccountName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $roleName }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+rules:
+  - apiGroups: [ "", "apps", "coordination.k8s.io" ] # core API group (like configmaps) is ""
+    resources: [ "configmaps", "secrets", "leases", "deployments", "daemonsets", "persistentvolumes" ]
+    verbs: [ "list", "watch" ]
+  - apiGroups: [ "apps" ]
+    resources: [ "deployments", "daemonsets" ]
+    resourceNames: [ "ebs-csi-controller", "ebs-csi-node" ]
+    verbs: [ "get", "update", "patch" ]
+  - apiGroups: [ "apps" ]
+    resources: [ "deployments"]
+    resourceNames: [ "datafy-controller" ]
+    verbs: [ "get", "update", "patch", "delete" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets", "configmaps" ]
+    resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config" ]
+    verbs: [ "get", "update", "patch", "delete" ]
+  - apiGroups: [ "", "coordination.k8s.io" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
+    resources: [ "secrets", "configmaps", "leases" ]
+    verbs: [ "create" ]
+  - apiGroups: [ "datafy.io" ]
+    resources: [ "resourceanchors" ]
+    verbs: [ "list", "watch", "get", "delete" ]
+  - apiGroups: [ "coordination.k8s.io" ]
+    resources: [ "leases" ]
+    resourceNames: [ "datafy-controller-leader" ]
+    verbs: [ "get", "update", "patch", "delete" ]
+  - apiGroups: [ "", "events.k8s.io" ]
+    resources: [ "events" ]
+    verbs: [ "create", "patch", "update" ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $roleBindingName }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $roleName }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Values.controller.serviceAccountName }}
+    namespace: {{ .Release.Namespace }}

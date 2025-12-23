@@ -7,6 +7,10 @@ on:
         description: "New agent version (optional)"
         required: false
         type: string
+      controller_version:
+        description: "New controller version (optional)"
+        required: false
+        type: string
       csi_version:
         description: "New CSI proxy version (optional)"
         required: false
@@ -38,14 +42,17 @@ jobs:
           current="${{ steps.read_version.outputs.current }}"
           agent="${{ inputs.agent_version }}"
           csi="${{ inputs.csi_version }}"
+          controller="${{ inputs.controller_version }}"
 
           agent_part=$(echo "$current" | cut -d'_' -f1)
           csi_part=$(echo "$current" | cut -d'_' -f2)
+          controller_part=$(echo "$current" | cut -d'_' -f3)
 
           if [ -n "$agent" ]; then agent_part="$agent"; fi
           if [ -n "$csi" ]; then csi_part="$csi"; fi
+          if [ -n "$controller" ]; then controller_part="$controller"; fi
 
-          new="${agent_part}_${csi_part}"
+          new="${agent_part}_${csi_part}_${controller_part}"
           echo "new=$new" >> $GITHUB_OUTPUT
           echo "$new"
 
