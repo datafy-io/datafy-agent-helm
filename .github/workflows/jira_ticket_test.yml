@@ -5,18 +5,4 @@ on:
 
 jobs:
   test_jira_ticket:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    steps:
-      - name: ignore-dependabot
-        if: ${{ startsWith(github.head_ref, 'dependabot-') }}
-        run: |
-
-      - name: check-jira-ticket
-        if: ${{ !startsWith(github.head_ref, 'dependabot-') }}
-        run: |
-          pr_name="${{ github.event.pull_request.title }}"
-          if ! [[ $pr_name == *"DT-"* ]]; then
-            echo "Pull request doesn't contain Jira ticket"
-            exit 1
-          fi
+    uses: datafy-io/devops_tools/.github/workflows/test_jira_id_in_pr.yml@avner/DT-6431-support-for-2-jira-tickets-in-pr
