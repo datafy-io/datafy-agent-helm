@@ -9,8 +9,7 @@ agent image tag
 k8s-csi-controller image tag
 */}}
 {{- define "datafy-agent.ebsCsiProxyImageTag" -}}
-{{- (default v(split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
-{{- end -}}
+{{- (default (printf "v%s" (split "_" .Chart.AppVersion)._1) .Values.ebsCsiProxy.image.tag) -}}{{- end -}}
 
 {{/*
 datafy-contorller image tag
