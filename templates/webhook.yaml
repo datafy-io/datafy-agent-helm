@@ -82,6 +82,17 @@ webhooks:
         operations: [ "CREATE", "UPDATE" ]
         resources: [ "pods" ]
         scope: "*"
+    objectSelector:
+      matchExpressions:
+        - key: "app.kubernetes.io/name"
+          operator: In
+          values:
+            - "aws-ebs-csi-driver"
+        - key: "app"
+          operator: In
+          values:
+            - "ebs-csi-node"
+            - "ebs-csi-controller"
     clientConfig:
       service:
         namespace: {{ .Release.Namespace }}
