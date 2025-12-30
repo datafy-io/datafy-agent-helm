@@ -28,6 +28,7 @@ spec:
         app.kubernetes.io/name: datafy-controller
       annotations:
         checksum/controller-config: {{ include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum }}
+        checksum/controller-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.controller.serviceAccountName }}
       priorityClassName: system-node-critical
@@ -111,3 +112,30 @@ spec:
         - name: datafy-controller-webhook-tls
           secret:
             secretName: datafy-controller-webhook-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datafy-controller-webhook
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  selector:
+    app.kubernetes.io/name: datafy-controller
+  ports:
+    - name: https
+      port: 443
+      targetPort: 9443
