@@ -88,34 +88,26 @@ spec:
                   key: replacements
             - name: DATAFY_CONFIG_FILE
               value: /etc/datafy-controller/config.yaml
-            - name: DATAFY_WEBHOOK_ENABLED
-              value: {{ .Values.controller.webhook.enabled | quote }}
             - name: DATAFY_WEBHOOK_CERT_DIR
               value: /etc/datafy-controller/tls
-            - name: DATAFY_WEBHOOK_PORT
-              value: {{ .Values.controller.webhook.port | quote }}
           resources:
             requests:
               cpu: 10m
               memory: 40Mi
           ports:
             - name: webhook
-              containerPort: {{ .Values.controller.webhook.port }}
+              containerPort: 9443
           volumeMounts:
             - name: datafy-controller-config
               mountPath: /etc/datafy-controller
               readOnly: true
-            {{- if .Values.controller.webhook.enabled }}
             - name: datafy-controller-webhook-tls
               mountPath: /etc/datafy-controller/tls
               readOnly: true
-            {{- end }}
       volumes:
         - name: datafy-controller-config
           configMap:
             name: datafy-controller-config
-        {{- if .Values.controller.webhook.enabled }}
         - name: datafy-controller-webhook-tls
           secret:
             secretName: datafy-controller-webhook-tls
-        {{- end }}
