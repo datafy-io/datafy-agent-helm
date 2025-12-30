@@ -1,0 +1,99 @@
+{{- if .Values.controller.webhook.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: datafy-controller-webhook
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  selector:
+    app.kubernetes.io/name: datafy-controller
+  ports:
+    - name: https
+      port: 443
+      targetPort: 9443
+---
+{{- $host := printf "datafy-controller-webhook.%s.svc" .Release.Namespace }}
+{{- $ca := genSelfSignedCert $host (list) (list $host) 365 }}
+kind: Secret
+apiVersion: v1
+metadata:
+  name: datafy-controller-webhook-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ b64enc (trim $ca.Cert) }}
+  tls.key: {{ b64enc (trim $ca.Key) }}
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: datafy-controller-webhook
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+webhooks:
+  - name: controller.datafy.io
+    admissionReviewVersions: [ "v1" ]
+    sideEffects: None
+    failurePolicy: Ignore
+    timeoutSeconds: 5
+    matchPolicy: Equivalent
+    rules:
+      - apiGroups: [ "apps" ]
+        apiVersions: [ "v1" ]
+        operations: [ "CREATE", "UPDATE" ]
+        resources: [ "pods" ]
+        scope: Namespaced
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: In
+          values:
+            - kube-system
+    clientConfig:
+      service:
+        namespace: {{ .Release.Namespace }}
+        name: datafy-controller-webhook
+        path: /mutate-v1-pods
+        port: 443
+      caBundle: {{ b64enc (trim $ca.Cert) }}
+{{- end }}

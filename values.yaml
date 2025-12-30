@@ -77,6 +77,10 @@ controller:
   serviceAccountName: datafy-controller-sa
   replicas: 2
 
+  webhook:
+    enabled: true
+    port: 9443
+
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/datafy-controller
