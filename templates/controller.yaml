@@ -1,3 +1,4 @@
+{{- $configChecksum := include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +28,7 @@ spec:
       labels:
         app.kubernetes.io/name: datafy-controller
       annotations:
-        checksum/controller-config: {{ include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum }}
+        checksum/controller-config: {{ $configChecksum }}
         checksum/controller-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
     spec:
       serviceAccountName: {{ .Values.controller.serviceAccountName }}
@@ -89,6 +90,8 @@ spec:
                   key: replacements
             - name: DATAFY_CONFIG_FILE
               value: /etc/datafy-controller/config.yaml
+            - name: DATAFY_CONFIG_CHECKSUM
+              value: {{ $configChecksum | quote }}
             - name: DATAFY_WEBHOOK_CERT_DIR
               value: /etc/datafy-controller/tls
           resources:
