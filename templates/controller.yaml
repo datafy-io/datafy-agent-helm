@@ -1,4 +1,5 @@
 {{- $configChecksum := include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum}}
+{{- $datafyTokenChecksum := include (print $.Template.BasePath "/datafy-token.yaml") . | sha256sum }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -29,7 +30,7 @@ spec:
         app.kubernetes.io/name: datafy-controller
       annotations:
         checksum/controller-config: {{ $configChecksum }}
-        checksum/controller-secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        checksum/datafy-token-secret: {{ $datafyTokenChecksum }}
     spec:
       serviceAccountName: {{ .Values.controller.serviceAccountName }}
       priorityClassName: system-node-critical

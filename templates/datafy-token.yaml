@@ -1,0 +1,24 @@
+{{- if .Values.agent.token }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: datafy-token
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+type: Opaque
+data:
+  token: {{ .Values.agent.token | b64enc | quote }}
+{{- end }}
