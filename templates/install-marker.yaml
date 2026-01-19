@@ -18,3 +18,15 @@ metadata:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 {{- end }}
+---
+# ResourceAnchor is used as an ownerReference root;
+# when Helm removes this resource, Kubernetes GC will cascade-delete all resources owned by it.
+apiVersion: datafy.io/v1
+kind: ResourceAnchor
+metadata:
+  name: datafy-ra
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- end }}
+spec:

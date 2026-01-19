@@ -39,31 +39,55 @@ metadata:
   {{- end }}
   {{- end }}
 rules:
-  - apiGroups: [ "", "apps", "coordination.k8s.io" ] # core API group (like configmaps) is ""
-    resources: [ "configmaps", "secrets", "leases", "deployments", "daemonsets", "persistentvolumes" ]
+  # Core API group ""
+  - apiGroups: [ "" ]
+    resources: [ "configmaps", "secrets", "persistentvolumes" ]
+    verbs: [ "list", "watch" ]
+  - apiGroups: [ "" ]
+    resources: [ "secrets", "configmaps" ]
+    verbs: [ "create" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
+  - apiGroups: [ "" ]
+    resources: [ "secrets", "configmaps", "services" ]
+    resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config", "datafy-controller-webhook", "datafy-controller-webhook-tls" ]
+    verbs: [ "get", "update", "patch", "delete" ]
+
+  # apps API group
+  - apiGroups: [ "apps" ]
+    resources: [ "deployments", "daemonsets" ]
     verbs: [ "list", "watch" ]
   - apiGroups: [ "apps" ]
     resources: [ "deployments", "daemonsets" ]
     resourceNames: [ "ebs-csi-controller", "ebs-csi-node" ]
     verbs: [ "get", "update", "patch" ]
   - apiGroups: [ "apps" ]
-    resources: [ "deployments"]
+    resources: [ "deployments" ]
     resourceNames: [ "datafy-controller" ]
     verbs: [ "get", "update", "patch", "delete" ]
-  - apiGroups: [ "" ]
-    resources: [ "secrets", "configmaps" ]
-    resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config" ]
+
+  # admissionregistration.k8s.io API group
+  - apiGroups: [ "admissionregistration.k8s.io" ]
+    resources: [ "mutatingwebhookconfigurations" ]
+    resourceNames: [ "datafy-controller-webhook" ]
     verbs: [ "get", "update", "patch", "delete" ]
-  - apiGroups: [ "", "coordination.k8s.io" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
-    resources: [ "secrets", "configmaps", "leases" ]
+
+  # coordination.k8s.io API group
+  - apiGroups: [ "coordination.k8s.io" ]
+    resources: [ "leases" ]
+    verbs: [ "list", "watch" ]
+  - apiGroups: [ "coordination.k8s.io" ]
+    resources: [ "leases" ]
     verbs: [ "create" ]
-  - apiGroups: [ "datafy.io" ]
-    resources: [ "resourceanchors" ]
-    verbs: [ "list", "watch", "get", "delete" ]
   - apiGroups: [ "coordination.k8s.io" ]
     resources: [ "leases" ]
     resourceNames: [ "datafy-controller-leader" ]
     verbs: [ "get", "update", "patch", "delete" ]
+
+  # datafy.io API group (CRDs)
+  - apiGroups: [ "datafy.io" ]
+    resources: [ "resourceanchors" ]
+    verbs: [ "list", "watch", "get", "delete" ]
+
+  # events API groups
   - apiGroups: [ "", "events.k8s.io" ]
     resources: [ "events" ]
     verbs: [ "create", "patch", "update" ]

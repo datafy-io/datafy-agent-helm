@@ -1,3 +1,5 @@
+{{- $configChecksum := include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum}}
+{{- $datafyTokenChecksum := include (print $.Template.BasePath "/datafy-token.yaml") . | sha256sum }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -27,7 +29,8 @@ spec:
       labels:
         app.kubernetes.io/name: datafy-controller
       annotations:
-        checksum/controller-config: {{ include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum }}
+        checksum/controller-config: {{ $configChecksum }}
+        checksum/datafy-token-secret: {{ $datafyTokenChecksum }}
     spec:
       serviceAccountName: {{ .Values.controller.serviceAccountName }}
       priorityClassName: system-node-critical
@@ -86,18 +89,57 @@ spec:
                 configMapKeyRef:
                   name: datafy-volume-replacements
                   key: replacements
-            - name: DATAFY_CONFIG_FILE_PATH
+            - name: DATAFY_CONFIG_FILE
               value: /etc/datafy-controller/config.yaml
+            - name: DATAFY_CONFIG_CHECKSUM
+              value: {{ $configChecksum | quote }}
+            - name: DATAFY_WEBHOOK_CERT_DIR
+              value: /etc/datafy-controller/tls
           resources:
             requests:
               cpu: 10m
               memory: 40Mi
+          ports:
+            - name: webhook
+              containerPort: 9443
           volumeMounts:
             - name: datafy-controller-config
               mountPath: /etc/datafy-controller
+              readOnly: true
+            - name: datafy-controller-webhook-tls
+              mountPath: /etc/datafy-controller/tls
               readOnly: true
       volumes:
         - name: datafy-controller-config
           configMap:
             name: datafy-controller-config
-
+        - name: datafy-controller-webhook-tls
+          secret:
+            secretName: datafy-controller-webhook-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datafy-controller-webhook
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  selector:
+    app.kubernetes.io/name: datafy-controller
+  ports:
+    - name: https
+      port: 443
+      targetPort: 9443
