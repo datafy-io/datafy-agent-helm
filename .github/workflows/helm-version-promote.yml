@@ -12,6 +12,17 @@ on:
         required: false
         type: string
 
+  workflow_dispatch:
+    inputs:
+      agent_version:
+        description: "New agent version (optional)"
+        required: false
+        type: string
+      csi_version:
+        description: "New CSI proxy version (optional)"
+        required: false
+        type: string        
+
 permissions:
   contents: write
   
