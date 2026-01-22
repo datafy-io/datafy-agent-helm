@@ -34,8 +34,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: datafy-io/datafy-agent-helm
-          ref: master
-          token: ${{ secrets.GH_ACCESS_TOKEN }}
+          ref: test-external-update
 
       - name: Read current appVersion
         id: read_version
