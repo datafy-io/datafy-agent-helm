@@ -35,7 +35,7 @@ jobs:
         with:
           repository: datafy-io/datafy-agent-helm
           ref: master
-          token: ${{ secrets.GH_PUSH_TOKEN }}
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
 
       - name: Read current appVersion
         id: read_version
