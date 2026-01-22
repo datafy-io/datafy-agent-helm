@@ -1,63 +1,60 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-# Datafy Agent Helm Chart Uninstall Script
+# Datafy Agent Helm Chart Uninstall Script (env-driven)
 # Uninstalls datafy-agent helm release
 
-# Default values
+# Defaults (override via environment variables documented in usage())
 NAMESPACE="datafy-agent"
 RELEASE_NAME="datafy-agent"
-DELETE_NAMESPACE="false"
 WAIT_TIMEOUT="5m"
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m'
-
-print_info() { echo -e "${GREEN}[INFO]${NC} $1"; }
-print_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
-print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
+print_info() { echo "[INFO] $1"; }
+print_warn() { echo "[WARN] $1"; }
+print_error() { echo "[ERROR] $1"; }
 
 usage() {
+    local exit_code="${1:-0}"
     cat << EOF
-Usage: $0 [OPTIONS]
+Usage:
+  $0
 
-Uninstall Datafy Agent Helm Chart
+This script is configured via environment variables (friendly for curl | bash).
 
-OPTIONS:
-    -n, --namespace NAMESPACE       Namespace (default: datafy-agent)
-    -r, --release-name NAME         Release name (default: datafy-agent)
-    -d, --delete-namespace          Delete namespace after uninstall
-    --timeout DURATION              Wait timeout (default: 5m)
-    -h, --help                      Show help
+Optional (defaults shown):
+  DATAFY_NAMESPACE              Kubernetes namespace (default: ${NAMESPACE})
+  DATAFY_RELEASE_NAME           Helm release name (default: ${RELEASE_NAME})
+  DATAFY_TIMEOUT                Helm timeout (default: ${WAIT_TIMEOUT})
 
-EXAMPLES:
-    $0
-    $0 --namespace my-ns
-    $0 --delete-namespace
-    $0 --release-name my-agent --namespace my-ns --delete-namespace
+Examples:
+  $0
+  DATAFY_NAMESPACE=my-ns $0
+  DATAFY_RELEASE_NAME=my-agent DATAFY_NAMESPACE=my-ns $0
 
 EOF
-    exit 1
+    exit "$exit_code"
+}
+
+apply_env_overrides() {
+    NAMESPACE="${DATAFY_NAMESPACE:-$NAMESPACE}"
+    RELEASE_NAME="${DATAFY_RELEASE_NAME:-$RELEASE_NAME}"
+    WAIT_TIMEOUT="${DATAFY_TIMEOUT:-$WAIT_TIMEOUT}"
 }
 
 check_prerequisites() {
+    print_info "Checking prerequisites..."
+
     if ! command -v helm &> /dev/null; then
-        print_error "helm not found. Please install helm."
+        print_error "helm not found. Install from: https://helm.sh/docs/intro/install/"
         exit 1
     fi
-    
-    if ! command -v kubectl &> /dev/null; then
-        print_error "kubectl not found. Please install kubectl."
-        exit 1
-    fi
-    
+
     if ! kubectl cluster-info &> /dev/null; then
         print_error "Cannot connect to cluster. Check kubeconfig."
         exit 1
     fi
+
+    print_info "Prerequisites OK"
 }
 
 check_release_exists() {
@@ -72,52 +69,36 @@ uninstall_chart() {
     print_info "Uninstalling Datafy Agent..."
     print_info "  Release: $RELEASE_NAME"
     print_info "  Namespace: $NAMESPACE"
-    
+
     helm uninstall "$RELEASE_NAME" --namespace "$NAMESPACE" --timeout "$WAIT_TIMEOUT"
-    
+
     print_info "Helm release uninstalled successfully!"
 }
 
-delete_namespace_if_requested() {
-    if [ "$DELETE_NAMESPACE" = "true" ]; then
-        if kubectl get namespace "$NAMESPACE" &> /dev/null; then
-            print_info "Deleting namespace '$NAMESPACE'..."
-            kubectl delete namespace "$NAMESPACE" --timeout="$WAIT_TIMEOUT"
-            print_info "Namespace deleted."
-        else
-            print_warn "Namespace '$NAMESPACE' not found."
-        fi
-    fi
-}
-
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -n|--namespace) NAMESPACE="$2"; shift 2 ;;
-        -r|--release-name) RELEASE_NAME="$2"; shift 2 ;;
-        -d|--delete-namespace) DELETE_NAMESPACE="true"; shift ;;
-        --timeout) WAIT_TIMEOUT="$2"; shift 2 ;;
-        -h|--help) usage ;;
-        *)
-            print_error "Unknown option: $1"
-            usage
-            ;;
-    esac
-done
-
-# Main
 main() {
-    print_info "Datafy Agent Helm Chart Uninstallation"
-    print_info "======================================="
+    # Minimal help flag for discoverability; everything else is env-driven.
+    if [[ $# -gt 0 ]]; then
+        case "${1:-}" in
+            -h|--help|help) usage 0 ;;
+            *)
+                print_error "This script is configured via environment variables (not CLI flags)."
+                usage 1
+                ;;
+        esac
+    fi
+
+    print_info "Datafy Agent Helm Chart Uninstallation (env-driven)"
+    print_info "======================================"
     echo ""
-    
+
+    apply_env_overrides
     check_prerequisites
     check_release_exists
     uninstall_chart
-    delete_namespace_if_requested
-    
+
     echo ""
-    print_info "======================================="
+    print_info "======================================"
     print_info "Uninstallation completed!"
 }
 
-main
+main "$@"

@@ -45,29 +45,25 @@ Optional (defaults shown):
   DATAFY_HELM_REPO_NAME         Helm repo name (default: ${HELM_REPO_NAME})
   DATAFY_HELM_REPO_URL          Helm repo url (default: ${HELM_REPO_URL})
   DATAFY_ADDITIONAL_HELM        Additional helm values as comma-separated key=value pairs
-                                 Example: "agent.dsoUrl=test"
+                                 Example: "agent.dsoUrl=test,agent.mode=AutoScaler"
 
 Examples:
   DATAFY_TOKEN=YOUR_TOKEN $0
-
   DATAFY_TOKEN=YOUR_TOKEN DATAFY_DRY_RUN=true $0
-  DATAFY_TOKEN=YOUR_TOKEN DATAFY_ADDITIONAL_HELM="agent.dsoUrl=" $0
+  DATAFY_TOKEN=YOUR_TOKEN DATAFY_ADDITIONAL_HELM="agent.mode=AutoScaler" $0
+  DATAFY_TOKEN=YOUR_TOKEN DATAFY_ADDITIONAL_HELM="agent.mode=sensor,agent.dsoUrl=wss://custom.dso.url" $0
+  # Note: Complex values like affinity require using helm values files or --set-file
 
 EOF
     exit "$exit_code"
 }
 
-normalize_bool() {
-    # normalize_bool <value> <var_name_for_errors>
+is_truthy() {
+    # is_truthy <value> - returns 0 (true) if value is truthy, 1 (false) otherwise
     local v="${1:-}"
-    local name="${2:-value}"
     case "${v,,}" in
-        1|true|yes|y|on) echo "true" ;;
-        0|false|no|n|off|"") echo "false" ;;
-        *)
-            print_error "Invalid boolean for ${name}: '${v}'. Use true/false."
-            exit 1
-            ;;
+        1|true|yes|y|on) return 0 ;;
+        *) return 1 ;;
     esac
 }
 
@@ -82,9 +78,24 @@ apply_env_overrides() {
     DSO_URL="${DATAFY_DSO_URL:-$DSO_URL}"
     WAIT_TIMEOUT="${DATAFY_TIMEOUT:-$WAIT_TIMEOUT}"
 
-    DRY_RUN="$(normalize_bool "${DATAFY_DRY_RUN:-$DRY_RUN}" "DATAFY_DRY_RUN")"
-    DEBUG="$(normalize_bool "${DATAFY_DEBUG:-$DEBUG}" "DATAFY_DEBUG")"
-    ATOMIC="$(normalize_bool "${DATAFY_ATOMIC:-$ATOMIC}" "DATAFY_ATOMIC")"
+    if is_truthy "${DATAFY_DRY_RUN:-$DRY_RUN}"; then
+        DRY_RUN="true"
+    else
+        DRY_RUN="false"
+    fi
+
+    if is_truthy "${DATAFY_DEBUG:-$DEBUG}"; then
+        DEBUG="true"
+    else
+        DEBUG="false"
+    fi
+
+    if is_truthy "${DATAFY_ATOMIC:-$ATOMIC}"; then
+        ATOMIC="true"
+    else
+        ATOMIC="false"
+    fi
+
     ADDITIONAL_HELM="${DATAFY_ADDITIONAL_HELM:-$ADDITIONAL_HELM}"
 }
 
