@@ -49,22 +49,22 @@ jobs:
           echo "new=$new" >> $GITHUB_OUTPUT
           echo "$new"
 
-      - name: Update Chart.yaml appVersion
-        run: |
-          yq -i ".appVersion = \"${{ steps.new_version.outputs.new }}\"" Chart.yaml
+      # - name: Update Chart.yaml appVersion
+      #   run: |
+      #     yq -i ".appVersion = \"${{ steps.new_version.outputs.new }}\"" Chart.yaml
 
-      - name: Install helm-docs
-        run: |
-          curl -sSL https://github.com/norwoodj/helm-docs/releases/latest/download/helm-docs_Linux_x86_64.tar.gz | tar -xz
-          sudo mv helm-docs /usr/local/bin/
+      # - name: Install helm-docs
+      #   run: |
+      #     curl -sSL https://github.com/norwoodj/helm-docs/releases/latest/download/helm-docs_Linux_x86_64.tar.gz | tar -xz
+      #     sudo mv helm-docs /usr/local/bin/
 
-      - name: Regenerate Helm docs
-        run: helm-docs
+      # - name: Regenerate Helm docs
+      #   run: helm-docs
 
-      - name: Commit and push changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add Chart.yaml README.md || true
-          git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
-          git push
+      # - name: Commit and push changes
+      #   run: |
+      #     git config user.name "github-actions[bot]"
+      #     git config user.email "github-actions[bot]@users.noreply.github.com"
+      #     git add Chart.yaml README.md || true
+      #     git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
+      #     git push
