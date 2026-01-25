@@ -42,7 +42,7 @@ jobs:
           current=$(yq '.appVersion' Chart.yaml)
           echo "current=$current" >> $GITHUB_OUTPUT
 
-      - name: Compute new appVersion
+      - name: Compute new appVersion & update Chart.yaml
         id: new_version
         run: |
           current="${{ steps.read_version.outputs.current }}"
@@ -55,14 +55,25 @@ jobs:
           if [ -n "$agent" ]; then agent_part="$agent"; fi
           if [ -n "$csi" ]; then csi_part="$csi"; fi
 
-          new="${agent_part}_${csi_part}"
-          echo "new=$new" >> $GITHUB_OUTPUT
-          echo "$new"
+          NEW_APP_VERSION="${agent_part}_${csi_part}"
+          echo "new appVersion=${NEW_APP_VERSION}"
+          
+          yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
 
-      # - name: Update Chart.yaml appVersion
-      #   run: |
-      #     yq -i ".appVersion = \"${{ steps.new_version.outputs.new }}\"" Chart.yaml
 
+      - name: Read current chart version & update Chart.yaml
+        id: read_chart_version
+        run: |
+          current_chart_version=$(yq '.version' Chart.yaml)
+          echo "current chart version=$current_chart_version"
+
+          IFS='.' read -r -a CHART_PARTS <<< "$(grep '^version:' Chart.yaml | awk '{print $2}')"
+          CHART_PARTS[2]=$((CHART_PARTS[2] + 1))
+          NEW_CHART_VERSION="${CHART_PARTS[0]}.${CHART_PARTS[1]}.${CHART_PARTS[2]}"
+          echo "NEW_CHART_VERSION=$NEW_CHART_VERSION"
+
+          yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
+          
       # - name: Install helm-docs
       #   run: |
       #     curl -sSL https://github.com/norwoodj/helm-docs/releases/latest/download/helm-docs_Linux_x86_64.tar.gz | tar -xz
@@ -78,3 +89,12 @@ jobs:
       #     git add Chart.yaml README.md || true
       #     git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
       #     git push
+
+  release:
+    needs: [ update ]
+    permissions:
+      id-token: write
+      contents: write
+    uses: datafy-io/datafy-agent-helm/.github/workflows/release.yaml@test-external-update
+    secrets:
+      PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
