@@ -37,32 +37,28 @@ jobs:
           ref: test-external-update
 
       - name: Read current appVersion
-        id: read_version
+        id: read_chart_app_version_and_update
         run: |
-          current=$(yq '.appVersion' Chart.yaml)
-          echo "current=$current" >> $GITHUB_OUTPUT
+          CURRENT_APP_VERSION=$(yq '.appVersion' Chart.yaml)
+          echo "Current appVersion: $CURRENT_APP_VERSION"
 
-      - name: Compute new appVersion & update Chart.yaml
-        id: new_version
-        run: |
-          current="${{ steps.read_version.outputs.current }}"
           agent="${{ inputs.agent_version }}"
           csi="${{ inputs.csi_version }}"
 
-          agent_part=$(echo "$current" | cut -d'_' -f1)
-          csi_part=$(echo "$current" | cut -d'_' -f2)
-
+          agent_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f1)
+          csi_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f2)
           if [ -n "$agent" ]; then agent_part="$agent"; fi
           if [ -n "$csi" ]; then csi_part="$csi"; fi
 
           NEW_APP_VERSION="${agent_part}_${csi_part}"
-          echo "new appVersion=${NEW_APP_VERSION}"
+          echo "New appVersion=${NEW_APP_VERSION}"
+          echo "new_app_version=${NEW_APP_VERSION}" >> $GITHUB_OUTPUT
           
           yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
 
 
       - name: Read current chart version & update Chart.yaml
-        id: read_chart_version
+        id: read_chart_version_and_update
         run: |
           current_chart_version=$(yq '.version' Chart.yaml)
           echo "current chart version=$current_chart_version"
@@ -74,21 +70,21 @@ jobs:
 
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
           
-      # - name: Install helm-docs
-      #   run: |
-      #     curl -sSL https://github.com/norwoodj/helm-docs/releases/latest/download/helm-docs_Linux_x86_64.tar.gz | tar -xz
-      #     sudo mv helm-docs /usr/local/bin/
+      - name: Install helm-docs
+        run: |
+          curl -sSL https://github.com/norwoodj/helm-docs/releases/latest/download/helm-docs_Linux_x86_64.tar.gz | tar -xz
+          sudo mv helm-docs /usr/local/bin/
 
-      # - name: Regenerate Helm docs
-      #   run: helm-docs
+      - name: Regenerate Helm docs
+        run: helm-docs
 
-      # - name: Commit and push changes
-      #   run: |
-      #     git config user.name "github-actions[bot]"
-      #     git config user.email "github-actions[bot]@users.noreply.github.com"
-      #     git add Chart.yaml README.md || true
-      #     git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
-      #     git push
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Chart.yaml README.md || true
+          git commit -m "chore: update appVersion to ${{ steps.read_chart_app_version_and_update.outputs.new_app_version }}" || echo "No changes to commit"
+          git push
 
   release:
     needs: [ update ]
