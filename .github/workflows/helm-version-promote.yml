@@ -50,23 +50,29 @@ jobs:
           CURRENT_APP_VERSION=$(yq '.appVersion' Chart.yaml)
           echo "Current appVersion: $CURRENT_APP_VERSION"
 
-          agent="${{ inputs.agent_version }}"
-          csi="${{ inputs.csi_version }}"
+          input_agent_version="${{ inputs.agent_version }}"
+          input_csi_version="${{ inputs.csi_version }}"
 
-          if [ -z "$agent" ] && [ -z "$csi" ]; then
+          if [ -z "$input_agent_version" ] && [ -z "$input_csi_version" ]; then
             echo "No input versions provided. Exiting."
             exit 1
           fi
 
           agent_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f1)
           csi_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f2)
-          if [ -n "$agent" ]; then agent_part="$agent"; fi
-          if [ -n "$csi" ]; then csi_part="$csi"; fi
+
+          if [ -n "$input_agent_version" ]; then agent_part="$input_agent_version"; fi
+          if [ -n "$input_csi_version" ]; then csi_part="$input_csi_version"; fi
 
           NEW_APP_VERSION="${agent_part}_${csi_part}"
           echo "New appVersion=${NEW_APP_VERSION}"
+
+          if [ "$NEW_APP_VERSION" == "$CURRENT_APP_VERSION" ]; then
+            echo "App version has not changed. Exiting."
+            exit 1
+          fi
           echo "new_app_version=${NEW_APP_VERSION}" >> $GITHUB_OUTPUT
-          
+            
           yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
 
 
