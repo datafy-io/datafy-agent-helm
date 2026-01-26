@@ -18,6 +18,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
+          ref: master
           fetch-depth: 0
       - name: Configure AWS Management Credentials
         uses: aws-actions/configure-aws-credentials@v4
