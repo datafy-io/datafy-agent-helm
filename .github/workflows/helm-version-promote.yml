@@ -11,6 +11,25 @@ on:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
+      no_release:
+        description: "If true, skip the release job"
+        required: false
+        type: boolean
+
+  workflow_dispatch:
+    inputs:
+      agent_version:
+        description: "New agent version (optional)"
+        required: false
+        type: string
+      csi_version:
+        description: "New CSI proxy version (optional)"
+        required: false
+        type: string        
+      no_release:
+        description: "If true, skip the release job"
+        required: false
+        type: boolean
 
 permissions:
   contents: write
@@ -24,38 +43,55 @@ jobs:
         with:
           repository: datafy-io/datafy-agent-helm
           ref: master
-          token: ${{ secrets.GH_PUSH_TOKEN }}
 
       - name: Read current appVersion
-        id: read_version
+        id: read_chart_app_version_and_update
         run: |
-          current=$(yq '.appVersion' Chart.yaml)
-          echo "current=$current" >> $GITHUB_OUTPUT
+          CURRENT_APP_VERSION=$(yq '.appVersion' Chart.yaml)
+          echo "Current appVersion: $CURRENT_APP_VERSION"
 
-      - name: Compute new appVersion
-        id: new_version
+          input_agent_version="${{ inputs.agent_version }}"
+          input_csi_version="${{ inputs.csi_version }}"
+
+          if [ -z "$input_agent_version" ] && [ -z "$input_csi_version" ]; then
+            echo "No input versions provided. Exiting."
+            exit 1
+          fi
+
+          agent_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f1)
+          csi_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f2)
+
+          if [ -n "$input_agent_version" ]; then agent_part="$input_agent_version"; fi
+          if [ -n "$input_csi_version" ]; then csi_part="$input_csi_version"; fi
+
+          NEW_APP_VERSION="${agent_part}_${csi_part}"
+          echo "New appVersion=${NEW_APP_VERSION}"
+
+          if [ "$NEW_APP_VERSION" == "$CURRENT_APP_VERSION" ]; then
+            echo "App version has not changed. Exiting."
+            exit 1
+          fi
+          echo "new_app_version=${NEW_APP_VERSION}" >> $GITHUB_OUTPUT
+            
+          yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
+
+
+      - name: Read current chart version & update Chart.yaml
+        id: read_chart_version_and_update
         run: |
-          current="${{ steps.read_version.outputs.current }}"
-          agent="${{ inputs.agent_version }}"
-          csi="${{ inputs.csi_version }}"
+          current_chart_version=$(yq '.version' Chart.yaml)
+          echo "current chart version=$current_chart_version"
 
-          agent_part=$(echo "$current" | cut -d'_' -f1)
-          csi_part=$(echo "$current" | cut -d'_' -f2)
+          IFS='.' read -r -a CHART_PARTS <<< "$(grep '^version:' Chart.yaml | awk '{print $2}')"
+          CHART_PARTS[2]=$((CHART_PARTS[2] + 1))
+          NEW_CHART_VERSION="${CHART_PARTS[0]}.${CHART_PARTS[1]}.${CHART_PARTS[2]}"
+          echo "NEW_CHART_VERSION=$NEW_CHART_VERSION"
 
-          if [ -n "$agent" ]; then agent_part="$agent"; fi
-          if [ -n "$csi" ]; then csi_part="$csi"; fi
-
-          new="${agent_part}_${csi_part}"
-          echo "new=$new" >> $GITHUB_OUTPUT
-          echo "$new"
-
-      - name: Update Chart.yaml appVersion
-        run: |
-          yq -i ".appVersion = \"${{ steps.new_version.outputs.new }}\"" Chart.yaml
-
+          yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
+          
       - name: Install helm-docs
         run: |
-          curl -sSL https://github.com/norwoodj/helm-docs/releases/latest/download/helm-docs_Linux_x86_64.tar.gz | tar -xz
+          curl -sSL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | tar -xz
           sudo mv helm-docs /usr/local/bin/
 
       - name: Regenerate Helm docs
@@ -66,5 +102,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Chart.yaml README.md || true
-          git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
+          git commit -m "chore: update appVersion to ${{ steps.read_chart_app_version_and_update.outputs.new_app_version }}"
           git push
+
+  release:
+    needs: [ update ]
+    if : ${{ inputs.no_release == false }}
+    permissions:
+      id-token: write
+      contents: write
+    uses: datafy-io/datafy-agent-helm/.github/workflows/release.yaml@master
+    secrets:
+      PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
