@@ -45,7 +45,7 @@ jobs:
           repository: datafy-io/datafy-agent-helm
           ref: test-external-update
 
-      - name: Read current appVersion
+      - name: Read and Update appVersion
         id: read_chart_app_version_and_update
         run: |
           CURRENT_APP_VERSION=$(yq '.appVersion' Chart.yaml)
@@ -77,7 +77,7 @@ jobs:
           yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
 
 
-      - name: Update Chart.yaml
+      - name: Read and Update chart version
         id: update_chart_version
         run: |
           current_chart_version=$(yq '.version' Chart.yaml)
@@ -127,7 +127,7 @@ jobs:
           git commit -m "chore: update appVersion to ${{ steps.read_chart_app_version_and_update.outputs.new_app_version }}"
           git push
 
-  release:
+  release_helm_chart:
     needs: [ update ]
     permissions:
       id-token: write
