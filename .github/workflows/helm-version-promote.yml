@@ -11,6 +11,26 @@ on:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
+      semantic_bump_type:
+        description: "What version type (major, minor, or patch) to bump"
+        required: true
+        type: string
+
+  workflow_dispatch:
+    inputs:
+      agent_version:
+        description: "New agent version (optional)"
+        required: false
+        type: string
+      csi_version:
+        description: "New CSI proxy version (optional)"
+        required: false
+        type: string        
+      semantic_bump_type:
+        description: "What version type (major, minor, or patch) to bump"
+        required: true
+        type: string
+
 
 permissions:
   contents: write
@@ -24,38 +44,76 @@ jobs:
         with:
           repository: datafy-io/datafy-agent-helm
           ref: master
-          token: ${{ secrets.GH_PUSH_TOKEN }}
 
-      - name: Read current appVersion
-        id: read_version
+      - name: Read and Update appVersion
+        id: read_chart_app_version_and_update
         run: |
-          current=$(yq '.appVersion' Chart.yaml)
-          echo "current=$current" >> $GITHUB_OUTPUT
+          CURRENT_APP_VERSION=$(yq '.appVersion' Chart.yaml)
+          echo "Current appVersion: $CURRENT_APP_VERSION"
 
-      - name: Compute new appVersion
-        id: new_version
+          input_agent_version="${{ inputs.agent_version }}"
+          input_csi_version="${{ inputs.csi_version }}"
+
+          if [ -z "$input_agent_version" ] && [ -z "$input_csi_version" ]; then
+            echo "No input versions provided. Exiting."
+            exit 1
+          fi
+
+          agent_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f1)
+          csi_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f2)
+
+          if [ -n "$input_agent_version" ]; then agent_part="$input_agent_version"; fi
+          if [ -n "$input_csi_version" ]; then csi_part="$input_csi_version"; fi
+
+          NEW_APP_VERSION="${agent_part}_${csi_part}"
+          echo "New appVersion=${NEW_APP_VERSION}"
+
+          if [ "$NEW_APP_VERSION" == "$CURRENT_APP_VERSION" ]; then
+            echo "App version has not changed. Exiting."
+            exit 1
+          fi
+          echo "new_app_version=${NEW_APP_VERSION}" >> $GITHUB_OUTPUT
+            
+          yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
+
+
+      - name: Read and Update chart version
+        id: update_chart_version
         run: |
-          current="${{ steps.read_version.outputs.current }}"
-          agent="${{ inputs.agent_version }}"
-          csi="${{ inputs.csi_version }}"
+          current_chart_version=$(yq '.version' Chart.yaml)
+          echo "current chart version=$current_chart_version"
 
-          agent_part=$(echo "$current" | cut -d'_' -f1)
-          csi_part=$(echo "$current" | cut -d'_' -f2)
+          bump_type_raw="${{ inputs.semantic_bump_type }}"
+          bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
 
-          if [ -n "$agent" ]; then agent_part="$agent"; fi
-          if [ -n "$csi" ]; then csi_part="$csi"; fi
+          IFS='.' read -r major minor patch <<< "$current_chart_version"
 
-          new="${agent_part}_${csi_part}"
-          echo "new=$new" >> $GITHUB_OUTPUT
-          echo "$new"
+          case "$bump_type" in
+            patch)
+              patch=$((patch + 1))
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            *)
+              echo "❌ Error: semantic_bump_type must be one of: Major, Minor, Patch"
+              exit 1
+              ;;
+          esac
 
-      - name: Update Chart.yaml appVersion
-        run: |
-          yq -i ".appVersion = \"${{ steps.new_version.outputs.new }}\"" Chart.yaml
-
+          NEW_CHART_VERSION="${major}.${minor}.${patch}"
+          echo "new chart version=$NEW_CHART_VERSION (bump: $bump_type_raw)"
+          yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
+          
       - name: Install helm-docs
         run: |
-          curl -sSL https://github.com/norwoodj/helm-docs/releases/latest/download/helm-docs_Linux_x86_64.tar.gz | tar -xz
+          curl -sSL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | tar -xz
           sudo mv helm-docs /usr/local/bin/
 
       - name: Regenerate Helm docs
@@ -66,5 +124,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Chart.yaml README.md || true
-          git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
+          git commit -m "chore: update appVersion to ${{ steps.read_chart_app_version_and_update.outputs.new_app_version }}"
           git push
+
+  release_helm_chart:
+    needs: [ update ]
+    permissions:
+      id-token: write
+      contents: write
+    uses: datafy-io/datafy-agent-helm/.github/workflows/release.yaml@master
+    secrets:
+      PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
