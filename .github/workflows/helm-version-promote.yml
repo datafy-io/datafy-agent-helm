@@ -11,12 +11,8 @@ on:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
-      no_release:
-        description: "If true, skip the release job"
-        required: false
-        type: boolean
-      helm_chart_version:
-        description: "New Helm chart version (mandatory)"
+      semantic_bump_type:
+        description: "What version type (major, minor, or patch) to bump"
         required: true
         type: string
 
@@ -30,14 +26,11 @@ on:
         description: "New CSI proxy version (optional)"
         required: false
         type: string        
-      no_release:
-        description: "If true, skip the release job"
-        required: false
-        type: boolean
-      helm_chart_version:
-        description: "New Helm chart version (mandatory)"
+      semantic_bump_type:
+        description: "What version type (major, minor, or patch) to bump"
         required: true
         type: string
+
 
 permissions:
   contents: write
@@ -90,14 +83,32 @@ jobs:
           current_chart_version=$(yq '.version' Chart.yaml)
           echo "current chart version=$current_chart_version"
 
-          NEW_CHART_VERSION="${{ inputs.helm_chart_version }}"
-          if ! echo "$NEW_CHART_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "❌ Error: Version '$NEW_CHART_VERSION' does not match valid release format (x.x.x)"
-            echo "Expected format: major.minor.patch (e.g., 2.7.6)"
-            exit 1
-          fi          
+          bump_type_raw="${{ inputs.semantic_bump_type }}"
+          bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
 
-          echo "new chart version=$NEW_CHART_VERSION"
+          IFS='.' read -r major minor patch <<< "$current_chart_version"
+
+          case "$bump_type" in
+            patch)
+              patch=$((patch + 1))
+              ;;
+            minor)
+              minor=$((minor + 1))
+              patch=0
+              ;;
+            major)
+              major=$((major + 1))
+              minor=0
+              patch=0
+              ;;
+            *)
+              echo "❌ Error: semantic_bump_type must be one of: Major, Minor, Patch"
+              exit 1
+              ;;
+          esac
+
+          NEW_CHART_VERSION="${major}.${minor}.${patch}"
+          echo "new chart version=$NEW_CHART_VERSION (bump: $bump_type_raw)"
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
           
       - name: Install helm-docs
@@ -118,7 +129,6 @@ jobs:
 
   release:
     needs: [ update ]
-    if : ${{ inputs.no_release == false }}
     permissions:
       id-token: write
       contents: write
