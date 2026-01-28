@@ -76,17 +76,20 @@ jobs:
           yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
 
 
-      - name: Read current chart version & update Chart.yaml
-        id: read_chart_version_and_update
+      - name: Update Chart.yaml
+        id: update_chart_version
         run: |
           current_chart_version=$(yq '.version' Chart.yaml)
           echo "current chart version=$current_chart_version"
 
-          IFS='.' read -r -a CHART_PARTS <<< "$(grep '^version:' Chart.yaml | awk '{print $2}')"
-          CHART_PARTS[2]=$((CHART_PARTS[2] + 1))
-          NEW_CHART_VERSION="${CHART_PARTS[0]}.${CHART_PARTS[1]}.${CHART_PARTS[2]}"
-          echo "NEW_CHART_VERSION=$NEW_CHART_VERSION"
+          NEW_CHART_VERSION="${{ inputs.helm_chart_version }}"
+          if ! echo "$NEW_CHART_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: Version '$NEW_CHART_VERSION' does not match valid release format (x.x.x)"
+            echo "Expected format: major.minor.patch (e.g., 2.7.6)"
+            exit 1
+          fi          
 
+          echo "new chart version=$NEW_CHART_VERSION"
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
           
       - name: Install helm-docs
