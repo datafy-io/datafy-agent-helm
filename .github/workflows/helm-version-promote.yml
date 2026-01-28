@@ -11,6 +11,10 @@ on:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
+      helm_chart_version:
+        description: "New Helm chart version (mandatory)"
+        required: true
+        type: string
 
   workflow_dispatch:
     inputs:
@@ -22,6 +26,10 @@ on:
         description: "New CSI proxy version (optional)"
         required: false
         type: string        
+      helm_chart_version:
+        description: "New Helm chart version (mandatory)"
+        required: true
+        type: string
 
 permissions:
   contents: write
