@@ -15,10 +15,6 @@ on:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
-      no_release:
-        description: "If true, skip the release job"
-        required: false
-        type: boolean
 
   workflow_dispatch:
     inputs:
@@ -30,10 +26,6 @@ on:
         description: "New CSI proxy version (optional)"
         required: false
         type: string        
-      no_release:
-        description: "If true, skip the release job"
-        required: false
-        type: boolean
 
 permissions:
   contents: write
@@ -109,9 +101,8 @@ jobs:
           git commit -m "chore: update appVersion to ${{ steps.read_chart_app_version_and_update.outputs.new_app_version }}"
           git push
 
-  release:
+  release-chart:
     needs: [ update ]
-    if : ${{ inputs.no_release == false }}
     permissions:
       id-token: write
       contents: write
