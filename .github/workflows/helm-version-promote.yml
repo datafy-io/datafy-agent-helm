@@ -7,7 +7,7 @@ on:
         description: "New agent version (optional)"
         required: false
         type: string
-      csi_version:
+      csi_proxy_version:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
@@ -22,7 +22,7 @@ on:
         description: "New agent version (optional)"
         required: false
         type: string
-      csi_version:
+      csi_proxy_version:
         description: "New CSI proxy version (optional)"
         required: false
         type: string        
@@ -52,20 +52,20 @@ jobs:
           echo "Current appVersion: $CURRENT_APP_VERSION"
 
           input_agent_version="${{ inputs.agent_version }}"
-          input_csi_version="${{ inputs.csi_version }}"
+          input_csi_proxy_version="${{ inputs.csi_proxy_version }}"
 
-          if [ -z "$input_agent_version" ] && [ -z "$input_csi_version" ]; then
+          if [ -z "$input_agent_version" ] && [ -z "$input_csi_proxy_version" ]; then
             echo "No input versions provided. Exiting."
             exit 1
           fi
 
           agent_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f1)
-          csi_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f2)
+          csi_proxy_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f2)
 
           if [ -n "$input_agent_version" ]; then agent_part="$input_agent_version"; fi
-          if [ -n "$input_csi_version" ]; then csi_part="$input_csi_version"; fi
+          if [ -n "$input_csi_proxy_version" ]; then csi_proxy_part="$input_csi_proxy_version"; fi
 
-          NEW_APP_VERSION="${agent_part}_${csi_part}"
+          NEW_APP_VERSION="${agent_part}_${csi_proxy_part}"
           echo "New appVersion=${NEW_APP_VERSION}"
 
           if [ "$NEW_APP_VERSION" == "$CURRENT_APP_VERSION" ]; then
