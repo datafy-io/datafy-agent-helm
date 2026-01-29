@@ -82,23 +82,25 @@ jobs:
         run: |
           current_chart_version=$(yq '.version' Chart.yaml)
           echo "current chart version=$current_chart_version"
+          echo "current_chart_version=$current_chart_version" >> $GITHUB_OUTPUT
 
           bump_type_raw="${{ inputs.semantic_bump_type }}"
           bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
+          echo "bump_type=$bump_type" >> $GITHUB_OUTPUT
 
       - name: Bump Version
         id: bump
         uses: cbrgm/semver-bump-action@main
         with:
-          current-version: ${{ steps.update_chart_version.outputs.current_chart_version }}
-          bump-level: ${{ steps.update_chart_version.outputs.bump_type }}
+          current-version: ${{ env.current_chart_version }}
+          bump-level: ${{ env.bump_type }}
 
       - name: Update chart version
         run: |
           NEW_CHART_VERSION=${{ steps.bump.outputs.new_version }}
           echo $NEW_CHART_VERSION
 
-          echo "new chart version=$NEW_CHART_VERSION (bump: ${{ steps.update_chart_version.outputs.bump_type }})"
+          echo "new chart version=$NEW_CHART_VERSION (bump: ${{ env.bump_type }})"
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
           
       - name: Install helm-docs
