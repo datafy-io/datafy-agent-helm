@@ -77,7 +77,7 @@ jobs:
           yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
 
 
-      - name: Read and Update chart version
+      - name: Read current chart version
         id: update_chart_version
         run: |
           current_chart_version=$(yq '.version' Chart.yaml)
@@ -86,29 +86,19 @@ jobs:
           bump_type_raw="${{ inputs.semantic_bump_type }}"
           bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
 
-          IFS='.' read -r major minor patch <<< "$current_chart_version"
+      - name: Bump Version
+        id: bump
+        uses: cbrgm/semver-bump-action@main
+        with:
+          current-version: ${{ steps.update_chart_version.outputs.current_chart_version }}
+          bump-level: ${{ steps.update_chart_version.outputs.bump_type }}
 
-          case "$bump_type" in
-            patch)
-              patch=$((patch + 1))
-              ;;
-            minor)
-              minor=$((minor + 1))
-              patch=0
-              ;;
-            major)
-              major=$((major + 1))
-              minor=0
-              patch=0
-              ;;
-            *)
-              echo "❌ Error: semantic_bump_type must be one of: Major, Minor, Patch"
-              exit 1
-              ;;
-          esac
+      - name: Update chart version
+        run: |
+          NEW_CHART_VERSION=${{ steps.bump.outputs.new_version }}
+          echo $NEW_CHART_VERSION
 
-          NEW_CHART_VERSION="${major}.${minor}.${patch}"
-          echo "new chart version=$NEW_CHART_VERSION (bump: $bump_type_raw)"
+          echo "new chart version=$NEW_CHART_VERSION (bump: ${{ steps.update_chart_version.outputs.bump_type }})"
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
           
       - name: Install helm-docs
