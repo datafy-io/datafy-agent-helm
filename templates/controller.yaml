@@ -1,0 +1,145 @@
+{{- $configChecksum := include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum}}
+{{- $datafyTokenChecksum := include (print $.Template.BasePath "/datafy-token.yaml") . | sha256sum }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: datafy-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  replicas: {{ .Values.controller.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: datafy-controller
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: datafy-controller
+      annotations:
+        checksum/controller-config: {{ $configChecksum }}
+        checksum/datafy-token-secret: {{ $datafyTokenChecksum }}
+    spec:
+      serviceAccountName: {{ .Values.controller.serviceAccountName }}
+      priorityClassName: system-node-critical
+      schedulerName: default-scheduler
+      restartPolicy: Always
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.imagePullSecrets }}
+        - name: {{ . }}
+        {{- end }}
+      {{- end }}
+      {{- if .Values.controller.affinity }}
+      affinity:
+        {{- toYaml .Values.controller.affinity | nindent 8 }}
+      {{- end }}
+      {{- if .Values.controller.nodeSelector }}
+      nodeSelector:
+        {{- toYaml .Values.controller.nodeSelector | nindent 8 }}
+      {{- end }}
+      {{- if .Values.controller.tolerations }}
+      tolerations:
+        {{- toYaml .Values.controller.tolerations | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: controller
+          image: "{{ .Values.controller.image.repository }}:{{ include "datafy-agent.controllerImageTag" . }}"
+          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
+          {{- if .Values.controller.securityContext }}
+          securityContext:
+            {{- toYaml .Values.controller.securityContext | nindent 12 }}
+          {{- end }}
+          env:
+            - name: DATAFY_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: DATAFY_TOKEN_SYNC_ENABLED
+              value: {{ ternary true false (not (empty .Values.agent.token)) | quote }}
+            - name: DATAFY_TRANSPARENT_MODE_ENABLED
+              value: {{ false | quote }}
+            - name: DATAFY_TOKEN_SECRET_NAME
+              value: {{ default "datafy-token" .Values.agent.externalTokenSecret.name | quote }}
+            - name: DATAFY_TOKEN_SECRET_KEY
+              value: {{ default "token" .Values.agent.externalTokenSecret.key | quote }}
+            - name: DATAFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            - name: DATAFY_IAC_URL
+              value: {{ .Values.ebsCsiProxy.iacUrl | default (.Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac") }}
+            - name: DATAFY_AGENT_MODE
+              value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
+            - name: DATAFY_VOLUME_REPLACEMENTS
+              valueFrom:
+                configMapKeyRef:
+                  name: datafy-volume-replacements
+                  key: replacements
+            - name: DATAFY_CONFIG_FILE
+              value: /etc/datafy-controller/config.yaml
+            - name: DATAFY_CONFIG_CHECKSUM
+              value: {{ $configChecksum | quote }}
+            - name: DATAFY_WEBHOOK_CERT_DIR
+              value: /etc/datafy-controller/tls
+          resources:
+            requests:
+              cpu: 10m
+              memory: 40Mi
+          ports:
+            - name: webhook
+              containerPort: 9443
+          volumeMounts:
+            - name: datafy-controller-config
+              mountPath: /etc/datafy-controller
+              readOnly: true
+            - name: datafy-controller-webhook-tls
+              mountPath: /etc/datafy-controller/tls
+              readOnly: true
+      volumes:
+        - name: datafy-controller-config
+          configMap:
+            name: datafy-controller-config
+        - name: datafy-controller-webhook-tls
+          secret:
+            secretName: datafy-controller-webhook-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: datafy-controller-webhook
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- else }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  selector:
+    app.kubernetes.io/name: datafy-controller
+  ports:
+    - name: https
+      port: 443
+      targetPort: 9443

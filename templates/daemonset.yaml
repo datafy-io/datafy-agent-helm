@@ -42,9 +42,6 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          envFrom:
-            - configMapRef:
-                name: datafy-agent-cm
           env:
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
@@ -66,11 +63,8 @@ spec:
           securityContext:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          envFrom:
-            - configMapRef:
-                name: datafy-agent-cm
           env:
-            {{- if (and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") .Values.ebsCsiProxy.enabled) }}
+            {{- if (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") }}
             - name: DATAFY_GRPC_ENABLED
               value: "true"
             {{- end }}
@@ -102,9 +96,9 @@ spec:
       restartPolicy: Always
       schedulerName: default-scheduler
       terminationGracePeriodSeconds: 30
-      {{- if .Values.agent.image.imagePullSecrets }}
+      {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
-        {{- range .Values.agent.image.imagePullSecrets }}
+        {{- range .Values.imagePullSecrets }}
         - name: {{ . }}
         {{ end }}
       {{- end }}

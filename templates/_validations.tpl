@@ -5,6 +5,13 @@
   {{- end }}
 {{- end }}
 
+{{- define "datafy-agent.validation.uninstallMode" }}
+  {{- $mode := (include "datafy-agent.uninstallModeNormalized" . ) }}
+  {{- if not (or (eq $mode "full") (eq $mode "transparent")) }}
+    {{ fail (printf "invalid value: uninstallMode must be either 'full' or 'transparent', got '%s'" $mode) }}
+  {{- end }}
+{{- end }}
+
 {{- define "datafy-agent.validation.token" }}
   {{- $hasToken := not (empty (trim (default "" .Values.agent.token))) }}
   {{- $hasExternalSecretName := not (empty (trim (default "" .Values.agent.externalTokenSecret.name))) }}
@@ -24,28 +31,11 @@
     {{- if not $hasExternalSecret }}
       {{ fail (printf "invalid value: external secret '%s' not found in namespace '%s'" .Values.agent.externalTokenSecret.name .Release.Namespace) }}
     {{- end }}
-    {{- $csiNamespace := (include "datafy-agent.ebsCsiProxyNamespace" . ) }}
-    {{- if ne .Release.Namespace $csiNamespace }}
-      {{- $hasCsiExternalSecret := lookup "v1" "Secret" $csiNamespace .Values.agent.externalTokenSecret.name }}
+    {{- $ebsCsiNamespace := (include "datafy-agent.ebsCsiNamespace" . ) }}
+    {{- if ne .Release.Namespace $ebsCsiNamespace }}
+      {{- $hasCsiExternalSecret := lookup "v1" "Secret" $ebsCsiNamespace .Values.agent.externalTokenSecret.name }}
       {{- if not $hasCsiExternalSecret }}
-        {{ fail (printf "invalid value: external secret '%s' not found in namespace '%s'" .Values.agent.externalTokenSecret.name $csiNamespace) }}
-      {{- end }}
-    {{- end }}
-  {{- end }}
-{{- end }}
-
-{{- define "datafy-agent.validation.csi" }}
-  {{- $mode := (include "datafy-agent.agentModeNormalized" . ) }}
-  {{- if eq $mode "autoscaler" }}
-    {{- $driverName := "ebs.csi.aws.com" }}
-    {{- $hasCsiDriver := or (not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName))) (not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName))) }}
-    {{- if .Values.awsEbsCsiDriver.enabled }}
-      {{- if and $hasCsiDriver .Release.IsInstall }}
-        {{ fail (printf "CSI driver '%s' already exists. Disable awsEbsCsiDriver.enabled or uninstall the existing CSI driver." $driverName) }}
-      {{- end }}
-    {{- else }}
-      {{- if and .Values.ebsCsiProxy.enabled (not $hasCsiDriver) }}
-        {{ fail (printf "CSI driver '%s' not found. Install it (or set awsEbsCsiDriver.enabled) or set ebsCsiProxy.enabled=false." $driverName) }}
+        {{ fail (printf "invalid value: external secret '%s' not found in namespace '%s'" .Values.agent.externalTokenSecret.name $ebsCsiNamespace) }}
       {{- end }}
     {{- end }}
   {{- end }}
