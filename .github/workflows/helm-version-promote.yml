@@ -65,21 +65,21 @@ jobs:
           fi
 
           AGENT_VERSION="${{ inputs.agent_version }}"
-          if ! echo "$AGENT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if [ -n "$AGENT_VERSION" ] && ! echo "$AGENT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "❌ Error: Agent version '$AGENT_VERSION' does not match stable release format (x.x.x)"
             echo "Expected format: major.minor.patch (e.g., 1.30.0)"
             exit 1
           fi
 
           CONTROLLER_VERSION="${{ inputs.controller_version }}"
-          if ! echo "$CONTROLLER_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if [ -n "$CONTROLLER_VERSION" ] && ! echo "$CONTROLLER_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "❌ Error: Controller version '$CONTROLLER_VERSION' does not match stable release format (x.x.x)"
             echo "Expected format: major.minor.patch (e.g., 1.30.0)"
             exit 1
           fi
 
           CSI_PROXY_VERSION="${{ inputs.csi_proxy_version }}"
-          if ! echo "$CSI_PROXY_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+          if [ -n "$CSI_PROXY_VERSION" ] && ! echo "$CSI_PROXY_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
             echo "❌ Error: CSI proxy version '$CSI_PROXY_VERSION' does not match stable release format (x.x.x)"
             echo "Expected format: major.minor.patch (e.g., 1.30.0)"
             exit 1
