@@ -1,7 +1,7 @@
 name: Helm Chart App Version
 
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
       agent_version:
         description: "New agent version (optional)"
@@ -11,36 +11,25 @@ on:
         description: "New controller version (optional)"
         required: false
         type: string
-      csi_version:
+      csi_proxy_version:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
       semantic_bump_type:
-        description: "What version type (major, minor, or patch) to bump"
+        description: what version type (major, minor, or patch) to bump
         required: true
-        type: string
-
-  workflow_dispatch:
-    inputs:
-      agent_version:
-        description: "New agent version (optional)"
-        required: false
-        type: string
-      csi_version:
-        description: "New CSI proxy version (optional)"
-        required: false
-        type: string        
-      semantic_bump_type:
-        description: "What version type (major, minor, or patch) to bump"
-        required: true
-        type: string
-
+        type: choice
+        default: Patch
+        options:
+          - Major
+          - Minor
+          - Patch
 
 permissions:
   contents: write
   
 jobs:
-  update:
+  update_helm_chart:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -49,75 +38,94 @@ jobs:
           repository: datafy-io/datafy-agent-helm
           ref: master
 
-      - name: Read and Update appVersion
-        id: read_chart_app_version_and_update
+      - name: Validate inputs
         run: |
-          CURRENT_APP_VERSION=$(yq '.appVersion' Chart.yaml)
-          echo "Current appVersion: $CURRENT_APP_VERSION"
-
-          input_agent_version="${{ inputs.agent_version }}"
-          input_csi_version="${{ inputs.csi_version }}"
-
-          if [ -z "$input_agent_version" ] && [ -z "$input_csi_version" ]; then
-            echo "No input versions provided. Exiting."
+          if [[ -z "${{ inputs.agent_version }}" && -z "${{ inputs.controller_version }}" && -z "${{ inputs.csi_proxy_version }}" ]]; then
+            echo "Error: At least one of agent_version, controller_version, or csi_proxy_version must be provided."
             exit 1
           fi
 
-          agent_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f1)
-          csi_part=$(echo "$CURRENT_APP_VERSION" | cut -d'_' -f2)
-
-          if [ -n "$input_agent_version" ]; then agent_part="$input_agent_version"; fi
-          if [ -n "$input_csi_version" ]; then csi_part="$input_csi_version"; fi
-
-          NEW_APP_VERSION="${agent_part}_${csi_part}"
-          echo "New appVersion=${NEW_APP_VERSION}"
-
-          if [ "$NEW_APP_VERSION" == "$CURRENT_APP_VERSION" ]; then
-            echo "App version has not changed. Exiting."
+          AGENT_VERSION="${{ inputs.agent_version }}"
+          if [ -n "$AGENT_VERSION" ] && ! echo "$AGENT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: Agent version '$AGENT_VERSION' does not match stable release format (x.x.x)"
+            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
             exit 1
           fi
-          echo "new_app_version=${NEW_APP_VERSION}" >> $GITHUB_OUTPUT
-            
-          yq -i ".appVersion = \"${NEW_APP_VERSION}\"" Chart.yaml
+
+          CONTROLLER_VERSION="${{ inputs.controller_version }}"
+          if [ -n "$CONTROLLER_VERSION" ] && ! echo "$CONTROLLER_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: Controller version '$CONTROLLER_VERSION' does not match stable release format (x.x.x)"
+            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
+            exit 1
+          fi
+
+          CSI_PROXY_VERSION="${{ inputs.csi_proxy_version }}"
+          if [ -n "$CSI_PROXY_VERSION" ] && ! echo "$CSI_PROXY_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: CSI proxy version '$CSI_PROXY_VERSION' does not match stable release format (x.x.x)"
+            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
+            exit 1
+          fi
 
 
-      - name: Read and Update chart version
+      - name: Read current appVersion
+        id: read_version
+        run: |
+          current=$(yq '.appVersion' Chart.yaml)
+          echo "current=$current" >> $GITHUB_OUTPUT
+
+      - name: Compute new appVersion
+        id: new_version
+        run: |
+          current="${{ steps.read_version.outputs.current }}"
+          agent="${{ inputs.agent_version }}"
+          csi="${{ inputs.csi_proxy_version }}"
+          controller="${{ inputs.controller_version }}"
+
+          agent_part=$(echo "$current" | cut -d'_' -f1)
+          csi_part=$(echo "$current" | cut -d'_' -f2)
+          controller_part=$(echo "$current" | cut -d'_' -f3)
+
+          if [ -n "$agent" ]; then agent_part="$agent"; fi
+          if [ -n "$csi" ]; then csi_part="$csi"; fi
+          if [ -n "$controller" ]; then controller_part="$controller"; fi
+
+          new="${agent_part}_${csi_part}_${controller_part}"
+          echo "new=$new" >> $GITHUB_OUTPUT
+          echo "$new"
+
+      - name: Update Chart.yaml appVersion
+        run: |
+          yq -i ".appVersion = \"${{ steps.new_version.outputs.new }}\"" Chart.yaml
+
+      - name: Read current chart version
         id: update_chart_version
         run: |
           current_chart_version=$(yq '.version' Chart.yaml)
           echo "current chart version=$current_chart_version"
+          echo "current_chart_version=$current_chart_version" >> $GITHUB_ENV
 
           bump_type_raw="${{ inputs.semantic_bump_type }}"
           bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
+          echo "bump_type=$bump_type" >> $GITHUB_ENV
 
-          IFS='.' read -r major minor patch <<< "$current_chart_version"
+      - name: Bump Version
+        id: bump
+        uses: cbrgm/semver-bump-action@main
+        with:
+          current-version: ${{ env.current_chart_version }}
+          bump-level: ${{ env.bump_type }}
 
-          case "$bump_type" in
-            patch)
-              patch=$((patch + 1))
-              ;;
-            minor)
-              minor=$((minor + 1))
-              patch=0
-              ;;
-            major)
-              major=$((major + 1))
-              minor=0
-              patch=0
-              ;;
-            *)
-              echo "❌ Error: semantic_bump_type must be one of: Major, Minor, Patch"
-              exit 1
-              ;;
-          esac
+      - name: Update chart version
+        run: |
+          NEW_CHART_VERSION=${{ steps.bump.outputs.new_version }}
+          echo $NEW_CHART_VERSION
 
-          NEW_CHART_VERSION="${major}.${minor}.${patch}"
-          echo "new chart version=$NEW_CHART_VERSION (bump: $bump_type_raw)"
+          echo "new chart version=$NEW_CHART_VERSION (bump: ${{ env.bump_type }})"
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
-          
+
       - name: Install helm-docs
         run: |
-          curl -sSL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | tar -xz
+         curl -sSL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | tar -xz
           sudo mv helm-docs /usr/local/bin/
 
       - name: Regenerate Helm docs
@@ -128,11 +136,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add Chart.yaml README.md || true
-          git commit -m "chore: update appVersion to ${{ steps.read_chart_app_version_and_update.outputs.new_app_version }}"
+          git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
           git push
 
   release_helm_chart:
-    needs: [ update ]
+    needs: [ update_helm_chart ]
     permissions:
       id-token: write
       contents: write
