@@ -11,7 +11,7 @@ on:
         description: "New controller version (optional)"
         required: false
         type: string
-      csi_version:
+      csi_proxy_version:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
@@ -30,7 +30,7 @@ on:
         description: "New controller version (optional)"
         required: false
         type: string
-      csi_version:
+      csi_proxy_version:
         description: "New CSI proxy version (optional)"
         required: false
         type: string
@@ -60,8 +60,8 @@ jobs:
 
       - name: Validate inputs
         run: |
-          if [[ -z "${{ inputs.agent_version }}" && -z "${{ inputs.controller_version }}" && -z "${{ inputs.csi_version }}" ]]; then
-            echo "Error: At least one of agent_version, controller_version, or csi_version must be provided."
+          if [[ -z "${{ inputs.agent_version }}" && -z "${{ inputs.controller_version }}" && -z "${{ inputs.csi_proxy_version }}" ]]; then
+            echo "Error: At least one of agent_version, controller_version, or csi_proxy_version must be provided."
             exit 1
           fi
 
@@ -76,7 +76,7 @@ jobs:
         run: |
           current="${{ steps.read_version.outputs.current }}"
           agent="${{ inputs.agent_version }}"
-          csi="${{ inputs.csi_version }}"
+          csi="${{ inputs.csi_proxy_version }}"
           controller="${{ inputs.controller_version }}"
 
           agent_part=$(echo "$current" | cut -d'_' -f1)
