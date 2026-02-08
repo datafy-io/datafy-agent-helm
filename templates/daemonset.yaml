@@ -92,15 +92,16 @@ spec:
             requests:
               cpu: 10m
               memory: 40Mi
-        - name: csi-monitor
-{{/*          image: "{{ .Values.ebsCsiProxy.image.repository }}:{{ include "datafy-agent.ebsCsiProxyImageTag" . }}"*/}}
+        - name: monitor
           image: "327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/ebs-csi-controller:DT-8080_csi-monitor"
-{{/*          imagePullPolicy: {{ .Values.ebsCsiProxy.image.pullPolicy }}*/}}
           imagePullPolicy: Always
-          {{- with .Values.agent.securityContext }}
+{{/*          image: "{{ .Values.ebsCsiProxy.image.repository }}:{{ include "datafy-agent.ebsCsiProxyImageTag" . }}"*/}}
+{{/*          imagePullPolicy: {{ .Values.ebsCsiProxy.image.pullPolicy }}*/}}
           securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: true
           env: #todo: make this configurable via values.yaml
             - name: DATAFY_MONITOR_CHECK_INTERVAL
               value: "5s"
@@ -110,6 +111,10 @@ spec:
               value: "3"
             - name: DATAFY_MONITOR_CHECK_SUCCESS_THRESHOLD
               value: "1"
+            - name: DATAFY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           volumeMounts:
             - name: datafy-agent-run-dir
               mountPath: /run/datafy
