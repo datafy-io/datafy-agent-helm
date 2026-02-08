@@ -1,25 +1,6 @@
 name: Helm Chart App Version
 
 on:
-  workflow_call:
-    inputs:
-      agent_version:
-        description: "New agent version (optional)"
-        required: false
-        type: string
-      controller_version:
-        description: "New controller version (optional)"
-        required: false
-        type: string
-      csi_proxy_version:
-        description: "New CSI proxy version (optional)"
-        required: false
-        type: string
-      semantic_bump_type:
-        description: "What version type (major, minor, or patch) to bump"
-        required: true
-        type: string
-
   workflow_dispatch:
     inputs:
       agent_version:
