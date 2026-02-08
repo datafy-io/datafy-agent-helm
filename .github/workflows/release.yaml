@@ -19,6 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: test-external-update
       - name: Configure AWS Management Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -28,7 +29,7 @@ jobs:
         run: |
           helm plugin install https://github.com/hypnoglow/helm-s3.git
           helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
-      - name: Push Helm chart
-        run: |
-          helm package .
-          helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+      # - name: Push Helm chart
+      #   run: |
+      #     helm package .
+      #     helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
