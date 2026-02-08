@@ -56,7 +56,6 @@ jobs:
         with:
           repository: datafy-io/datafy-agent-helm
           ref: test-external-update2
-#          token: ${{ secrets.GH_PUSH_TOKEN }}
 
       - name: Validate inputs
         run: |
