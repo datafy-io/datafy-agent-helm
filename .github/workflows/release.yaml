@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: test-external-update
+          ref: test-external-update2
       - name: Configure AWS Management Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:

@@ -48,14 +48,14 @@ permissions:
   contents: write
   
 jobs:
-  update:
+  update_helm_chart:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           repository: datafy-io/datafy-agent-helm
-          ref: test-external-update
+          ref: test-external-update2
           token: ${{ secrets.GH_PUSH_TOKEN }}
 
       - name: Validate inputs
@@ -138,10 +138,10 @@ jobs:
           git push
 
   release_helm_chart:
-    needs: [ update ]
+    needs: [ update_helm_chart ]
     permissions:
       id-token: write
       contents: write
-    uses: datafy-io/datafy-agent-helm/.github/workflows/release.yaml@test-external-update
+    uses: datafy-io/datafy-agent-helm/.github/workflows/release.yaml@test-external-update2
     secrets:
       PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
