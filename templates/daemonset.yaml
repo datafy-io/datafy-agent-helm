@@ -85,10 +85,43 @@ spec:
             - name: DATAFY_MOCKS_CORE_ENABLED
               value: {{ .Values.agent.coreMockEnabled | quote }}
             {{- end }}
+          volumeMounts:
+            - name: datafy-agent-run-dir
+              mountPath: /run/datafy
           resources:
             requests:
               cpu: 10m
               memory: 40Mi
+        - name: csi-monitor
+{{/*          image: "{{ .Values.ebsCsiProxy.image.repository }}:{{ include "datafy-agent.ebsCsiProxyImageTag" . }}"*/}}
+          image: "327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/ebs-csi-controller:DT-8080_csi-monitor"
+{{/*          imagePullPolicy: {{ .Values.ebsCsiProxy.image.pullPolicy }}*/}}
+          imagePullPolicy: Always
+          {{- with .Values.agent.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env: #todo: make this configurable via values.yaml
+            - name: DATAFY_MONITOR_CHECK_INTERVAL
+              value: "5s"
+            - name: DATAFY_MONITOR_CHECK_TIMEOUT
+              value: "4s"
+            - name: DATAFY_MONITOR_CHECK_FAILURE_THRESHOLD
+              value: "3"
+            - name: DATAFY_MONITOR_CHECK_SUCCESS_THRESHOLD
+              value: "1"
+          volumeMounts:
+            - name: datafy-agent-run-dir
+              mountPath: /run/datafy
+          resources:
+            requests:
+              cpu: 10m
+              memory: 40Mi
+      volumes:
+        - name: datafy-agent-run-dir
+          hostPath:
+            path: /run/datafy
+            type: DirectoryOrCreate
       {{- if .Values.agent.serviceAccount.create }}
       serviceAccountName: {{ .Values.agent.serviceAccount.name }}
       {{- end }}
