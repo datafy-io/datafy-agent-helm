@@ -19,7 +19,6 @@ on:
         description: what version type (major, minor, or patch) to bump
         required: true
         type: choice
-        default: Patch
         options:
           - Major
           - Minor
