@@ -93,10 +93,8 @@ spec:
               cpu: 10m
               memory: 40Mi
         - name: monitor
-          image: "327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/ebs-csi-controller:DT-8080_csi-monitor"
-          imagePullPolicy: Always
-{{/*          image: "{{ .Values.ebsCsiProxy.image.repository }}:{{ include "datafy-agent.ebsCsiProxyImageTag" . }}"*/}}
-{{/*          imagePullPolicy: {{ .Values.ebsCsiProxy.image.pullPolicy }}*/}}
+          image: "{{ .Values.monitor.image.repository }}:{{ include "datafy-agent.monitorImageTag" . }}"
+          imagePullPolicy: {{ .Values.monitor.image.pullPolicy }}
           securityContext:
             runAsUser: 0
             runAsGroup: 0

@@ -73,6 +73,12 @@ agent:
     create: true
     name: datafy-agent-sa
 
+monitor:
+  image:
+    pullPolicy: IfNotPresent
+    repository: public.ecr.aws/datafy-io/datafy-monitor
+    tag:
+
 controller:
   serviceAccountName: datafy-controller-sa
   replicas: 2
