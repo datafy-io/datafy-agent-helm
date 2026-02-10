@@ -36,6 +36,12 @@ rules:
     resources: [ "secrets", "configmaps", "services" ]
     resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config", "datafy-controller-webhook", "datafy-controller-webhook-tls" ]
     verbs: [ "get", "update", "patch", "delete" ]
+  - apiGroups: [ "" ]
+    resources: [ "nodes" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "" ]
+    resources: [ "pods" ]
+    verbs: [ "get", "delete" ]
 
   # apps API group
   - apiGroups: [ "apps" ]
