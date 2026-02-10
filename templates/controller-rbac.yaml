@@ -82,11 +82,6 @@ rules:
     resourceNames: [ "datafy-controller-leader" ]
     verbs: [ "get", "update", "patch", "delete" ]
 
-  # datafy.io API group (CRDs)
-  - apiGroups: [ "datafy.io" ]
-    resources: [ "resourceanchors" ]
-    verbs: [ "list", "watch", "get", "delete" ]
-
   # events API groups
   - apiGroups: [ "", "events.k8s.io" ]
     resources: [ "events" ]
