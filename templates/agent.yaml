@@ -100,15 +100,15 @@ spec:
             runAsGroup: 0
             runAsNonRoot: false
             allowPrivilegeEscalation: true
-          env: #todo: make this configurable via values.yaml
-            - name: DATAFY_MONITOR_CHECK_INTERVAL
-              value: "5s"
-            - name: DATAFY_MONITOR_CHECK_TIMEOUT
-              value: "4s"
-            - name: DATAFY_MONITOR_CHECK_FAILURE_THRESHOLD
-              value: "3"
-            - name: DATAFY_MONITOR_CHECK_SUCCESS_THRESHOLD
-              value: "1"
+          env:
+            - name: DATAFY_MONITOR_PROBE_INTERVAL
+              value: {{ .Values.monitor.probe.interval | default "5s" }}
+            - name: DATAFY_MONITOR_PROBE_TIMEOUT
+              value: {{ .Values.monitor.probe.timeout | default "4s" }}
+            - name: DATAFY_MONITOR_PROBE_FAILURE_THRESHOLD
+              value: {{ .Values.monitor.probe.failureThreshold | default "3" }}
+            - name: DATAFY_MONITOR_PROBE_SUCCESS_THRESHOLD
+              value: {{ .Values.monitor.probe.successThreshold | default "1" }}
             - name: DATAFY_NODE_NAME
               valueFrom:
                 fieldRef:
