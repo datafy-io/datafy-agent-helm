@@ -85,9 +85,6 @@ spec:
             - name: DATAFY_MOCKS_CORE_ENABLED
               value: {{ .Values.agent.coreMockEnabled | quote }}
             {{- end }}
-          volumeMounts:
-            - name: datafy-agent-run-dir
-              mountPath: /run/datafy
           resources:
             requests:
               cpu: 10m
@@ -106,22 +103,22 @@ spec:
             - name: DATAFY_MONITOR_PROBE_TIMEOUT
               value: {{ .Values.monitor.probe.timeout | default "4s" }}
             - name: DATAFY_MONITOR_PROBE_FAILURE_THRESHOLD
-              value: {{ .Values.monitor.probe.failureThreshold | default "3" }}
+              value: {{ .Values.monitor.probe.failureThreshold | default 3 | quote }}
             - name: DATAFY_MONITOR_PROBE_SUCCESS_THRESHOLD
-              value: {{ .Values.monitor.probe.successThreshold | default "1" }}
+              value: {{ .Values.monitor.probe.successThreshold | default 1 | quote }}
             - name: DATAFY_NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
           volumeMounts:
-            - name: datafy-agent-run-dir
+            - name: datafy-run
               mountPath: /run/datafy
           resources:
             requests:
               cpu: 10m
               memory: 40Mi
       volumes:
-        - name: datafy-agent-run-dir
+        - name: datafy-run
           hostPath:
             path: /run/datafy
             type: DirectoryOrCreate
