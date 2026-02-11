@@ -38,10 +38,10 @@ rules:
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "nodes" ]
-    verbs: [ "get" ]
+    verbs: [ "get", "list", "watch" ]
   - apiGroups: [ "" ]
     resources: [ "pods" ]
-    verbs: [ "get", "delete" ]
+    verbs: [ "get", "list", "watch", "delete" ]
 
   # apps API group
   - apiGroups: [ "apps" ]
