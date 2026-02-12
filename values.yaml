@@ -74,6 +74,12 @@ agent:
     name: datafy-agent-sa
 
 monitor:
+  probe:
+    interval: 5s
+    timeout: 4s
+    failureThreshold: 3
+    successThreshold: 1
+
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/datafy-monitor
