@@ -31,4 +31,3 @@ data:
       resources:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
