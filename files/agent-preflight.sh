@@ -14,7 +14,7 @@ echo
 
 if [ "$preflight_rc" -ne 0 ]; then
   echo "preflight failed (code=$preflight_rc)"
-else 
+else
   echo "preflight succeeded (code=$preflight_rc)"
 fi
 
