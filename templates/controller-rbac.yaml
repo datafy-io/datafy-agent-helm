@@ -41,8 +41,11 @@ metadata:
 rules:
   # Core API group ""
   - apiGroups: [ "" ]
-    resources: [ "configmaps", "secrets", "persistentvolumes" ]
+    resources: [ "configmaps", "secrets" ]
     verbs: [ "list", "watch" ]
+  - apiGroups: [""]
+    resources: [ "persistentvolumes" ]
+    verbs: [ "list", "watch", "patch" ]
   - apiGroups: [ "" ]
     resources: [ "secrets", "configmaps" ]
     verbs: [ "create" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
