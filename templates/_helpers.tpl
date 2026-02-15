@@ -16,7 +16,7 @@ k8s-csi-controller image tag
 k8s-monitor image tag
 */}}
 {{- define "datafy-agent.monitorImageTag" -}}
-{{- (default (include "datafy-agent.ebsCsiProxyImageTag" .) .Values.monitor.image.tag) -}}
+{{- (default (split "_" .Chart.AppVersion)._2 .Values.controller.image.tag) -}}
 {{- end -}}
 
 {{/*
