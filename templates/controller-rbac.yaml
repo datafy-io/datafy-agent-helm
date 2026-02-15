@@ -7,17 +7,10 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- else }}
-  {{- with .Values.extraAnnotations }}
-  annotations:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
   {{- end }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -26,17 +19,10 @@ metadata:
   name: {{ $roleName }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- else }}
-  {{- with .Values.extraAnnotations }}
-  annotations:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
   {{- end }}
 rules:
   # Core API group ""
@@ -93,17 +79,10 @@ metadata:
   name: {{ $roleBindingName }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- else }}
-  {{- with .Values.extraAnnotations }}
-  annotations:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
   {{- end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
