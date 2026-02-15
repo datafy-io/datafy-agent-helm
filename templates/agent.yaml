@@ -99,13 +99,13 @@ spec:
             allowPrivilegeEscalation: true
           env:
             - name: DATAFY_MONITOR_PROBE_INTERVAL
-              value: {{ .Values.monitor.probe.interval | default "5s" }}
+              value: {{ .Values.monitor.probe.interval }}
             - name: DATAFY_MONITOR_PROBE_TIMEOUT
-              value: {{ .Values.monitor.probe.timeout | default "4s" }}
+              value: {{ .Values.monitor.probe.timeout }}
             - name: DATAFY_MONITOR_PROBE_FAILURE_THRESHOLD
-              value: {{ .Values.monitor.probe.failureThreshold | default 3 | quote }}
+              value: {{ .Values.monitor.probe.failureThreshold | quote }}
             - name: DATAFY_MONITOR_PROBE_SUCCESS_THRESHOLD
-              value: {{ .Values.monitor.probe.successThreshold | default 1 | quote }}
+              value: {{ .Values.monitor.probe.successThreshold | quote }}
             - name: DATAFY_NODE_NAME
               valueFrom:
                 fieldRef:

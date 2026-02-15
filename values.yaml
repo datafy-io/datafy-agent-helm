@@ -77,8 +77,8 @@ monitor:
   probe:
     interval: 5s
     timeout: 4s
-    failureThreshold: 3
-    successThreshold: 1
+    failureThreshold: 4
+    successThreshold: 2
 
   image:
     pullPolicy: IfNotPresent
