@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 TOKEN="$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)"
 CACERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
@@ -17,50 +17,77 @@ if [ -z "${AGENT_MODE}" ]; then
 fi
 
 get_node_label_value() {
-  _tmp="$(mktemp)"
+  while true; do
+    _tmp="$(mktemp)"
 
-  http_code=$(curl -sS --cacert "${CACERT}" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    -H "Accept: application/json" \
-    -o "${_tmp}" \
-    -w '%{http_code}' \
-    -X GET "${APISERVER}/api/v1/nodes/${NODE_NAME}" || echo "000")
+    http_code=$(curl -sS --cacert "${CACERT}" \
+      -H "Authorization: Bearer ${TOKEN}" \
+      -H "Accept: application/json" \
+      -o "${_tmp}" \
+      -w '%{http_code}' \
+      -X GET "${APISERVER}/api/v1/nodes/${NODE_NAME}" || echo "000")
 
-  if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
-    body="$(cat "${_tmp}" 2>/dev/null)"
+    if [ "$http_code" = "429" ]; then
+      rm -f "${_tmp}" || true
+
+      jitter=$((RANDOM % 4 + 1)) # Random jitter between 1 and 5
+      echo "WARN: GET node rate-limited (http=429), Sleeping for ${jitter} seconds"
+      sleep $jitter
+
+      continue
+    fi
+
+    if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+      body="$(cat "${_tmp}" 2>/dev/null || true)"
+      rm -f "${_tmp}" || true
+      echo "ERROR: failed to GET node (http=${http_code}). Response:"
+      echo "${body}"
+
+      return 1
+    fi
+
+    val=$(cat $_tmp | sed -n '/"labels"[[:space:]]*:[[:space:]]*{/,/}[[:space:]]*,/p' | grep "$1" | cut -d "\"" -f 4)
     rm -f "${_tmp}" || true
-    echo "ERROR: failed to GET node (http=${http_code}). Response: ${body}"
-    return 1
-  fi
 
-  val=$(cat $_tmp | sed -n '/"labels"[[:space:]]*:[[:space:]]*{/,/}[[:space:]]*,/p' | grep "$1" | cut -d "\"" -f 4)
-  rm -f "${_tmp}" || true
-  echo "${val}"
+    echo "${val}"
+    return 0
+  done
 }
 
 patch_node_or_die() {
-  _payload="$1"
-  _tmp="$(mktemp)"
+  while true; do
+    _tmp="$(mktemp)"
 
-  http_code=$(curl -sS --cacert "${CACERT}" \
-    -H "Authorization: Bearer ${TOKEN}" \
-    -H "Content-Type: application/merge-patch+json" \
-    -o "${_tmp}" \
-    -w '%{http_code}' \
-    -X PATCH "${APISERVER}/api/v1/nodes/${NODE_NAME}" \
-    -d "${_payload}" || echo "000")
+    http_code=$(curl -sS --cacert "${CACERT}" \
+      -H "Authorization: Bearer ${TOKEN}" \
+      -H "Content-Type: application/merge-patch+json" \
+      -o "${_tmp}" \
+      -w '%{http_code}' \
+      -X PATCH "${APISERVER}/api/v1/nodes/${NODE_NAME}" \
+      -d "$1" || echo "000")
 
-  if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+    if [ "$http_code" = "429" ]; then
+      rm -f "${_tmp}" || true
+
+      jitter=$((RANDOM % 4 + 1)) # Random jitter between 1 and 5
+      echo "WARN: PATCH node rate-limited (http=429), Sleeping for ${jitter} seconds"
+      sleep $jitter
+
+      continue
+    fi
+
+    if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
+      rm -f "${_tmp}" || true
+      return 0
+    fi
+
+    body="$(cat "${_tmp}" 2>/dev/null || true)"
     rm -f "${_tmp}" || true
-    return 0
-  fi
 
-  body="$(cat "${_tmp}" 2>/dev/null)"
-  rm -f "${_tmp}" || true
-
-  echo "ERROR: node patch failed (http=${http_code}). Response:"
-  echo ${body}
-  return 1
+    echo "ERROR: node patch failed (http=${http_code}). Response:"
+    echo "${body}"
+    return 1
+  done
 }
 
 insert_label() {
