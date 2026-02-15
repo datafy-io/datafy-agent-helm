@@ -21,10 +21,7 @@ metadata:
   annotations:
   {{- toYaml . | nindent 4 }}
   {{- end }}
-rules:
-  - apiGroups: [ "" ]
-    resources: [ "nodes" ]
-    verbs: [ "get", "patch" ]
+rules: [ ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
