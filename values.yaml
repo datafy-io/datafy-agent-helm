@@ -124,10 +124,3 @@ ebsCsiProxy:
     requests:
       cpu: 10m
       memory: 40Mi
-
-  livenessProbe:
-  readinessProbe:
-    periodSeconds: 30
-    timeoutSeconds: 10
-    failureThreshold: 5
-    successThreshold: 1
