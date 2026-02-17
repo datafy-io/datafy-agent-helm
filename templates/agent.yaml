@@ -106,6 +106,8 @@ spec:
               value: {{ .Values.monitor.probe.failureThreshold | quote }}
             - name: DATAFY_MONITOR_PROBE_SUCCESS_THRESHOLD
               value: {{ .Values.monitor.probe.successThreshold | quote }}
+            - name: DATAFY_IAC_URL
+              value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
