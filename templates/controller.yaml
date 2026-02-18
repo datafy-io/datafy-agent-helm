@@ -102,8 +102,6 @@ spec:
           ports:
             - name: webhook
               containerPort: 9443
-            - name: grpc
-              containerPort: 50051
           volumeMounts:
             - name: datafy-controller-config
               mountPath: /etc/datafy-controller
@@ -144,18 +142,4 @@ spec:
   ports:
     - name: https
       port: 443
-      targetPort: webhook
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: datafy-controller
-  namespace: {{ .Release.Namespace }}
-spec:
-  selector:
-    app.kubernetes.io/name: datafy-controller
-  ports:
-    - name: grpc
-      port: 50051
-      targetPort: grpc
-      appProtocol: grpc
+      targetPort: 9443
