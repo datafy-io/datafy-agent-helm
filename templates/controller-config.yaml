@@ -38,6 +38,4 @@ data:
       resources:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      controller:
-        service_address: {{ printf "datafy-controller.%s:50051" .Release.Namespace | quote }}
 
