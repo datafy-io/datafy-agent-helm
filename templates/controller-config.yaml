@@ -19,16 +19,7 @@ data:
         repository: {{ .repository }}
         tag: {{ include "datafy-agent.ebsCsiProxyImageTag" $ }}
       {{- end }}
-      {{- with .Values.ebsCsiProxy.livenessProbe }}
-      livenessProbe:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.ebsCsiProxy.readinessProbe }}
-      readinessProbe:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       {{- with .Values.ebsCsiProxy.resources }}
       resources:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
