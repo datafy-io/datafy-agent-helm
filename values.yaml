@@ -73,6 +73,18 @@ agent:
     create: true
     name: datafy-agent-sa
 
+monitor:
+  probe:
+    interval: 5s
+    timeout: 4s
+    failureThreshold: 4
+    successThreshold: 2
+
+  image:
+    pullPolicy: IfNotPresent
+    repository: public.ecr.aws/datafy-io/datafy-monitor
+    tag:
+
 controller:
   serviceAccountName: datafy-controller-sa
   replicas: 2
@@ -112,10 +124,3 @@ ebsCsiProxy:
     requests:
       cpu: 10m
       memory: 40Mi
-
-  livenessProbe:
-  readinessProbe:
-    periodSeconds: 30
-    timeoutSeconds: 10
-    failureThreshold: 5
-    successThreshold: 1

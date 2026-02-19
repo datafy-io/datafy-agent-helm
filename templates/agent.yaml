@@ -89,6 +89,46 @@ spec:
             requests:
               cpu: 10m
               memory: 40Mi
+        - name: monitor
+          image: "{{ .Values.monitor.image.repository }}:{{ include "datafy-agent.monitorImageTag" . }}"
+          imagePullPolicy: {{ .Values.monitor.image.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+            runAsNonRoot: false
+            allowPrivilegeEscalation: true
+          env:
+            - name: DATAFY_MONITOR_PROBE_INTERVAL
+              value: {{ .Values.monitor.probe.interval }}
+            - name: DATAFY_MONITOR_PROBE_TIMEOUT
+              value: {{ .Values.monitor.probe.timeout }}
+            - name: DATAFY_MONITOR_PROBE_FAILURE_THRESHOLD
+              value: {{ .Values.monitor.probe.failureThreshold | quote }}
+            - name: DATAFY_MONITOR_PROBE_SUCCESS_THRESHOLD
+              value: {{ .Values.monitor.probe.successThreshold | quote }}
+            - name: DATAFY_IAC_URL
+              value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
+            - name: DATAFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            - name: DATAFY_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+          volumeMounts:
+            - name: datafy-run
+              mountPath: /run/datafy
+          resources:
+            requests:
+              cpu: 10m
+              memory: 40Mi
+      volumes:
+        - name: datafy-run
+          hostPath:
+            path: /run/datafy
+            type: DirectoryOrCreate
       {{- if .Values.agent.serviceAccount.create }}
       serviceAccountName: {{ .Values.agent.serviceAccount.name }}
       {{- end }}
