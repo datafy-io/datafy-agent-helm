@@ -5,13 +5,6 @@
   {{- end }}
 {{- end }}
 
-{{- define "datafy-agent.validation.uninstallMode" }}
-  {{- $mode := (include "datafy-agent.uninstallModeNormalized" . ) }}
-  {{- if not (or (eq $mode "full") (eq $mode "transparent")) }}
-    {{ fail (printf "invalid value: uninstallMode must be either 'full' or 'transparent', got '%s'" $mode) }}
-  {{- end }}
-{{- end }}
-
 {{- define "datafy-agent.validation.token" }}
   {{- $hasToken := not (empty (trim (default "" .Values.agent.token))) }}
   {{- $hasExternalSecretName := not (empty (trim (default "" .Values.agent.externalTokenSecret.name))) }}
