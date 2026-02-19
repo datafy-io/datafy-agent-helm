@@ -7,17 +7,10 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- else }}
-  {{- with .Values.extraAnnotations }}
-  annotations:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
   {{- end }}
 spec:
   replicas: {{ .Values.controller.replicas }}
@@ -67,14 +60,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: DATAFY_TOKEN_SYNC_ENABLED
-              value: {{ ternary true false (not (empty .Values.agent.token)) | quote }}
             - name: DATAFY_TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
             - name: DATAFY_TOKEN_SECRET_NAME
               value: {{ default "datafy-token" .Values.agent.externalTokenSecret.name | quote }}
             - name: DATAFY_TOKEN_SECRET_KEY
               value: {{ default "token" .Values.agent.externalTokenSecret.key | quote }}
+            - name: DATAFY_TOKEN_EXTERNAL_ENABLED
+              value: {{ empty .Values.agent.token | quote }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -124,17 +117,10 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- else }}
-  {{- with .Values.extraAnnotations }}
-  annotations:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
   {{- end }}
 spec:
   selector:
