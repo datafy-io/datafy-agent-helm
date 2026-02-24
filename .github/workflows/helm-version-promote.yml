@@ -70,6 +70,17 @@ jobs:
           echo "github.event.sender.login=${{ github.event.sender.login }}"
           echo "github.event_name=${{ github.event_name }}"
 
+      - name: Validate push token is available
+        run: |
+          if [ -z "${{ secrets.GH_ACCESS_TOKEN }}" ]; then
+            echo "GH_ACCESS_TOKEN is empty or not passed to this workflow."
+            exit 1
+          fi
+
+      - name: Configure authenticated git remote
+        run: |
+          git remote set-url origin "https://x-access-token:${{ secrets.GH_ACCESS_TOKEN }}@github.com/datafy-io/datafy-agent-helm.git"
+
       - name: Validate inputs
         run: |
           if [[ -z "${{ inputs.agent_version }}" && -z "${{ inputs.controller_version }}" && -z "${{ inputs.csi_proxy_version }}" ]]; then
