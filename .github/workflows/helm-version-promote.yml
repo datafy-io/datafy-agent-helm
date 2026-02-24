@@ -56,6 +56,8 @@ jobs:
         with:
           repository: datafy-io/datafy-agent-helm
           ref: test-external-update2
+          token: ${{ secrets.AVNER_TEST_PAT }}
+          persist-credentials: true
 
       - name: Print workflow trigger actor
         run: |
