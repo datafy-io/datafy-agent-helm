@@ -60,7 +60,7 @@ jobs:
         with:
           repository: datafy-io/datafy-agent-helm
           ref: test-external-update2
-          token: ${{ secrets.DEVOPS_PAT }}
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
           persist-credentials: true
 
       - name: Print workflow trigger actor
@@ -72,14 +72,14 @@ jobs:
 
       - name: Validate push token is available
         run: |
-          if [ -z "${{ secrets.DEVOPS_PAT }}" ]; then
-            echo "DEVOPS_PAT is empty or not passed to this workflow."
+          if [ -z "${{ secrets.GH_ACCESS_TOKEN }}" ]; then
+            echo "GH_ACCESS_TOKEN is empty or not passed to this workflow."
             exit 1
           fi
 
       - name: Configure authenticated git remote
         run: |
-          git remote set-url origin "https://x-access-token:${{ secrets.DEVOPS_PAT }}@github.com/datafy-io/datafy-agent-helm.git"
+          git remote set-url origin "https://x-access-token:${{ secrets.GH_ACCESS_TOKEN }}@github.com/datafy-io/datafy-agent-helm.git"
 
       - name: Validate inputs
         run: |
