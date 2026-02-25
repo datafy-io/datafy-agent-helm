@@ -20,7 +20,7 @@ on:
         required: true
         type: string
     secrets:
-      GH_ACCESS_TOKEN:
+      DEVOPS_PAT:
         description: "PAT used for checkout/push to protected branches"
         required: true
 
@@ -67,7 +67,7 @@ jobs:
         with:
           repository: datafy-io/datafy-agent-helm
           ref: test-external-update2
-          token: ${{ secrets.GH_ACCESS_TOKEN }}
+          token: ${{ secrets.DEVOPS_PAT }}
           persist-credentials: true
 
       - name: Print workflow trigger actor
@@ -79,14 +79,14 @@ jobs:
 
       - name: Validate push token is available
         run: |
-          if [ -z "${{ secrets.GH_ACCESS_TOKEN }}" ]; then
-            echo "GH_ACCESS_TOKEN is empty or not passed to this workflow."
+          if [ -z "${{ secrets.DEVOPS_PAT }}" ]; then
+            echo "DEVOPS_PAT is empty or not passed to this workflow."
             exit 1
           fi
 
       - name: Configure authenticated git remote
         run: |
-          git remote set-url origin "https://x-access-token:${{ secrets.GH_ACCESS_TOKEN }}@github.com/datafy-io/datafy-agent-helm.git"
+          git remote set-url origin "https://x-access-token:${{ secrets.DEVOPS_PAT }}@github.com/datafy-io/datafy-agent-helm.git"
 
       - name: Validate inputs
         run: |
@@ -185,7 +185,7 @@ jobs:
         id: cpr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GH_ACCESS_TOKEN }}
+          token: ${{ secrets.DEVOPS_PAT }}
           commit-message: "chore: update chart for appVersion ${{ steps.new_version.outputs.new }}"
           title: "chore: update chart for appVersion ${{ steps.new_version.outputs.new }}"
           body: |
@@ -203,7 +203,7 @@ jobs:
       - name: Merge pull request (admin bypass)
         if: steps.cpr.outputs.pull-request-number
         env:
-          GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
+          GH_TOKEN: ${{ secrets.DEVOPS_PAT }}
         run: |
           gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" \
             --repo datafy-io/datafy-agent-helm \
@@ -212,7 +212,7 @@ jobs:
             --admin
 
   release_helm_chart:
-    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'automation/helm-version-promote'
+    needs: [ update_helm_chart ]
     permissions:
       id-token: write
       contents: write
