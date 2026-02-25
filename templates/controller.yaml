@@ -137,6 +137,14 @@ kind: Service
 metadata:
   name: datafy-controller
   namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+
 spec:
   selector:
     app.kubernetes.io/name: datafy-controller
