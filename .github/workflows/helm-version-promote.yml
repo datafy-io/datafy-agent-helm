@@ -47,12 +47,19 @@ on:
           - Major
           - Minor
           - Patch
+  pull_request:
+    types:
+      - closed
+    branches:
+      - test-external-update2
 
 permissions:
   contents: write
+  pull-requests: write
   
 jobs:
   update_helm_chart:
+    if: github.event_name == 'workflow_call' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -174,16 +181,38 @@ jobs:
       - name: Regenerate Helm docs
         run: helm-docs
 
-      - name: Commit and push changes
+      - name: Create pull request
+        id: cpr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GH_ACCESS_TOKEN }}
+          commit-message: "chore: update chart for appVersion ${{ steps.new_version.outputs.new }}"
+          title: "chore: update chart for appVersion ${{ steps.new_version.outputs.new }}"
+          body: |
+            Automated chart update from `helm-version-promote.yml`.
+
+            - appVersion: `${{ steps.new_version.outputs.new }}`
+            - chart version bump: `${{ env.current_chart_version }}` -> `${{ steps.bump.outputs.new_version }}`
+          branch: "automation/helm-version-promote"
+          delete-branch: true
+          base: test-external-update2
+          add-paths: |
+            Chart.yaml
+            README.md
+
+      - name: Merge pull request (admin bypass)
+        if: steps.cpr.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
         run: |
-          git config user.name ${{ github.actor }}
-          git config user.email "${{ github.actor }}@users.noreply.github.com"
-          git add Chart.yaml README.md || true
-          git commit -m "chore: update appVersion to ${{ steps.new_version.outputs.new }}" || echo "No changes to commit"
-          git push
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" \
+            --repo datafy-io/datafy-agent-helm \
+            --squash \
+            --delete-branch \
+            --admin
 
   release_helm_chart:
-    needs: [ update_helm_chart ]
+    if: github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'automation/helm-version-promote'
     permissions:
       id-token: write
       contents: write
