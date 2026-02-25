@@ -37,7 +37,7 @@ rules:
     verbs: [ "create" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
   - apiGroups: [ "" ]
     resources: [ "secrets", "configmaps", "services" ]
-    resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config", "datafy-controller-webhook", "datafy-controller-webhook-tls" ]
+    resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config", "datafy-controller-webhook", "datafy-controller", "datafy-controller-webhook-tls" ]
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "nodes" ]
