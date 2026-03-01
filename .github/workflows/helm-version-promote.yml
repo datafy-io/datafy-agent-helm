@@ -200,7 +200,7 @@ jobs:
             Chart.yaml
             README.md
 
-      - name: Sleep before checking PR status
+      - name: Sleep before checking PR checks status
         if: steps.cpr.outputs.pull-request-number
         run: sleep 30
 
