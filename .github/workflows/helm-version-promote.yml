@@ -200,6 +200,10 @@ jobs:
             Chart.yaml
             README.md
 
+      - name: Sleep before checking PR status
+        if: steps.cpr.outputs.pull-request-number
+        run: sleep 30
+
       - name: Wait for all PR checks to complete
         if: steps.cpr.outputs.pull-request-number
         env:
