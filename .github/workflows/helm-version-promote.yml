@@ -47,11 +47,6 @@ on:
           - Major
           - Minor
           - Patch
-  pull_request:
-    types:
-      - closed
-    branches:
-      - master
 
 permissions:
   contents: write
@@ -183,7 +178,7 @@ jobs:
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
           commit-message: "update chart for appVersion ${{ steps.new_version.outputs.new }}"
-          title: "DT-0042: update chart for appVersion ${{ steps.new_version.outputs.new }}"
+          title: "Update chart for appVersion ${{ steps.new_version.outputs.new }}"
           body: |
             Automated chart update from `helm-version-promote.yml`.
 
@@ -195,21 +190,6 @@ jobs:
           add-paths: |
             Chart.yaml
             README.md
-
-      - name: Sleep before checking PR checks status
-        if: steps.cpr.outputs.pull-request-number
-        run: sleep 30
-
-      - name: Wait for all PR checks to complete
-        if: steps.cpr.outputs.pull-request-number
-        env:
-          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-        run: |
-          # Wait up to 5 minutes for checks to finish; continue even on timeout/failures.
-          timeout 5m gh pr checks "${{ steps.cpr.outputs.pull-request-number }}" \
-            --repo datafy-io/datafy-agent-helm \
-            --watch \
-            --interval 10 || true
 
       - name: Merge pull request (admin bypass)
         if: steps.cpr.outputs.pull-request-number
