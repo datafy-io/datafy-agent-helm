@@ -42,8 +42,8 @@ on:
         description: what version type (major, minor, or patch) to bump
         required: true
         type: choice
-        default: Patch
         options:
+          - Choose a version type
           - Major
           - Minor
           - Patch
@@ -84,10 +84,6 @@ jobs:
             exit 1
           fi
 
-      - name: Configure authenticated git remote
-        run: |
-          git remote set-url origin "https://x-access-token:${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}@github.com/datafy-io/datafy-agent-helm.git"
-
       - name: Validate inputs
         run: |
           if [[ -z "${{ inputs.agent_version }}" && -z "${{ inputs.controller_version }}" && -z "${{ inputs.csi_proxy_version }}" ]]; then
@@ -115,6 +111,21 @@ jobs:
             echo "Expected format: major.minor.patch (e.g., 1.30.0)"
             exit 1
           fi
+
+      - name: Validate semantic bump type
+        run: |
+          SEMANTIC_BUMP_TYPE="${{ inputs.semantic_bump_type }}"
+
+          case "$SEMANTIC_BUMP_TYPE" in
+            Major|Minor|Patch)
+              echo "✅ Semantic bump type '$SEMANTIC_BUMP_TYPE' is valid"
+              ;;
+            *)
+              echo "❌ Error: You must select a valid semantic bump type (Major, Minor, or Patch)"
+              echo "Received: '$SEMANTIC_BUMP_TYPE'"
+              exit 1
+              ;;
+          esac
 
 
       - name: Read current appVersion
