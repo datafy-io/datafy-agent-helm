@@ -70,10 +70,6 @@ jobs:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
           persist-credentials: true
 
-      - name: Configure authenticated git remote
-        run: |
-          git remote set-url origin "https://x-access-token:${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}@github.com/datafy-io/datafy-agent-helm.git"
-
       - name: Validate inputs
         run: |
           if [[ -z "${{ inputs.agent_version }}" && -z "${{ inputs.controller_version }}" && -z "${{ inputs.csi_proxy_version }}" ]]; then
@@ -187,7 +183,7 @@ jobs:
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
           commit-message: "update chart for appVersion ${{ steps.new_version.outputs.new }}"
-          title: "DT-0001: update chart for appVersion ${{ steps.new_version.outputs.new }}"
+          title: "DT-0042: update chart for appVersion ${{ steps.new_version.outputs.new }}"
           body: |
             Automated chart update from `helm-version-promote.yml`.
 
