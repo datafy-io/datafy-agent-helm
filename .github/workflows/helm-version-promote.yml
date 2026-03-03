@@ -43,14 +43,13 @@ on:
         required: true
         type: choice
         options:
-          - Choose a version type
+          - ''
           - Major
           - Minor
           - Patch
 
 permissions:
   contents: write
-  pull-requests: write
   
 jobs:
   update_helm_chart:
@@ -187,35 +186,19 @@ jobs:
       - name: Regenerate Helm docs
         run: helm-docs
 
-      - name: Create pull request
-        id: cpr
-        uses: peter-evans/create-pull-request@v7
-        with:
-          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-          commit-message: "update chart for appVersion ${{ steps.new_version.outputs.new }}"
-          title: "Update chart for appVersion ${{ steps.new_version.outputs.new }}"
-          body: |
-            Automated chart update from `helm-version-promote.yml`.
-
-            - appVersion: `${{ steps.new_version.outputs.new }}`
-            - chart version bump: `${{ env.current_chart_version }}` -> `${{ steps.bump.outputs.new_version }}`
-          branch: "automation/helm-version-promote"
-          delete-branch: true
-          base: test-external-update2
-          add-paths: |
-            Chart.yaml
-            README.md
-
-      - name: Merge pull request (admin bypass)
-        if: steps.cpr.outputs.pull-request-number
-        env:
-          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+      - name: Commit and push directly to test-external-update2
         run: |
-          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" \
-            --repo datafy-io/datafy-agent-helm \
-            --squash \
-            --delete-branch \
-            --admin
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          git add Chart.yaml README.md
+          if git diff --cached --quiet; then
+            echo "No chart changes detected; skipping commit and push."
+            exit 0
+          fi
+
+          git commit -m "update chart for appVersion ${{ steps.new_version.outputs.new }}"
+          git push origin HEAD:test-external-update2
 
   release_helm_chart:
     needs: [ update_helm_chart ]

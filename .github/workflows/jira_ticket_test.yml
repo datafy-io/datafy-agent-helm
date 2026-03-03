@@ -13,7 +13,7 @@ jobs:
         run: |
 
       - name: check-jira-ticket
-        if: ${{ !startsWith(github.head_ref, 'dependabot-') && !startsWith(github.head_ref, 'automation/helm-version-promote') }}
+        if: ${{ !startsWith(github.head_ref, 'dependabot-') }}
         run: |
           pr_name="${{ github.event.pull_request.title }}"
           if ! [[ $pr_name == *"DT-"* ]]; then
