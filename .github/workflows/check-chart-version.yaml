@@ -6,7 +6,6 @@ on:
 jobs:
   check-version:
     runs-on: ubuntu-latest
-    if: ${{ !startsWith(github.head_ref, 'automation/helm-version-promote') }}
     steps:
       - uses: actions/checkout@v4
         with:

@@ -6,7 +6,6 @@ on:
 jobs:
   test_jira_ticket:
     runs-on: ubuntu-latest
-    if: ${{ !startsWith(github.head_ref, 'automation/helm-version-promote') }}
     timeout-minutes: 5
     steps:
       - name: ignore-dependabot
