@@ -192,7 +192,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-          commit-message: "update chart for appVersion ${{ steps.new_version.outputs.new }}"
+          commit-message: "update chart for appVersion ${{ steps.new_version.outputs.new }} [skip ci]"
           title: "Update chart for appVersion ${{ steps.new_version.outputs.new }}"
           body: |
             Automated chart update from `helm-version-promote.yml`.
