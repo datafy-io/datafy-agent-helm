@@ -74,17 +74,17 @@ Create chart name and version as used by the chart label.
 Common labels for all resources
 */}}
 {{- define "datafy-agent.labels" -}}
+{{- $labels := dict -}}
 {{- if ne .Release.Name "kustomize" -}}
-helm.sh/chart: {{ include "datafy-agent.chart" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/component: datafy-agent
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-app: datafy-agent
-app.agent.version: {{ include "datafy-agent.agentImageTag" . }}
-{{- end }}
-{{- if .Values.extraLabels }}
-{{ toYaml .Values.extraLabels }}
-{{- end }}
+{{- $_ := set $labels "helm.sh/chart" (include "datafy-agent.chart" .) -}}
+{{- if .Chart.AppVersion }}{{ $_ := set $labels "app.kubernetes.io/version" (.Chart.AppVersion | quote) }}{{- end -}}
+{{- $_ := set $labels "app.kubernetes.io/component" "datafy-agent" -}}
+{{- $_ := set $labels "app.kubernetes.io/managed-by" .Release.Service -}}
+{{- $_ := set $labels "app" "datafy-agent" -}}
+{{- $_ := set $labels "app.agent.version" (include "datafy-agent.agentImageTag" .) -}}
+{{- end -}}
+{{- range $k, $v := .Values.extraLabels }}
+{{- $_ := set $labels $k $v -}}
+{{- end -}}
+{{ toYaml $labels }}
 {{- end -}}
