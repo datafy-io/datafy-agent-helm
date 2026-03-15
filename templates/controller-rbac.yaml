@@ -35,6 +35,9 @@ rules:
   - apiGroups: [""]
     resources: [ "persistentvolumes" ]
     verbs: [ "list", "watch", "patch" ]
+  - apiGroups: [""]
+    resources: [ "persistentvolumeclaims" ]
+    verbs: [ "list", "watch" ]
   - apiGroups: [ "" ]
     resources: [ "secrets", "configmaps" ]
     verbs: [ "create" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
