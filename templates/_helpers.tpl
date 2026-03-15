@@ -13,6 +13,13 @@ k8s-csi-controller image tag
 {{- end -}}
 
 {{/*
+k8s-monitor image tag
+*/}}
+{{- define "datafy-agent.monitorImageTag" -}}
+{{- (default (split "_" .Chart.AppVersion)._2 .Values.controller.image.tag) -}}
+{{- end -}}
+
+{{/*
 datafy-contorller image tag
 */}}
 {{- define "datafy-agent.controllerImageTag" -}}
@@ -31,13 +38,6 @@ Normalized agent mode
 */}}
 {{- define "datafy-agent.agentModeNormalized" -}}
     {{- .Values.agent.mode | lower | trim -}}
-{{- end -}}
-
-{{/*
-Normolized uninstall mode
-*/}}
-{{- define "datafy-agent.uninstallModeNormalized" -}}
-    {{- (default "transparent" .Values.uninstallMode) | lower | trim -}}
 {{- end -}}
 
 {{/*

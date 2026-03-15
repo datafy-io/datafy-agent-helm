@@ -5,17 +5,10 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- if eq (include "datafy-agent.uninstallModeNormalized" .) "transparent" }}
   annotations:
     helm.sh/resource-policy: keep
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
-  {{- end }}
-  {{- else }}
-  {{- with .Values.extraAnnotations }}
-  annotations:
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
   {{- end }}
 data:
   config.yaml: |
@@ -26,16 +19,7 @@ data:
         repository: {{ .repository }}
         tag: {{ include "datafy-agent.ebsCsiProxyImageTag" $ }}
       {{- end }}
-      {{- with .Values.ebsCsiProxy.livenessProbe }}
-      livenessProbe:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.ebsCsiProxy.readinessProbe }}
-      readinessProbe:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       {{- with .Values.ebsCsiProxy.resources }}
       resources:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-
