@@ -51,6 +51,10 @@ jobs:
       - name: Apply fake EBS CSI resources
         run: kubectl apply -f scripts/helm-validation/fake-ebs-csi.yaml
 
+      # Agent detects AWS via IMDS (169.254.169.254). Kind has none — run AWS EC2 Metadata Mock on each node + DNAT.
+      - name: Fake EC2 IMDS on Kind nodes
+        run: bash scripts/helm-validation/setup-kind-fake-ec2-imds.sh
+
       - name: Run chart-testing (install)
         id: ct_install
         run: |
@@ -93,7 +97,7 @@ jobs:
             --config .ct.yaml \
             --namespace "$NS" \
             --skip-clean-up \
-            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }}"
+            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} --set agent.coreMockEnabled=true --set agent.hqMockEnabled=true"
 
       - name: Debug chart install failure
         if: failure() && steps.ct_install.outcome == 'failure'
