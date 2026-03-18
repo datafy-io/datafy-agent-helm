@@ -144,10 +144,10 @@ jobs:
           echo "Found release: $rel"
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
 
-  # Install published chart from helm.datafy.io, then upgrade to this PR’s chart.
-  upgrade-from-registry:
+  # Install latest from helm.datafy.io → upgrade to PR chart → uninstall.
+  test-upgrade-uninstall:
     runs-on: ubuntu-latest
-    name: test upgrade from registry
+    name: Test upgrade and uninstall
     steps:
       - name: Checkout repository (PR branch chart)
         uses: actions/checkout@v4
