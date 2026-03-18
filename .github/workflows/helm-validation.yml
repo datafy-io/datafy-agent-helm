@@ -200,9 +200,32 @@ jobs:
             --set agent.coreMockEnabled=true \
             --set agent.hqMockEnabled=true
 
-      - name: Debug upgrade failure
+      - name: Helm uninstall
+        run: |
+          set -euo pipefail
+          NS=datafy-agent
+          helm uninstall datafy-agent --namespace "$NS" --wait --timeout 5m --debug
+
+      - name: Verify uninstall
+        run: |
+          set -euo pipefail
+          NS=datafy-agent
+          if helm status datafy-agent -n "$NS" >/dev/null 2>&1; then
+            echo "Release datafy-agent still exists after uninstall" >&2
+            helm list -n "$NS"
+            exit 1
+          fi
+          echo "Release datafy-agent removed (uninstall OK)"
+          remaining=$(kubectl get pods -n "$NS" --no-headers 2>/dev/null | wc -l | tr -d ' ' || echo 0)
+          if [[ "${remaining}" != "0" ]]; then
+            echo "Note: $remaining pod(s) still in $NS (terminating or non-chart):" >&2
+            kubectl get pods -n "$NS" -o wide >&2 || true
+          fi
+
+      - name: Debug upgrade / uninstall failure
         if: failure()
         run: |
           kubectl get pods -n datafy-agent -o wide || true
           kubectl get events -n datafy-agent --sort-by=.lastTimestamp | tail -50 || true
-          helm history datafy-agent -n datafy-agent || true
+          helm list -n datafy-agent -a || true
+          helm history datafy-agent -n datafy-agent 2>/dev/null || true
