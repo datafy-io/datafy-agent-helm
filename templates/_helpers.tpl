@@ -1,16 +1,29 @@
 {{/*
-agent image tag
+Agent image tag: appVersion segment before first "_"; override with agent.image.tag.
 */}}
 {{- define "datafy-agent.agentImageTag" -}}
-{{- (default (split "_" .Chart.AppVersion)._0 .Values.agent.image.tag) -}}
+{{- default (split "_" .Chart.AppVersion)._0 .Values.agent.image.tag -}}
 {{- end -}}
 
 {{/*
-Shared image tag for ebs-csi-controller proxy, datafy-monitor, and datafy-controller (appVersion segment after first "_", no "v" prefix).
-Override via ebsCsiProxy.image.tag.
+EBS CSI proxy image tag: appVersion segment after first "_"; override with ebsCsiProxy.image.tag.
 */}}
 {{- define "datafy-agent.ebsCsiProxyImageTag" -}}
-{{- (default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
+{{- default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag -}}
+{{- end -}}
+
+{{/*
+Monitor image tag: same default as sidecar (second appVersion segment); override with monitor.image.tag.
+*/}}
+{{- define "datafy-agent.monitorImageTag" -}}
+{{- default (split "_" .Chart.AppVersion)._1 .Values.monitor.image.tag -}}
+{{- end -}}
+
+{{/*
+Controller image tag: same default as sidecar (second appVersion segment); override with controller.image.tag.
+*/}}
+{{- define "datafy-agent.controllerImageTag" -}}
+{{- default (split "_" .Chart.AppVersion)._1 .Values.controller.image.tag -}}
 {{- end -}}
 
 {{/*

@@ -49,7 +49,7 @@ spec:
       {{- end }}
       containers:
         - name: controller
-          image: "{{ .Values.controller.image.repository }}:{{ include "datafy-agent.ebsCsiProxyImageTag" . }}"
+          image: "{{ .Values.controller.image.repository }}:{{ include "datafy-agent.controllerImageTag" . }}"
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           {{- if .Values.controller.securityContext }}
           securityContext:
