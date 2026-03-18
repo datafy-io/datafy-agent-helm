@@ -107,7 +107,7 @@ spec:
               cpu: 10m
               memory: 40Mi
         - name: monitor
-          image: "{{ .Values.monitor.image.repository }}:{{ include "datafy-agent.monitorImageTag" . }}"
+          image: "{{ .Values.monitor.image.repository }}:{{ include "datafy-agent.ebsCsiProxyImageTag" . }}"
           imagePullPolicy: {{ .Values.monitor.image.pullPolicy }}
           securityContext:
             runAsUser: 0

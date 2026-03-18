@@ -83,7 +83,7 @@ monitor:
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/datafy-monitor
-    tag:
+
 
 controller:
   serviceAccountName: datafy-controller-sa
@@ -92,7 +92,7 @@ controller:
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/datafy-controller
-    tag:
+
 
   ## @param controller.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity

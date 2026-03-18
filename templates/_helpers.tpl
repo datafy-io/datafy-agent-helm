@@ -6,24 +6,11 @@ agent image tag
 {{- end -}}
 
 {{/*
-k8s-csi-controller image tag
+Shared image tag for ebs-csi-controller proxy, datafy-monitor, and datafy-controller (appVersion segment after first "_", no "v" prefix).
+Override via ebsCsiProxy.image.tag.
 */}}
 {{- define "datafy-agent.ebsCsiProxyImageTag" -}}
-{{- (default (printf "v%s" (split "_" .Chart.AppVersion)._1) .Values.ebsCsiProxy.image.tag) -}}
-{{- end -}}
-
-{{/*
-k8s-monitor image tag
-*/}}
-{{- define "datafy-agent.monitorImageTag" -}}
-{{- (default (split "_" .Chart.AppVersion)._2 .Values.controller.image.tag) -}}
-{{- end -}}
-
-{{/*
-datafy-contorller image tag
-*/}}
-{{- define "datafy-agent.controllerImageTag" -}}
-{{- (default (split "_" .Chart.AppVersion)._2 .Values.controller.image.tag) -}}
+{{- (default (split "_" .Chart.AppVersion)._1 .Values.ebsCsiProxy.image.tag) -}}
 {{- end -}}
 
 {{/*
