@@ -1,6 +1,6 @@
 # datafy-agent
 
-![Version: 3.2.0](https://img.shields.io/badge/Version-3.2.0-informational?style=flat-square) ![AppVersion: 1.34.30_1.2.0](https://img.shields.io/badge/AppVersion-1.34.30_1.2.0-informational?style=flat-square)
+![Version: 3.2.1](https://img.shields.io/badge/Version-3.2.1-informational?style=flat-square) ![AppVersion: 1.34.30_1.2.0](https://img.shields.io/badge/AppVersion-1.34.30_1.2.0-informational?style=flat-square)
 
 **App Version:**
 
@@ -29,7 +29,7 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent --version 3.2.0 datafyio/datafy-agent \
+helm install datafy-agent --version 3.2.1 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
 --set agent.token=<your_token> \
@@ -39,12 +39,12 @@ helm install datafy-agent --version 3.2.0 datafyio/datafy-agent \
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 3.2.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
+helm upgrade --install datafy-agent --version 3.2.1 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 3.2.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
+helm upgrade --install datafy-agent --version 3.2.1 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
 ```
 
 Rollback:
@@ -86,7 +86,7 @@ helm uninstall datafy-agent --namespace <namespace>
 | agent.tolerations[0].operator | string | `"Exists"` |  |
 | controller.affinity | string | `nil` |  |
 | controller.image.pullPolicy | string | `"IfNotPresent"` |  |
-| controller.image.repository | string | `"public.ecr.aws/datafy-io/datafy-controller"` |  |
+| controller.image.tag | string | `nil` |  |
 | controller.nodeSelector | object | `{}` |  |
 | controller.replicas | int | `2` |  |
 | controller.securityContext.runAsNonRoot | bool | `true` |  |
@@ -104,6 +104,7 @@ helm uninstall datafy-agent --namespace <namespace>
 | imagePullSecrets | list | `[]` |  |
 | monitor.image.pullPolicy | string | `"IfNotPresent"` |  |
 | monitor.image.repository | string | `"public.ecr.aws/datafy-io/datafy-monitor"` |  |
+| monitor.image.tag | string | `nil` |  |
 | monitor.probe.failureThreshold | int | `4` |  |
 | monitor.probe.interval | string | `"5s"` |  |
 | monitor.probe.successThreshold | int | `2` |  |
