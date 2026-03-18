@@ -17,10 +17,12 @@ trap 'rm -rf "$tmpdir"' EXIT
 curl -fsSL -o "$tmpdir/ec2-metadata-mock" "$AEMM_URL"
 chmod +x "$tmpdir/ec2-metadata-mock"
 
-# Kind node containers (e.g. kind-control-plane, kind-worker, kind-worker2)
-mapfile -t nodes < <(docker ps --format '{{.Names}}' | grep -E '^kind-control-plane$|^kind-worker' || true)
+# Discover nodes by image — works for any cluster name (default "kind" → kind-control-plane;
+# helm/kind-action often uses "chart-testing" → chart-testing-control-plane).
+mapfile -t nodes < <(docker ps --format '{{.Names}}	{{.Image}}' | awk '/kindest\/node/ {print $1}' || true)
 if [[ ${#nodes[@]} -eq 0 ]]; then
-  echo "No kind-control-plane / kind-worker containers found. Is Kind running?" >&2
+  echo "No running containers with image kindest/node. Is Kind running? (docker ps)" >&2
+  docker ps --format 'table {{.Names}}\t{{.Image}}' >&2 || true
   exit 1
 fi
 
