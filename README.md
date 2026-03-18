@@ -86,6 +86,7 @@ helm uninstall datafy-agent --namespace <namespace>
 | agent.tolerations[0].operator | string | `"Exists"` |  |
 | controller.affinity | string | `nil` |  |
 | controller.image.pullPolicy | string | `"IfNotPresent"` |  |
+| controller.image.repository | string | `"public.ecr.aws/datafy-io/datafy-controller"` |  |
 | controller.image.tag | string | `nil` |  |
 | controller.nodeSelector | object | `{}` |  |
 | controller.replicas | int | `2` |  |

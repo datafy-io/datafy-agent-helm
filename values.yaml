@@ -91,6 +91,7 @@ controller:
 
   image:
     pullPolicy: IfNotPresent
+    repository: public.ecr.aws/datafy-io/datafy-controller
     tag:
 
   ## @param controller.affinity Affinity for pod assignment
