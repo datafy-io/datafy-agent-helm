@@ -65,10 +65,19 @@ jobs:
               kubectl get pods -n "$NS" -o wide 2>/dev/null || echo "(namespace not created yet)"
               echo "--- recent events ---"
               kubectl get events -n "$NS" --sort-by=.lastTimestamp 2>/dev/null | tail -30 || true
-              echo "--- agent container logs (previous = last crash; why BackOff) ---"
-              for p in $(kubectl get pods -n "$NS" -l 'app.kubernetes.io/name=datafy-agent' -o jsonpath='{.items[*].metadata.name}' 2>/dev/null); do
-                for c in shell core monitor; do
-                  kubectl logs -n "$NS" "$p" -c "$c" --previous --tail=80 2>/dev/null && echo "---" || true
+              echo "--- agent logs (PREVIOUS = last crash → BackOff reason) ---"
+              AG_PODS=$(kubectl get pods -n "$NS" -l app=datafy-agent -o jsonpath='{.items[*].metadata.name}' 2>/dev/null || true)
+              if [ -z "${AG_PODS// }" ]; then
+                echo "(no pods with label app=datafy-agent yet)"
+              fi
+              for p in $AG_PODS; do
+                for c in $(kubectl get pod -n "$NS" "$p" -o jsonpath='{.spec.containers[*].name}' 2>/dev/null); do
+                  echo ">>> $p / $c --previous"
+                  if ! kubectl logs -n "$NS" "$p" -c "$c" --previous --tail=150 2>&1; then
+                    echo ">>> $p / $c --current (no/failed --previous yet)"
+                    kubectl logs -n "$NS" "$p" -c "$c" --tail=80 2>&1 || true
+                  fi
+                  echo ""
                 done
               done
               echo "::endgroup::"
