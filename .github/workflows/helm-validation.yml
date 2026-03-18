@@ -29,11 +29,6 @@ jobs:
       - name: Set up Helm
         uses: azure/setup-helm@v4.3.1
 
-      - name: Add required Helm repos
-        run: |
-          helm repo add aws-ebs-csi-driver https://kubernetes-sigs.github.io/aws-ebs-csi-driver
-          helm repo update
-
       - uses: actions/setup-python@v5.3.0
         with:
           python-version: '3.13.x'
@@ -148,3 +143,66 @@ jobs:
           fi
           echo "Found release: $rel"
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
+
+  # Install published chart from helm.datafy.io, then upgrade to this PR’s chart.
+  upgrade-from-registry:
+    runs-on: ubuntu-latest
+    name: test upgrade from registry
+    steps:
+      - name: Checkout repository (PR branch chart)
+        uses: actions/checkout@v4
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4.3.1
+
+      - name: Add Helm repos
+        run: |
+          helm repo add datafyio https://helm.datafy.io/datafy-agent
+          helm repo update
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.12.0
+
+      - name: Apply fake EBS CSI resources
+        run: kubectl apply -f scripts/helm-validation/fake-ebs-csi.yaml
+
+      - name: Fake EC2 IMDS on Kind nodes
+        run: bash scripts/helm-validation/setup-kind-fake-ec2-imds.sh
+
+      - name: Helm install (published chart)
+        run: |
+          set -euo pipefail
+          NS=datafy-agent
+          helm install datafy-agent datafyio/datafy-agent \
+            --namespace "$NS" \
+            --create-namespace \
+            --timeout 5m \
+            --wait \
+            --debug \
+            --set agent.dsoUrl='wss://dso-stg.datafy.io' \
+            --set agent.token=${{ secrets.STGN_SECRET }} \
+            --set agent.mode=AutoScaler \
+            --set agent.coreMockEnabled=true \
+            --set agent.hqMockEnabled=true
+
+      - name: Helm upgrade (PR branch chart)
+        run: |
+          set -euo pipefail
+          NS=datafy-agent
+          helm upgrade datafy-agent . \
+            --namespace "$NS" \
+            --timeout 5m \
+            --wait \
+            --debug \
+            --set agent.dsoUrl='wss://dso-stg.datafy.io' \
+            --set agent.token=${{ secrets.STGN_SECRET }} \
+            --set agent.mode=AutoScaler \
+            --set agent.coreMockEnabled=true \
+            --set agent.hqMockEnabled=true
+
+      - name: Debug upgrade failure
+        if: failure()
+        run: |
+          kubectl get pods -n datafy-agent -o wide || true
+          kubectl get events -n datafy-agent --sort-by=.lastTimestamp | tail -50 || true
+          helm history datafy-agent -n datafy-agent || true
