@@ -1,11 +1,5 @@
 #!/usr/bin/env bash
-# Makes Kind nodes look like EC2 for the datafy-agent shell (IMDS at 169.254.169.254).
-# The agent runs via nsenter on the node network; it probes real IMDS — plain K8s env vars are not enough.
-#
-# Uses AWS amazon-ec2-metadata-mock + iptables DNAT inside each Kind node container.
-# Ref: https://github.com/aws/amazon-ec2-metadata-mock
-#
-# Run on the CI runner (or your Mac with Docker) after `kind create cluster`, before helm install.
+# Makes Kind nodes look like EC2 for the no cloud provider detection (IMDS at 169.254.169.254).
 set -euo pipefail
 
 AEMM_VERSION="${AEMM_VERSION:-v1.13.0}"
