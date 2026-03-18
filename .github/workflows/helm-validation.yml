@@ -19,7 +19,7 @@ jobs:
       matrix:
         mode: [Sensor, AutoScaler]
 
-    name: Test (${{ matrix.mode }})
+    name: Test_${{ matrix.mode }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -145,9 +145,9 @@ jobs:
           echo "release_name=$rel" >> "$GITHUB_OUTPUT"
 
   # Install latest from helm.datafy.io → upgrade to PR chart → uninstall.
-  test-upgrade-uninstall:
+  testupgrade-uninstall:
     runs-on: ubuntu-latest
-    name: Test upgrade and uninstall
+    name: test_upgrade_&_uninstall
     steps:
       - name: Checkout repository (PR branch chart)
         uses: actions/checkout@v4
