@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 3.2.1](https://img.shields.io/badge/Version-3.2.1-informational?style=flat-square) ![AppVersion: 1.34.31_1.2.0_1.2.0](https://img.shields.io/badge/AppVersion-1.34.31_1.2.0_1.2.0-informational?style=flat-square)
+![Version: 3.2.2](https://img.shields.io/badge/Version-3.2.2-informational?style=flat-square) ![AppVersion: 1.34.30_1.2.0](https://img.shields.io/badge/AppVersion-1.34.30_1.2.0-informational?style=flat-square)
 
 **App Version:**
 
-1.34.31_1.2.0_1.2.0
+1.34.30_1.2.0
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -29,7 +29,7 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent --version 3.2.1 datafyio/datafy-agent \
+helm install datafy-agent --version 3.2.2 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
 --set agent.token=<your_token> \
@@ -39,12 +39,12 @@ helm install datafy-agent --version 3.2.1 datafyio/datafy-agent \
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 3.2.1 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
+helm upgrade --install datafy-agent --version 3.2.2 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 3.2.1 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
+helm upgrade --install datafy-agent --version 3.2.2 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
 ```
 
 Rollback:
