@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: datafy-io/datafy-agent-helm
           ref: master
@@ -173,7 +173,7 @@ jobs:
 
       - name: Create pull request
         id: cpr
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
           commit-message: "update chart for appVersion ${{ steps.new_version.outputs.new }} [skip ci]"
