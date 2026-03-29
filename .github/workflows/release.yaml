@@ -57,7 +57,10 @@ jobs:
       update_chart: ${{ steps.mode.outputs.update_chart }}
     steps:
       - name: Log Inputs
-        run: echo "${{ tojson(inputs) }}"
+        run: |
+          echo "${{ tojson(inputs) }}"
+          echo "Target branch: ${{ env.TARGET_BRANCH }}"
+          exit 0
 
       - name: Determine update mode
         id: mode
