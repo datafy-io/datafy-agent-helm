@@ -122,5 +122,5 @@ ebsCsiProxy:
     limits:
       memory: 256Mi
     requests:
-      cpu: 10m
+      cpu: 11m
       memory: 40Mi
