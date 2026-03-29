@@ -60,7 +60,6 @@ jobs:
         run: |
           echo "${{ tojson(inputs) }}"
           echo "Target branch: ${{ env.TARGET_BRANCH }}"
-          exit 0
 
       - name: Determine update mode
         id: mode
@@ -268,16 +267,16 @@ jobs:
             git push origin HEAD:${{ env.UPDATE_PR_BRANCH }}
           fi
 
-      - name: Merge chart update pull request (single merge)
-        if: needs.determine_update_mode.outputs.update_chart == 'true' && needs.update_helm_chart.outputs.pr_number != ''
-        env:
-          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-        run: |
-          gh pr merge "${{ needs.update_helm_chart.outputs.pr_number }}" \
-            --repo "${{ github.repository }}" \
-            --squash \
-            --delete-branch \
-            --admin
+      # - name: Merge chart update pull request (single merge)
+      #   if: needs.determine_update_mode.outputs.update_chart == 'true' && needs.update_helm_chart.outputs.pr_number != ''
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+      #   run: |
+      #     gh pr merge "${{ needs.update_helm_chart.outputs.pr_number }}" \
+      #       --repo "${{ github.repository }}" \
+      #       --squash \
+      #       --delete-branch \
+      #       --admin
 
       # If chart was not updated, create a new pull request for docs changes
       - name: Create pull request for docs-only changes
@@ -296,54 +295,54 @@ jobs:
           add-paths: |
             README.md
 
-      - name: Merge docs pull request (admin bypass)
-        if: needs.determine_update_mode.outputs.update_chart == 'false' && steps.cpr_docs.outputs.pull-request-number
-        env:
-          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-        run: |
-          gh pr merge "${{ steps.cpr_docs.outputs.pull-request-number }}" \
-            --repo "${{ github.repository }}" \
-            --squash \
-            --delete-branch \
-            --admin
+      # - name: Merge docs pull request (admin bypass)
+      #   if: needs.determine_update_mode.outputs.update_chart == 'false' && steps.cpr_docs.outputs.pull-request-number
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+      #   run: |
+      #     gh pr merge "${{ steps.cpr_docs.outputs.pull-request-number }}" \
+      #       --repo "${{ github.repository }}" \
+      #       --squash \
+      #       --delete-branch \
+      #       --admin
 
-  release:
-    needs: [helm_docs_update]
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
-    steps:
-      - name: Checkout latest target branch
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ github.repository }}
-          ref: ${{ env.TARGET_BRANCH }}
-          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-          persist-credentials: true
-          fetch-depth: 0
+  # release:
+  #   needs: [helm_docs_update]
+  #   runs-on: ubuntu-latest
+  #   permissions:
+  #     id-token: write
+  #     contents: write
+  #   steps:
+  #     - name: Checkout latest target branch
+  #       uses: actions/checkout@v4
+  #       with:
+  #         repository: ${{ github.repository }}
+  #         ref: ${{ env.TARGET_BRANCH }}
+  #         token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+  #         persist-credentials: true
+  #         fetch-depth: 0
 
-      - name: Configure AWS Management Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
-          role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+  #     - name: Configure AWS Management Credentials
+  #       uses: aws-actions/configure-aws-credentials@v4
+  #       with:
+  #         aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+  #         role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
 
-      - name: Add datafyio-s3 Helm repository
-        run: |
-          helm plugin install https://github.com/hypnoglow/helm-s3.git
-          helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
+  #     - name: Add datafyio-s3 Helm repository
+  #       run: |
+  #         helm plugin install https://github.com/hypnoglow/helm-s3.git
+  #         helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
 
-      - name: Push Helm chart
-        run: |
-          CHART_VERSION="$(awk -F': ' '/^version:/{print $2; exit}' Chart.yaml)"
-          CHART_APP_VERSION="$(awk -F': ' '/^appVersion:/{print $2; exit}' Chart.yaml)"
-          echo "Chart.yaml version: ${CHART_VERSION}"
-          echo "Chart.yaml appVersion: ${CHART_APP_VERSION}"
+  #     - name: Push Helm chart
+  #       run: |
+  #         CHART_VERSION="$(awk -F': ' '/^version:/{print $2; exit}' Chart.yaml)"
+  #         CHART_APP_VERSION="$(awk -F': ' '/^appVersion:/{print $2; exit}' Chart.yaml)"
+  #         echo "Chart.yaml version: ${CHART_VERSION}"
+  #         echo "Chart.yaml appVersion: ${CHART_APP_VERSION}"
 
-          echo "README.md version/AppVersion lines:"
-          grep -nE 'Version:|AppVersion:' README.md || true
+  #         echo "README.md version/AppVersion lines:"
+  #         grep -nE 'Version:|AppVersion:' README.md || true
 
-          helm package .
-          ls -1 datafy-agent-*.tgz
-          # helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+  #         helm package .
+  #         ls -1 datafy-agent-*.tgz
+  #         # helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
