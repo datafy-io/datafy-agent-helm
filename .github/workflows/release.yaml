@@ -190,8 +190,8 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-          commit-message: "update chart metadata [skip ci]"
-          title: "Release chart update"
+          commit-message: "update chart metadata ${{ steps.app_version.outputs.new_app_version }} [skip ci]"
+          title: "Release chart update ${{ steps.app_version.outputs.new_app_version }}"
           body: |
             Automated chart update from `release.yaml`.
 
