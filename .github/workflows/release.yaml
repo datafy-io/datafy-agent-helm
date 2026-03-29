@@ -87,7 +87,7 @@ jobs:
           fi
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           ref: ${{ env.TARGET_BRANCH }}
@@ -187,7 +187,7 @@ jobs:
 
       - name: Create chart update pull request
         id: cpr
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
           commit-message: "update chart metadata ${{ steps.app_version.outputs.new_app_version }} [skip ci]"
@@ -222,7 +222,7 @@ jobs:
       # If chart was updated, checkout the update PR branch to regenerate docs and push changes there. If not, checkout the target branch to create a new PR for docs changes.
       - name: Checkout update PR branch
         if: needs.determine_update_mode.outputs.update_chart == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           ref: ${{ env.UPDATE_PR_BRANCH }}
@@ -232,7 +232,7 @@ jobs:
 
       - name: Checkout target branch
         if: needs.determine_update_mode.outputs.update_chart == 'false'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: ${{ github.repository }}
           ref: ${{ env.TARGET_BRANCH }}
@@ -282,7 +282,7 @@ jobs:
       - name: Create pull request for docs-only changes
         id: cpr_docs
         if: needs.determine_update_mode.outputs.update_chart == 'false'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
           commit-message: "regenerate helm docs [skip ci]"
@@ -314,7 +314,7 @@ jobs:
   #     contents: write
   #   steps:
   #     - name: Checkout latest target branch
-  #       uses: actions/checkout@v4
+  #       uses: actions/checkout@v6
   #       with:
   #         repository: ${{ github.repository }}
   #         ref: ${{ env.TARGET_BRANCH }}
