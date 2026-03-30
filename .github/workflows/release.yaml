@@ -319,43 +319,43 @@ jobs:
       #       --delete-branch \
       #       --admin
 
-  # release:
-  #   needs: [helm_docs_update]
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     id-token: write
-  #     contents: write
-  #   steps:
-  #     - name: Checkout latest target branch
-  #       uses: actions/checkout@v6
-  #       with:
-  #         repository: ${{ github.repository }}
-  #         ref: ${{ env.TARGET_BRANCH }}
-  #         token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-  #         persist-credentials: true
-  #         fetch-depth: 0
+  release:
+    needs: [helm_docs_update]
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout latest target branch
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
 
-  #     - name: Configure AWS Management Credentials
-  #       uses: aws-actions/configure-aws-credentials@v4
-  #       with:
-  #         aws-region: ${{ vars.AWS_DEFAULT_REGION }}
-  #         role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+      - name: Configure AWS Management Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
 
-  #     - name: Add datafyio-s3 Helm repository
-  #       run: |
-  #         helm plugin install https://github.com/hypnoglow/helm-s3.git
-  #         helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
+      - name: Add datafyio-s3 Helm repository
+        run: |
+          helm plugin install https://github.com/hypnoglow/helm-s3.git
+          helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
 
-  #     - name: Push Helm chart
-  #       run: |
-  #         CHART_VERSION="$(awk -F': ' '/^version:/{print $2; exit}' Chart.yaml)"
-  #         CHART_APP_VERSION="$(awk -F': ' '/^appVersion:/{print $2; exit}' Chart.yaml)"
-  #         echo "Chart.yaml version: ${CHART_VERSION}"
-  #         echo "Chart.yaml appVersion: ${CHART_APP_VERSION}"
+      - name: Push Helm chart
+        run: |
+          CHART_VERSION="$(awk -F': ' '/^version:/{print $2; exit}' Chart.yaml)"
+          CHART_APP_VERSION="$(awk -F': ' '/^appVersion:/{print $2; exit}' Chart.yaml)"
+          echo "Chart.yaml version: ${CHART_VERSION}"
+          echo "Chart.yaml appVersion: ${CHART_APP_VERSION}"
 
-  #         echo "README.md version/AppVersion lines:"
-  #         grep -nE 'Version:|AppVersion:' README.md || true
+          echo "README.md version/AppVersion lines:"
+          grep -nE 'Version:|AppVersion:' README.md || true
 
-  #         helm package .
-  #         ls -1 datafy-agent-*.tgz
-  #         # helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+          helm package .
+          ls -1 datafy-agent-*.tgz
+          # helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
