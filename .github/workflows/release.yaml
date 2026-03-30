@@ -154,6 +154,16 @@ jobs:
           echo "new_app_version=$new_app_version" >> "$GITHUB_OUTPUT"
           echo "Resulting appVersion: $new_app_version"
 
+      - name: Fail when appVersion is unchanged
+        run: |
+          current_app_version="$(yq '.appVersion' Chart.yaml)"
+          new_app_version="${{ steps.app_version.outputs.new_app_version }}"
+
+          if [[ "$current_app_version" == "$new_app_version" ]]; then
+            echo "No appVersion change detected: $current_app_version"
+            exit 1
+          fi
+
       - name: Update Chart.yaml appVersion
         run: |
           yq -i ".appVersion = \"${{ steps.app_version.outputs.new_app_version }}\"" Chart.yaml
@@ -253,6 +263,13 @@ jobs:
       - name: Regenerate Helm docs
         run: helm-docs
 
+      - name: Fail when docs are unchanged
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "No README.md changes after helm-docs generation."
+            exit 1
+          fi
+
       - name: Commit docs to update PR branch
         if: needs.determine_update_mode.outputs.update_chart == 'true'
         run: |
@@ -260,12 +277,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add README.md
-          if git diff --cached --quiet; then
-            echo "No README.md changes after helm-docs generation."
-          else
-            git commit -m "regenerate helm docs [skip ci]"
-            git push origin HEAD:${{ env.UPDATE_PR_BRANCH }}
-          fi
+          git commit -m "regenerate helm docs [skip ci]"
+          git push origin HEAD:${{ env.UPDATE_PR_BRANCH }}
 
       # - name: Merge chart update pull request (single merge)
       #   if: needs.determine_update_mode.outputs.update_chart == 'true' && needs.update_helm_chart.outputs.pr_number != ''
