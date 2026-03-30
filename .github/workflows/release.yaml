@@ -321,6 +321,7 @@ jobs:
 
   release:
     needs: [helm_docs_update]
+    if: ${{ always() && needs.helm_docs_update.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
