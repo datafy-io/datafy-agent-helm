@@ -68,7 +68,6 @@ helm uninstall datafy-agent --namespace <namespace>
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| EXTENDED_INSTALL_ON_SENSOR | bool | `true` |  |
 | agent.affinity.nodeAffinity | object | `{}` |  |
 | agent.dsoUrl | string | `"wss://dso.datafy.io"` |  |
 | agent.externalTokenSecret.key | string | `nil` |  |
@@ -101,6 +100,7 @@ helm uninstall datafy-agent --namespace <namespace>
 | ebsCsiProxy.resources.limits.memory | string | `"256Mi"` |  |
 | ebsCsiProxy.resources.requests.cpu | string | `"10m"` |  |
 | ebsCsiProxy.resources.requests.memory | string | `"40Mi"` |  |
+| extendedInstallOnSensor | bool | `true` |  |
 | extraAnnotations | object | `{}` |  |
 | extraLabels | object | `{}` |  |
 | imagePullSecrets | list | `[]` |  |

@@ -41,6 +41,19 @@ Normalized agent mode
 {{- end -}}
 
 {{/*
+Whether extended install resources should be created.
+Skip only when mode is sensor and extendedInstallOnSensor is false.
+*/}}
+{{- define "datafy-agent.extendedInstallEnabled" -}}
+{{- $isSensor := eq (include "datafy-agent.agentModeNormalized" .) "sensor" -}}
+{{- if and $isSensor (not .Values.extendedInstallOnSensor) -}}
+false
+{{- else -}}
+true
+{{- end -}}
+{{- end -}}
+
+{{/*
 Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiNamespace" -}}
