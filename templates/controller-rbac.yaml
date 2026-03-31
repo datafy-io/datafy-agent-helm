@@ -1,3 +1,4 @@
+{{- if .Values.EXTENDED_INSTALL_ON_SENSOR }}
 {{- $roleName := "datafy-controller-role" -}}
 {{- $roleBindingName := "datafy-controller-binding" -}}
 apiVersion: v1
@@ -98,3 +99,4 @@ subjects:
   - kind: ServiceAccount
     name: {{ .Values.controller.serviceAccountName }}
     namespace: {{ .Release.Namespace }}
+{{- end }}

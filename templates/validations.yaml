@@ -1,4 +1,4 @@
-{{- if not (default false .Values.disableValidation) }}
+{{- if and (.Values.EXTENDED_INSTALL_ON_SENSOR) (not (default false .Values.disableValidation)) }}
 {{ include "datafy-agent.validation.mode" . }}
 {{ include "datafy-agent.validation.token" . }}
 {{- end }}

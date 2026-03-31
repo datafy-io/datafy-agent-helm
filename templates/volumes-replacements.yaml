@@ -1,3 +1,4 @@
+{{- if .Values.EXTENDED_INSTALL_ON_SENSOR }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -12,3 +13,4 @@ metadata:
   {{- end }}
 data:
   replacements: ""
+{{- end }}
