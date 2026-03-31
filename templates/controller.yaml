@@ -1,3 +1,4 @@
+{{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
 {{- $configChecksum := include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum}}
 {{- $datafyTokenChecksum := include (print $.Template.BasePath "/datafy-token.yaml") . | sha256sum }}
 apiVersion: apps/v1
@@ -129,3 +130,4 @@ spec:
     - name: https
       port: 443
       targetPort: 9443
+{{- end }}

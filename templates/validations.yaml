@@ -1,4 +1,4 @@
-{{- if not (default false .Values.disableValidation) }}
+{{- if and (eq (include "datafy-agent.extendedInstallEnabled" .) "true") (not (default false .Values.disableValidation)) }}
 {{ include "datafy-agent.validation.mode" . }}
 {{ include "datafy-agent.validation.token" . }}
 {{- end }}

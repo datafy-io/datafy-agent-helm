@@ -14,6 +14,11 @@ extraAnnotations: {}
 ##
 imagePullSecrets: []
 
+## @param extendedInstallOnSensor Enable controller/webhook-related resources
+## If false, chart skips controller config, RBAC, webhook secret/config, and controller deployment/service.
+##
+extendedInstallOnSensor: true
+
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
 ## @param agent.env Environment variables to add to datafy-agent daemon set

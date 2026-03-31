@@ -1,3 +1,4 @@
+{{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
 {{- $roleName := "datafy-controller-role" -}}
 {{- $roleBindingName := "datafy-controller-binding" -}}
 apiVersion: v1
@@ -98,3 +99,4 @@ subjects:
   - kind: ServiceAccount
     name: {{ .Values.controller.serviceAccountName }}
     namespace: {{ .Release.Namespace }}
+{{- end }}

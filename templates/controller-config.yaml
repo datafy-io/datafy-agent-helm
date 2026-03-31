@@ -1,3 +1,4 @@
+{{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -23,3 +24,4 @@ data:
       resources:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+{{- end }}
