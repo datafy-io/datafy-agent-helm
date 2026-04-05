@@ -58,7 +58,12 @@ Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiNamespace" -}}
     {{- $driverName := "ebs.csi.aws.com" -}}
-    {{- $driverFound := or (not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName))) (not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName))) -}}
+    {{- $driverFound := false -}}
+    {{- if (.Capabilities.APIVersions.Has "storage.k8s.io/v1") -}}
+        {{- $driverFound = not (empty (lookup "storage.k8s.io/v1" "CSIDriver" "" $driverName)) -}}
+    {{- else if and (not $driverFound) (.Capabilities.APIVersions.Has "storage.k8s.io/v1beta1") -}}
+        {{- $driverFound = not (empty (lookup "storage.k8s.io/v1beta1" "CSIDriver" "" $driverName)) -}}
+    {{- end -}}
     {{- $namespace := "" -}}
     {{- if $driverFound }}
         {{- $namespaces := lookup "v1" "Namespace" "" "" -}}
