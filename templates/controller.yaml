@@ -106,6 +106,16 @@ spec:
               containerPort: 9443
             - name: grpc
               containerPort: 50051
+          {{- if .Values.controller.readinessProbe.enabled }}
+          readinessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: {{ .Values.controller.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.controller.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.controller.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.controller.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.controller.readinessProbe.failureThreshold }}
+          {{- end }}
           volumeMounts:
             - name: datafy-controller-config
               mountPath: /etc/datafy-controller
