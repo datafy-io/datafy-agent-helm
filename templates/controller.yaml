@@ -10,6 +10,7 @@ metadata:
   {{- include "datafy-agent.labels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Delete=false
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
   {{- end }}
@@ -120,6 +121,7 @@ metadata:
   {{- include "datafy-agent.labels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Delete=false
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
   {{- end }}
