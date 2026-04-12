@@ -72,44 +72,25 @@ jobs:
             echo "No versions were provided. Skipping appVersion and chart version updates."
           fi
 
-  update_helm_chart:
+  validate:
     needs: [determine_update_mode]
     if: needs.determine_update_mode.outputs.update_chart == 'true'
     runs-on: ubuntu-latest
     outputs:
-      pr_number: ${{ steps.cpr.outputs.pull-request-number }}
+      bump_type: ${{ steps.bump_type.outputs.bump_type }}
     steps:
-      - name: Validate GH token for chart update flow
+      - name: Normalize bump type
+        id: bump_type
         run: |
-          if [[ -z "${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}" ]]; then
-            echo "❌ Error: GH_PUBLIC_ACCESS_TOKEN is required when updating chart versions."
-            exit 1
-          fi
-
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          repository: ${{ github.repository }}
-          ref: ${{ env.TARGET_BRANCH }}
-          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-          persist-credentials: true
-          fetch-depth: 0
-
-      - name: Verify yq installation
-        run: |
-          if command -v yq >/dev/null 2>&1; then
-            echo "yq already installed: $(yq --version)"
-          else
-            sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
-            sudo chmod +x /usr/local/bin/yq
-            yq --version
-          fi
+          bump_type_raw="${{ inputs.semantic_bump_type }}"
+          bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
+          echo "bump_type=$bump_type" >> "$GITHUB_OUTPUT"
 
       - name: Validate semantic bump type
         run: |
-          SEMANTIC_BUMP_TYPE="${{ inputs.semantic_bump_type }}"
+          SEMANTIC_BUMP_TYPE="${{ steps.bump_type.outputs.bump_type }}"
           case "$SEMANTIC_BUMP_TYPE" in
-            Major|Minor|Patch|major|minor|patch)
+            major|minor|patch)
               echo "✅ Semantic bump type '$SEMANTIC_BUMP_TYPE' is valid"
               ;;
             *)
@@ -136,6 +117,29 @@ jobs:
             echo "Expected format: major.minor.patch (e.g., 1.30.0)"
             exit 1
           fi
+
+  update_helm_chart:
+    needs: [determine_update_mode, validate]
+    if: needs.determine_update_mode.outputs.update_chart == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.cpr.outputs.pull-request-number }}
+    steps:
+      - name: Validate GH token for chart update flow
+        run: |
+          if [[ -z "${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}" ]]; then
+            echo "❌ Error: GH_PUBLIC_ACCESS_TOKEN is required when updating chart versions."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
 
       - name: Set resulting appVersion
         id: app_version
@@ -175,19 +179,12 @@ jobs:
           echo "current chart version=$current_chart_version"
           echo "current_chart_version=$current_chart_version" >> "$GITHUB_OUTPUT"
 
-      - name: Normalize bump type
-        id: bump_type
-        run: |
-          bump_type_raw="${{ inputs.semantic_bump_type }}"
-          bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
-          echo "value=$bump_type" >> "$GITHUB_OUTPUT"
-
       - name: Bump Version
         id: bump
         uses: cbrgm/semver-bump-action@main
         with:
           current-version: ${{ steps.read_chart_version.outputs.current_chart_version }}
-          bump-level: ${{ steps.bump_type.outputs.value }}
+          bump-level: ${{ needs.validate.outputs.bump_type }}
 
       - name: Update chart version
         run: |
@@ -207,7 +204,7 @@ jobs:
 
             - appVersion: `${{ steps.app_version.outputs.new_app_version }}`
             - chart version bump: `${{ steps.read_chart_version.outputs.current_chart_version }}` -> `${{ steps.bump.outputs.new_version }}`
-            - semantic bump type: `${{ steps.bump_type.outputs.value }}`
+            - semantic bump type: `${{ needs.validate.outputs.bump_type }}`
           branch: ${{ env.UPDATE_PR_BRANCH }}
           delete-branch: true
           base: ${{ env.TARGET_BRANCH }}
@@ -215,8 +212,8 @@ jobs:
             Chart.yaml
 
   helm_docs_update:
-    needs: [determine_update_mode, update_helm_chart]
-    if: always() && needs.determine_update_mode.result == 'success' && (needs.update_helm_chart.result == 'success' || needs.update_helm_chart.result == 'skipped')
+    needs: [determine_update_mode, validate, update_helm_chart]
+    if: always() && needs.determine_update_mode.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') && (needs.update_helm_chart.result == 'success' || needs.update_helm_chart.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: write
