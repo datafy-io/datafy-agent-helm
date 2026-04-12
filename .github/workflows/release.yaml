@@ -337,7 +337,7 @@ jobs:
           fetch-depth: 0
 
       - name: Configure AWS Management Credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6.1.0
         with:
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
