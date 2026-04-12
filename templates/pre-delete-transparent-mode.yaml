@@ -1,0 +1,89 @@
+{{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
+{{/*
+Pre-delete hook: patch the datafy-controller deployment to enable transparent
+mode before Helm removes the install-marker ConfigMap.  This bypasses the
+controller's event-driven reconciler which can miss the ConfigMap deletion
+when the uninstall races with a node reboot / startup.
+*/}}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: datafy-pre-delete-hook
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: datafy-pre-delete-hook
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["datafy-controller"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: datafy-pre-delete-hook
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: datafy-pre-delete-hook
+subjects:
+  - kind: ServiceAccount
+    name: datafy-pre-delete-hook
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: datafy-pre-delete-transparent-mode
+  namespace: {{ .Release.Namespace }}
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  annotations:
+    helm.sh/hook: pre-delete
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 60
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: datafy-pre-delete-hook
+    spec:
+      serviceAccountName: datafy-pre-delete-hook
+      restartPolicy: Never
+      containers:
+        - name: kubectl
+          image: bitnami/kubectl:1.28
+          command:
+            - kubectl
+            - set
+            - env
+            - deployment/datafy-controller
+            - -n
+            - {{ .Release.Namespace }}
+            - DATAFY_TRANSPARENT_MODE_ENABLED=true
+{{- end }}
