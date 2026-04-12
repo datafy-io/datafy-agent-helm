@@ -43,7 +43,7 @@ on:
 
 permissions:
   id-token: write
-  contents: write
+  contents: write  # Grant write access to the repository contents
   pull-requests: write
 
 env:
