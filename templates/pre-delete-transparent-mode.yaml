@@ -76,15 +76,29 @@ spec:
       serviceAccountName: datafy-pre-delete-hook
       restartPolicy: Never
       containers:
-        - name: kubectl
-          image: bitnami/kubectl:1.28
+        - name: patch
+          image: curlimages/curl:8.11.1
           command:
             - /bin/sh
             - -c
             - |
-              if kubectl get deployment/datafy-controller -n {{ .Release.Namespace }} > /dev/null 2>&1; then
-                kubectl set env deployment/datafy-controller -n {{ .Release.Namespace }} DATAFY_TRANSPARENT_MODE_ENABLED=true
+              set -e
+              SA=/var/run/secrets/kubernetes.io/serviceaccount
+              TOKEN=$(cat "$SA/token")
+              CA="$SA/ca.crt"
+              API="https://kubernetes.default.svc"
+              NS="{{ .Release.Namespace }}"
+              DEP_URL="$API/apis/apps/v1/namespaces/$NS/deployments/datafy-controller"
+
+              # Check if deployment exists
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --cacert "$CA" -H "Authorization: Bearer $TOKEN" "$DEP_URL")
+              if [ "$HTTP_CODE" = "200" ]; then
+                echo "Patching datafy-controller to enable transparent mode"
+                curl -s --cacert "$CA" -H "Authorization: Bearer $TOKEN" \
+                  -H "Content-Type: application/strategic-merge-patch+json" \
+                  -X PATCH "$DEP_URL" \
+                  -d '{"spec":{"template":{"spec":{"containers":[{"name":"datafy-controller","env":[{"name":"DATAFY_TRANSPARENT_MODE_ENABLED","value":"true"}]}]}}}}'
               else
-                echo "datafy-controller deployment not found, skipping transparent mode patch"
+                echo "datafy-controller deployment not found (HTTP $HTTP_CODE), skipping transparent mode patch"
               fi
 {{- end }}
