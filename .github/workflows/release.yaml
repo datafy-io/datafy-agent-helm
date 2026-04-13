@@ -147,7 +147,8 @@ jobs:
           current_app_version="$(yq '.appVersion' Chart.yaml)"
           current_agent="$(echo "$current_app_version" | cut -d'_' -f1)"
           current_controller="$(echo "$current_app_version" | cut -d'_' -f2)"
-
+          echo "Current appVersion: $current_app_version"
+          
           agent="${{ inputs.agent_version }}"
           controller="${{ inputs.controller_version }}"
 
