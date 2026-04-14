@@ -30,12 +30,12 @@ metadata:
 rules:
   # Core API group ""
   - apiGroups: [ "" ]
-    resources: [ "configmaps", "secrets" ]
+    resources: [ "configmaps", "secrets", "serviceaccounts" ]
     verbs: [ "list", "watch" ]
-  - apiGroups: [""]
+  - apiGroups: [ "" ]
     resources: [ "persistentvolumes" ]
     verbs: [ "list", "watch", "patch" ]
-  - apiGroups: [""]
+  - apiGroups: [ "" ]
     resources: [ "persistentvolumeclaims" ]
     verbs: [ "list", "watch" ]
   - apiGroups: [ "" ]
@@ -51,6 +51,10 @@ rules:
   - apiGroups: [ "" ]
     resources: [ "pods" ]
     verbs: [ "get", "list", "watch", "delete" ]
+  - apiGroups: [ "" ]
+    resources: [ "serviceaccounts" ]
+    resourceNames: [ {{ .Values.controller.serviceAccountName | quote }} ]
+    verbs: [ "get", "update", "patch" ]
 
   # apps API group
   - apiGroups: [ "apps" ]
@@ -64,6 +68,15 @@ rules:
     resources: [ "deployments" ]
     resourceNames: [ "datafy-controller" ]
     verbs: [ "get", "update", "patch", "delete" ]
+
+  # rbac.authorization.k8s.io API group
+  - apiGroups: [ "rbac.authorization.k8s.io" ]
+    resources: [ "clusterroles", "clusterrolebindings" ]
+    verbs: [ "list", "watch" ]
+  - apiGroups: [ "rbac.authorization.k8s.io" ]
+    resources: [ "clusterroles", "clusterrolebindings" ]
+    resourceNames: [ {{ $roleName | quote }}, {{ $roleBindingName | quote }} ]
+    verbs: [ "get", "update", "delete", "patch" ]
 
   # admissionregistration.k8s.io API group
   - apiGroups: [ "admissionregistration.k8s.io" ]
