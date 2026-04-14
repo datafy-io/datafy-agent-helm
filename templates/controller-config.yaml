@@ -14,6 +14,11 @@ metadata:
   {{- end }}
 data:
   config.yaml: |
+    ebs_csi:
+      controller:
+        name: {{ include "datafy-agent.ebsCsiControllerName" . }}
+      node:
+        name: {{ include "datafy-agent.ebsCsiNodeName" . }}
     csi_proxy:
       {{- with .Values.ebsCsiProxy.image }}
       image:

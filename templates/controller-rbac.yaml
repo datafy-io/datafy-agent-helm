@@ -58,7 +58,7 @@ rules:
     verbs: [ "list", "watch" ]
   - apiGroups: [ "apps" ]
     resources: [ "deployments", "daemonsets" ]
-    resourceNames: [ "ebs-csi-controller", "ebs-csi-node" ]
+    resourceNames: [ "{{ include "datafy-agent.ebsCsiControllerName" . }}", "{{ include "datafy-agent.ebsCsiNodeName" . }}" ]
     verbs: [ "get", "update", "patch" ]
   - apiGroups: [ "apps" ]
     resources: [ "deployments" ]
