@@ -30,14 +30,20 @@ metadata:
 rules:
   # Core API group ""
   - apiGroups: [ "" ]
-    resources: [ "configmaps", "secrets", "persistentvolumes" ]
+    resources: [ "configmaps", "secrets" ]
+    verbs: [ "list", "watch" ]
+  - apiGroups: [""]
+    resources: [ "persistentvolumes" ]
+    verbs: [ "list", "watch", "patch" ]
+  - apiGroups: [""]
+    resources: [ "persistentvolumeclaims" ]
     verbs: [ "list", "watch" ]
   - apiGroups: [ "" ]
     resources: [ "secrets", "configmaps" ]
     verbs: [ "create" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
   - apiGroups: [ "" ]
     resources: [ "secrets", "configmaps", "services" ]
-    resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config", "datafy-controller-webhook", "datafy-controller-webhook-tls" ]
+    resourceNames: [ "datafy-token", "datafy-volume-replacements", "datafy-controller-config", "datafy-controller-webhook", "datafy-controller", "datafy-controller-webhook-tls" ]
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "nodes" ]
@@ -81,6 +87,14 @@ rules:
   - apiGroups: [ "", "events.k8s.io" ]
     resources: [ "events" ]
     verbs: [ "create", "patch", "update" ]
+
+  # snapshots API group
+  - apiGroups: [ "snapshot.storage.k8s.io" ]
+    resources: [ "volumesnapshots" ]
+    verbs: [ "get" ]
+  - apiGroups: [ "snapshot.storage.k8s.io" ]
+    resources: [ "volumesnapshots/status" ]
+    verbs: [ "update", "patch" ]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding

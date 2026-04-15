@@ -14,6 +14,7 @@ echo "Deleting Datafy [namespace ${NS}] kept resources"
 
 # Namespaced resources
 kubectl delete service datafy-controller-webhook -n "${NS}" --ignore-not-found
+kubectl delete service datafy-controller -n "${NS}" --ignore-not-found
 kubectl delete deployment datafy-controller -n "${NS}" --ignore-not-found
 kubectl delete configmap datafy-controller-config -n "${NS}" --ignore-not-found
 kubectl delete configmap datafy-volume-replacements -n "${NS}" --ignore-not-found
