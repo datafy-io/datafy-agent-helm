@@ -105,17 +105,17 @@ controller:
   health:
     enabled: true
     livenessProbe:
-      initialDelaySeconds: 10
-      periodSeconds: 20
+      initialDelaySeconds: 20
+      periodSeconds: 10
       timeoutSeconds: 5
       successThreshold: 1
-      failureThreshold: 3
+      failureThreshold: 5
     readinessProbe:
       initialDelaySeconds: 10
       periodSeconds: 10
       timeoutSeconds: 5
       successThreshold: 1
-      failureThreshold: 3
+      failureThreshold: 2
 
   ## @param controller.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
