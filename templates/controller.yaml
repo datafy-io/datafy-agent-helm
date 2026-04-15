@@ -106,6 +106,28 @@ spec:
               containerPort: 9443
             - name: grpc
               containerPort: 50051
+            - name: health
+              containerPort: 8081
+          {{- if .Values.controller.health.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: {{ .Values.controller.health.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.controller.health.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.controller.health.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.controller.health.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.controller.health.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: {{ .Values.controller.health.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.controller.health.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.controller.health.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.controller.health.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.controller.health.readinessProbe.failureThreshold }}
+          {{- end }}
           volumeMounts:
             - name: datafy-controller-config
               mountPath: /etc/datafy-controller
