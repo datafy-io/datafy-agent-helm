@@ -105,8 +105,8 @@ controller:
 
   image:
     pullPolicy: IfNotPresent
-    repository: public.ecr.aws/datafy-io/datafy-controller
-    tag:
+    repository: 327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/datafy-controller
+    tag: DT-9171-gardener
 
   ## @param controller.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
