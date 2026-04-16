@@ -41,12 +41,54 @@ Normalized agent mode
 {{- end -}}
 
 {{/*
+Normalized gardener mode
+*/}}
+{{- define "datafy-agent.gardenerModeNormalized" -}}
+    {{- default "" .Values.gardener.mode | lower | trim -}}
+{{- end -}}
+
+{{/*
+EBS CSI Node DaemonSet name
+*/}}
+{{- define "datafy-agent.ebsCsiNodeName" -}}
+{{- if .Values.gardener.enabled -}}
+csi-driver-node
+{{- else -}}
+ebs-csi-node
+{{- end -}}
+{{- end -}}
+
+{{/*
+EBS CSI Controller Deployment name
+*/}}
+{{- define "datafy-agent.ebsCsiControllerName" -}}
+{{- if .Values.gardener.enabled -}}
+csi-driver-controller
+{{- else -}}
+ebs-csi-controller
+{{- end -}}
+{{- end -}}
+
+{{/*
 Whether extended install resources should be created.
 Skip only when mode is sensor and extendedInstallOnSensor is false.
 */}}
 {{- define "datafy-agent.extendedInstallEnabled" -}}
 {{- $isSensor := eq (include "datafy-agent.agentModeNormalized" .) "sensor" -}}
 {{- if and $isSensor (not .Values.extendedInstallOnSensor) -}}
+false
+{{- else -}}
+true
+{{- end -}}
+{{- end -}}
+
+
+{{/*
+Whether agent should be installed
+*/}}
+{{- define "datafy-agent.agentInstallEnabled" -}}
+{{- $isGardenerSeed := and .Values.gardener.enabled (eq (include "datafy-agent.gardenerModeNormalized" .) "seed") -}}
+{{- if $isGardenerSeed -}}
 false
 {{- else -}}
 true
@@ -68,11 +110,18 @@ Determine ebs csi installed namespace
     {{- if $driverFound }}
         {{- $namespaces := lookup "v1" "Namespace" "" "" -}}
         {{- if $namespaces }}
+            {{- $nodeName := include "datafy-agent.ebsCsiNodeName" . -}}
+            {{- $controllerName := include "datafy-agent.ebsCsiControllerName" . -}}
             {{- range $ns := $namespaces.items }}
                 {{- if eq $namespace "" }}
-                    {{- $ds := lookup "apps/v1" "DaemonSet" $ns.metadata.name "ebs-csi-node" -}}
+                    {{- $ds := lookup "apps/v1" "DaemonSet" $ns.metadata.name $nodeName -}}
                     {{- if $ds }}
                         {{- $namespace = $ns.metadata.name -}}
+                    {{- else }}
+                        {{- $deployment := lookup "apps/v1" "Deployment" $ns.metadata.name $controllerName -}}
+                        {{- if $deployment }}
+                            {{- $namespace = $ns.metadata.name -}}
+                        {{- end -}}
                     {{- end -}}
                 {{- end -}}
             {{- end -}}

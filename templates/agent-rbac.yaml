@@ -1,3 +1,4 @@
+{{- if eq (include "datafy-agent.agentInstallEnabled" .) "true" }}
 {{- if .Values.agent.serviceAccount.create }}
 apiVersion: v1
 kind: ServiceAccount
@@ -44,4 +45,5 @@ subjects:
   - kind: ServiceAccount
     name: {{ .Values.agent.serviceAccount.name }}
     namespace: {{ .Release.Namespace }}
+{{- end }}
 {{- end }}

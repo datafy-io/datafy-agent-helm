@@ -33,3 +33,12 @@
     {{- end }}
   {{- end }}
 {{- end }}
+
+{{- define "datafy-agent.validation.gardener" }}
+  {{- if .Values.gardener.enabled }}
+    {{- $mode := (include "datafy-agent.gardenerModeNormalized" . ) }}
+    {{- if not (or (eq $mode "seed") (eq $mode "shoot")) }}
+      {{ fail (printf "invalid value: gardener.mode must be either 'seed' or 'shoot', got '%s'" $mode) }}
+    {{- end }}
+  {{- end }}
+{{- end }}

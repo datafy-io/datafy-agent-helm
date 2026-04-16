@@ -19,6 +19,15 @@ imagePullSecrets: []
 ##
 extendedInstallOnSensor: true
 
+## @param gardener.enabled Enable Gardener-specific configurations and CSI driver integration
+## @param gardener.mode The Gardener installation mode. Valid values: "seed", "shoot"
+## - seed: Install controller components without the agent and its dependencies
+## - shoot: Install normal configuration with all components
+##
+gardener:
+  enabled: false
+  mode:
+
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
 ## @param agent.env Environment variables to add to datafy-agent daemon set
@@ -96,8 +105,8 @@ controller:
 
   image:
     pullPolicy: IfNotPresent
-    repository: public.ecr.aws/datafy-io/datafy-controller
-    tag:
+    repository: 327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/datafy-controller
+    tag: DT-9171-gardener
 
   ## @param controller.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
