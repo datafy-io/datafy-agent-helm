@@ -154,6 +154,20 @@ Determine ebs csi installed namespace
 {{- end -}}
 
 {{/*
+Gardener generic kubeconfig secret name
+*/}}
+{{- define "datafy-agent.gardenerGenericKubeconfigSecretName" -}}
+{{ $genericKubeconfigSecretName := "" }}
+{{- if (.Capabilities.APIVersions.Has "extensions.gardener.cloud/v1alpha1") -}}
+    {{- $cluster := (lookup "extensions.gardener.cloud/v1alpha1" "Cluster" "" .Release.Namespace) -}}
+    {{- if and $cluster $cluster.metadata $cluster.metadata.annotations }}
+        {{- $genericKubeconfigSecretName = index $cluster.metadata.annotations "generic-token-kubeconfig.secret.gardener.cloud/name" -}}
+    {{- end }}
+{{- end }}
+{{- $genericKubeconfigSecretName -}}
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "datafy-agent.chart" -}}

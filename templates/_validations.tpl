@@ -40,5 +40,18 @@
     {{- if not (or (eq $mode "seed") (eq $mode "shoot")) }}
       {{ fail (printf "invalid value: gardener.mode must be either 'seed' or 'shoot', got '%s'" $mode) }}
     {{- end }}
+    {{- if and (eq $mode "seed") (not .Values.gardener.shootNamespace) }}
+      {{ fail (printf "invalid value: gardener.shootNamespace must be provided when mode is 'seed'") }}
+    {{- end }}
+    {{- if (eq $mode "seed") }}
+      {{ $genericKubeconfigSecretName := (include "datafy-agent.gardenerGenericKubeconfigSecretName" . ) }}
+      {{- if not $genericKubeconfigSecretName }}
+        {{ fail (printf "invalid value: unable to determine generic kubeconfig secret name from cluster annotations for gardener seed cluster '%s'" .Release.Namespace) }}
+      {{- end }}
+      {{- $hasGenericKubeconfigSecret := lookup "v1" "Secret" .Release.Namespace $genericKubeconfigSecretName }}
+      {{- if not $hasGenericKubeconfigSecret }}
+        {{ fail (printf "invalid value: generic kubeconfig secret '%s' not found in namespace '%s'" $genericKubeconfigSecretName .Release.Namespace) }}
+      {{- end }}
+    {{- end}}
   {{- end }}
 {{- end }}

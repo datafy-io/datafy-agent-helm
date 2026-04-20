@@ -116,4 +116,25 @@ subjects:
   - kind: ServiceAccount
     name: {{ .Values.controller.serviceAccountName }}
     namespace: {{ .Release.Namespace }}
+---
+{{- if and (eq .Values.gardener.enabled true) (eq (include "datafy-agent.gardenerModeNormalized" .) "seed") }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: shoot-access-datafy-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "datafy-agent.labels" . | nindent 4 }}
+    resources.gardener.cloud/class: shoot
+    resources.gardener.cloud/purpose: token-requestor
+  annotations:
+    helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Delete=false
+    serviceaccount.resources.gardener.cloud/name: {{ .Values.controller.serviceAccountName }}
+    serviceaccount.resources.gardener.cloud/namespace: {{ .Values.gardener.shootNamespace }}
+    {{- with .Values.extraAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+type: Opaque
+{{- end }}
 {{- end }}

@@ -27,6 +27,8 @@ extendedInstallOnSensor: true
 gardener:
   enabled: false
   mode:
+  ## The namespace where the Datafy Helm chart was installed on the shoot cluster (required when mode is "seed")
+  shootNamespace: kube-system
 
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
@@ -104,7 +106,7 @@ controller:
   replicas: 2
 
   image:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     repository: 327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/datafy-controller
     tag: DT-9171-gardener
 
@@ -128,7 +130,7 @@ controller:
 
 ebsCsiProxy:
   image:
-    pullPolicy: IfNotPresent
+    pullPolicy: Always
     repository: 327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/ebs-csi-controller
     tag: DT-9171-gardener
 
