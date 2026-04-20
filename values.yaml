@@ -129,8 +129,8 @@ controller:
 ebsCsiProxy:
   image:
     pullPolicy: IfNotPresent
-    repository: public.ecr.aws/datafy-io/ebs-csi-controller
-    tag:
+    repository: 327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/ebs-csi-controller
+    tag: DT-9171-gardener
 
   resources:
     limits:
