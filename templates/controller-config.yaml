@@ -16,9 +16,13 @@ data:
   config.yaml: |
     ebs_csi:
       controller:
-        name: {{ include "datafy-agent.ebsCsiControllerName" . }}
+        deployment_name: {{ include "datafy-agent.ebsCsiControllerDeploymentName" . }}
+        app_name: {{ include "datafy-agent.ebsCsiControllerAppName" . }}
+        role_name: {{ if .Values.gardener.enabled }}controller{{ else }}{{ end }}
       node:
-        name: {{ include "datafy-agent.ebsCsiNodeName" . }}
+        daemonset_name: {{ include "datafy-agent.ebsCsiNodeDaemonSetName" . }}
+        app_name: {{ include "datafy-agent.ebsCsiNodeAppName" . }}
+        role_name: {{ if .Values.gardener.enabled }}disk-driver{{ else }}{{ end }}
     csi_proxy:
       {{- with .Values.ebsCsiProxy.image }}
       image:

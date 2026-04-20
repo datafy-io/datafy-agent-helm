@@ -48,9 +48,31 @@ Normalized gardener mode
 {{- end -}}
 
 {{/*
+EBS CSI Controller Deployment name
+*/}}
+{{- define "datafy-agent.ebsCsiControllerDeploymentName" -}}
+{{- if .Values.gardener.enabled -}}
+csi-driver-controller
+{{- else -}}
+ebs-csi-controller
+{{- end -}}
+{{- end -}}
+
+{{/*
+EBS CSI Controller App name
+*/}}
+{{- define "datafy-agent.ebsCsiControllerAppName" -}}
+{{- if .Values.gardener.enabled -}}
+csi
+{{- else -}}
+ebs-csi-controller
+{{- end -}}
+{{- end -}}
+
+{{/*
 EBS CSI Node DaemonSet name
 */}}
-{{- define "datafy-agent.ebsCsiNodeName" -}}
+{{- define "datafy-agent.ebsCsiNodeDaemonSetName" -}}
 {{- if .Values.gardener.enabled -}}
 csi-driver-node
 {{- else -}}
@@ -59,13 +81,13 @@ ebs-csi-node
 {{- end -}}
 
 {{/*
-EBS CSI Controller Deployment name
+EBS CSI Node App name
 */}}
-{{- define "datafy-agent.ebsCsiControllerName" -}}
+{{- define "datafy-agent.ebsCsiNodeAppName" -}}
 {{- if .Values.gardener.enabled -}}
-csi-driver-controller
+csi
 {{- else -}}
-ebs-csi-controller
+ebs-csi-node
 {{- end -}}
 {{- end -}}
 
@@ -110,20 +132,21 @@ Determine ebs csi installed namespace
     {{- if $driverFound }}
         {{- $namespaces := lookup "v1" "Namespace" "" "" -}}
         {{- if $namespaces }}
-            {{- $nodeName := include "datafy-agent.ebsCsiNodeName" . -}}
-            {{- $controllerName := include "datafy-agent.ebsCsiControllerName" . -}}
+            {{- $nodeName := include "datafy-agent.ebsCsiNodeDaemonSetName" . -}}
             {{- range $ns := $namespaces.items }}
                 {{- if eq $namespace "" }}
                     {{- $ds := lookup "apps/v1" "DaemonSet" $ns.metadata.name $nodeName -}}
                     {{- if $ds }}
-                        {{- $namespace = $ns.metadata.name -}}
-                    {{- else }}
-                        {{- $deployment := lookup "apps/v1" "Deployment" $ns.metadata.name $controllerName -}}
-                        {{- if $deployment }}
-                            {{- $namespace = $ns.metadata.name -}}
-                        {{- end -}}
+                        {{- $namespace = $ds.metadata.namespace -}}
                     {{- end -}}
                 {{- end -}}
+            {{- end -}}
+        {{- end -}}
+        {{- if eq $namespace "" }}
+            {{- $controllerName := include "datafy-agent.ebsCsiControllerDeploymentName" . -}}
+            {{- $deployment := lookup "apps/v1" "Deployment" .Release.Namespace $controllerName -}}
+            {{- if $deployment }}
+                {{- $namespace = $deployment.metadata.namespace -}}
             {{- end -}}
         {{- end -}}
     {{- end -}}
