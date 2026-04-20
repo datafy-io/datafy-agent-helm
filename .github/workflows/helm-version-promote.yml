@@ -1,0 +1,360 @@
+name: Helm Chart App Version
+
+on:
+  workflow_call:
+    inputs:
+      agent_version:
+        description: "New agent version (optional)"
+        required: false
+        type: string
+      controller_version:
+        description: "New controller version (optional)"
+        required: false
+        type: string
+      semantic_bump_type:
+        description: "What version type (major, minor, or patch) to bump"
+        required: false
+        type: string
+    secrets:
+      GH_PUBLIC_ACCESS_TOKEN:
+        required: true
+      PRODUCTION_AWS_ROLE_ARN:
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      agent_version:
+        description: "New agent version (optional)"
+        required: false
+        type: string
+      controller_version:
+        description: "New controller version (optional)"
+        required: false
+        type: string
+      semantic_bump_type:
+        description: what version type (major, minor, or patch) to bump
+        required: false
+        type: choice
+        options:
+          - ''
+          - Major
+          - Minor
+          - Patch
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  TARGET_BRANCH: ${{ github.ref_name }}
+  UPDATE_PR_BRANCH: automation/release-chart-update
+  DOCS_PR_BRANCH: automation/release-helm-docs
+
+jobs:
+  determine_update_mode:
+    runs-on: ubuntu-latest
+    outputs:
+      update_chart: ${{ steps.mode.outputs.update_chart }}
+    steps:
+      - name: Log Inputs
+        run: |
+          echo "${{ tojson(inputs) }}"
+          echo "Target branch: ${{ env.TARGET_BRANCH }}"
+
+      - name: Determine update mode
+        id: mode
+        run: |
+          if [[ -n "${{ inputs.agent_version }}" || -n "${{ inputs.controller_version }}" ]]; then
+            echo "update_chart=true" >> "$GITHUB_OUTPUT"
+            echo "At least one version was provided. appVersion and chart version will be updated."
+          else
+            echo "update_chart=false" >> "$GITHUB_OUTPUT"
+            echo "No versions were provided. Skipping appVersion and chart version updates."
+          fi
+
+  validate:
+    needs: [determine_update_mode]
+    if: needs.determine_update_mode.outputs.update_chart == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      bump_type: ${{ steps.bump_type.outputs.bump_type }}
+    steps:
+      - name: Normalize bump type
+        id: bump_type
+        run: |
+          bump_type_raw="${{ inputs.semantic_bump_type }}"
+          bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
+          echo "bump_type=$bump_type" >> "$GITHUB_OUTPUT"
+
+      - name: Validate semantic bump type
+        run: |
+          SEMANTIC_BUMP_TYPE="${{ steps.bump_type.outputs.bump_type }}"
+          case "$SEMANTIC_BUMP_TYPE" in
+            major|minor|patch)
+              echo "✅ Semantic bump type '$SEMANTIC_BUMP_TYPE' is valid"
+              ;;
+            *)
+              echo "❌ Error: semantic_bump_type is required when agent_version or controller_version is provided."
+              echo "Allowed values: Major, Minor, Patch"
+              echo "Received: '$SEMANTIC_BUMP_TYPE'"
+              exit 1
+              ;;
+          esac
+
+      - name: Validate provided versions
+        run: |
+          AGENT_VERSION="${{ inputs.agent_version }}"
+          CONTROLLER_VERSION="${{ inputs.controller_version }}"
+
+          if [[ -n "$AGENT_VERSION" ]] && ! echo "$AGENT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: Agent version '$AGENT_VERSION' does not match stable release format (x.x.x)"
+            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
+            exit 1
+          fi
+
+          if [[ -n "$CONTROLLER_VERSION" ]] && ! echo "$CONTROLLER_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: Controller version '$CONTROLLER_VERSION' does not match stable release format (x.x.x)"
+            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
+            exit 1
+          fi
+
+  update_helm_chart:
+    needs: [determine_update_mode, validate]
+    if: needs.determine_update_mode.outputs.update_chart == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.cpr.outputs.pull-request-number }}
+    steps:
+      - name: Validate GH token for chart update flow
+        run: |
+          if [[ -z "${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}" ]]; then
+            echo "❌ Error: GH_PUBLIC_ACCESS_TOKEN is required when updating chart versions."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set resulting appVersion
+        id: app_version
+        run: |
+          current_app_version="$(yq '.appVersion' Chart.yaml)"
+          current_agent="$(echo "$current_app_version" | cut -d'_' -f1)"
+          current_controller="$(echo "$current_app_version" | cut -d'_' -f2)"
+          echo "Current appVersion: $current_app_version"
+          
+          agent="${{ inputs.agent_version }}"
+          controller="${{ inputs.controller_version }}"
+
+          if [[ -z "$agent" ]]; then agent="$current_agent"; fi
+          if [[ -z "$controller" ]]; then controller="$current_controller"; fi
+
+          new_app_version="${agent}_${controller}"
+          echo "new_app_version=$new_app_version" >> "$GITHUB_OUTPUT"
+          echo "Resulting appVersion: $new_app_version"
+
+      - name: Fail when appVersion is unchanged
+        run: |
+          current_app_version="$(yq '.appVersion' Chart.yaml)"
+          new_app_version="${{ steps.app_version.outputs.new_app_version }}"
+
+          if [[ "$current_app_version" == "$new_app_version" ]]; then
+            echo "No appVersion change detected: $current_app_version"
+            exit 1
+          fi
+
+      - name: Update Chart.yaml appVersion
+        run: |
+          yq -i ".appVersion = \"${{ steps.app_version.outputs.new_app_version }}\"" Chart.yaml
+
+      - name: Read current chart version
+        id: read_chart_version
+        run: |
+          current_chart_version=$(yq '.version' Chart.yaml)
+          echo "current chart version=$current_chart_version"
+          echo "current_chart_version=$current_chart_version" >> "$GITHUB_OUTPUT"
+
+      - name: Bump Version
+        id: bump
+        uses: cbrgm/semver-bump-action@main
+        with:
+          current-version: ${{ steps.read_chart_version.outputs.current_chart_version }}
+          bump-level: ${{ needs.validate.outputs.bump_type }}
+
+      - name: Update chart version
+        run: |
+          NEW_CHART_VERSION=${{ steps.bump.outputs.new_version }}
+          echo "new chart version=$NEW_CHART_VERSION"
+          yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
+
+      - name: Create chart update pull request
+        id: cpr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          commit-message: "update chart metadata ${{ steps.app_version.outputs.new_app_version }} [skip ci]"
+          title: "Release chart update ${{ steps.app_version.outputs.new_app_version }}"
+          body: |
+            Automated chart update from `release.yaml`.
+
+            - appVersion: `${{ steps.app_version.outputs.new_app_version }}`
+            - chart version bump: `${{ steps.read_chart_version.outputs.current_chart_version }}` -> `${{ steps.bump.outputs.new_version }}`
+            - semantic bump type: `${{ needs.validate.outputs.bump_type }}`
+          branch: ${{ env.UPDATE_PR_BRANCH }}
+          delete-branch: true
+          base: ${{ env.TARGET_BRANCH }}
+          add-paths: |
+            Chart.yaml
+
+  helm_docs_update:
+    needs: [determine_update_mode, validate, update_helm_chart]
+    if: always() && needs.determine_update_mode.result == 'success' && (needs.validate.result == 'success' || needs.validate.result == 'skipped') && (needs.update_helm_chart.result == 'success' || needs.update_helm_chart.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Validate GH token for release flow
+        run: |
+          if [[ -z "${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}" ]]; then
+            echo "❌ Error: GH_PUBLIC_ACCESS_TOKEN is required for docs sync and PR merge."
+            exit 1
+          fi
+
+      # If chart was updated, checkout the update PR branch to regenerate docs and push changes there. If not, checkout the target branch to create a new PR for docs changes.
+      - name: Checkout update PR branch
+        if: needs.determine_update_mode.outputs.update_chart == 'true'
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.UPDATE_PR_BRANCH }}
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Checkout target branch
+        if: needs.determine_update_mode.outputs.update_chart == 'false'
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Verify helm-docs installation
+        run: |
+          if command -v helm-docs >/dev/null 2>&1; then
+            echo "helm-docs already installed: $(helm-docs --version)"
+          else
+            curl -sSL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | tar -xz
+            sudo mv helm-docs /usr/local/bin/
+            helm-docs --version
+          fi
+
+      - name: Regenerate Helm docs
+        run: helm-docs
+
+      - name: Fail when docs are unchanged
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "No README.md changes after helm-docs generation."
+            exit 1
+          fi
+
+      - name: Commit docs to update PR branch
+        if: needs.determine_update_mode.outputs.update_chart == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add README.md
+          git commit -m "regenerate helm docs [skip ci]"
+          git push origin HEAD:${{ env.UPDATE_PR_BRANCH }}
+
+      - name: Merge chart update pull request (single merge)
+        if: needs.determine_update_mode.outputs.update_chart == 'true' && needs.update_helm_chart.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+        run: |
+          gh pr merge "${{ needs.update_helm_chart.outputs.pr_number }}" \
+            --repo "${{ github.repository }}" \
+            --squash \
+            --delete-branch \
+            --admin
+
+      # If chart was not updated, create a new pull request for docs changes
+      - name: Create pull request for docs-only changes
+        id: cpr_docs
+        if: needs.determine_update_mode.outputs.update_chart == 'false'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          commit-message: "regenerate helm docs [skip ci]"
+          title: "Regenerate Helm docs"
+          body: |
+            Automated Helm docs regeneration from `release.yaml`.
+          branch: ${{ env.DOCS_PR_BRANCH }}
+          delete-branch: true
+          base: ${{ env.TARGET_BRANCH }}
+          add-paths: |
+            README.md
+
+      - name: Merge docs pull request (admin bypass)
+        if: needs.determine_update_mode.outputs.update_chart == 'false' && steps.cpr_docs.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+        run: |
+          gh pr merge "${{ steps.cpr_docs.outputs.pull-request-number }}" \
+            --repo "${{ github.repository }}" \
+            --squash \
+            --delete-branch \
+            --admin
+
+  release:
+    needs: [helm_docs_update]
+    if: ${{ always() && needs.helm_docs_update.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+    steps:
+      - name: Checkout latest target branch
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Configure AWS Management Credentials
+        uses: aws-actions/configure-aws-credentials@v6.1.0
+        with:
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+
+      - name: Add datafyio-s3 Helm repository
+        run: |
+          helm plugin install https://github.com/hypnoglow/helm-s3.git
+          helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
+
+      - name: Push Helm chart
+        run: |
+          CHART_VERSION="$(awk -F': ' '/^version:/{print $2; exit}' Chart.yaml)"
+          CHART_APP_VERSION="$(awk -F': ' '/^appVersion:/{print $2; exit}' Chart.yaml)"
+          echo "Chart.yaml version: ${CHART_VERSION}"
+          echo "Chart.yaml appVersion: ${CHART_APP_VERSION}"
+
+          echo "README.md version/AppVersion lines:"
+          grep -nE 'Version:|AppVersion:' README.md || true
+
+          helm package .
+          ls -1 datafy-agent-*.tgz
+          # helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
