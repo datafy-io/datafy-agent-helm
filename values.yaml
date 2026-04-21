@@ -132,7 +132,7 @@ ebsCsiProxy:
   image:
     pullPolicy: Always
     repository: 327744850861.dkr.ecr.us-east-1.amazonaws.com/datafy-io/ebs-csi-controller
-    tag: DT-9171-gardener
+    tag: root-DT-9171-gardener
 
   resources:
     limits:
