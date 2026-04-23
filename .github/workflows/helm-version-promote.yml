@@ -296,8 +296,13 @@ jobs:
             --squash \
             --delete-branch \
             --admin; then
-            echo "Merge failed (likely stale base). Updating PR branch and retrying once..."
-            gh pr update-branch "$pr" --repo "${{ github.repository }}"
+            echo "Merge failed (likely stale base). Syncing PR branch with latest base and retrying once..."
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git fetch origin "${{ env.TARGET_BRANCH }}" "${{ env.UPDATE_PR_BRANCH }}"
+            git checkout -B "${{ env.UPDATE_PR_BRANCH }}" "origin/${{ env.UPDATE_PR_BRANCH }}"
+            git merge --no-edit "origin/${{ env.TARGET_BRANCH }}"
+            git push origin HEAD:${{ env.UPDATE_PR_BRANCH }}
             gh pr merge "$pr" \
               --repo "${{ github.repository }}" \
               --squash \
