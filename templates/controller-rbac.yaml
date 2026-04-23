@@ -47,7 +47,7 @@ rules:
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "nodes" ]
-    verbs: [ "get", "list", "watch", "update", "patch" ]
+    verbs: [ "get", "list", "watch", "patch" ]
   - apiGroups: [ "" ]
     resources: [ "pods" ]
     verbs: [ "get", "list", "watch", "delete" ]
