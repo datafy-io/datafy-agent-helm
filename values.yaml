@@ -28,7 +28,7 @@ gardener:
   enabled: false
   mode:
   ## The namespace where the Datafy Helm chart was installed on the shoot cluster (required when mode is "seed")
-  shootNamespace: kube-system
+  shootNamespace:
 
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
