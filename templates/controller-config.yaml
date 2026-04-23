@@ -27,4 +27,9 @@ data:
       {{- end }}
       controller:
         service_address: {{ printf "datafy-controller.%s:50051" .Release.Namespace | quote }}
+    {{- with .Values.agent.affinity.nodeAffinity }}
+    agent:
+      node_affinity:
+        {{- toYaml . | nindent 6 }}
+    {{- end }}
 {{- end }}
