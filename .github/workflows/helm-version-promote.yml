@@ -41,6 +41,10 @@ on:
           - Minor
           - Patch
 
+concurrency:
+  group: helm-version-promote-${{ github.repository }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
   pull-requests: write
@@ -284,11 +288,22 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
         run: |
-          gh pr merge "${{ needs.update_helm_chart.outputs.pr_number }}" \
+          set -euo pipefail
+          pr="${{ needs.update_helm_chart.outputs.pr_number }}"
+
+          if ! gh pr merge "$pr" \
             --repo "${{ github.repository }}" \
             --squash \
             --delete-branch \
-            --admin
+            --admin; then
+            echo "Merge failed (likely stale base). Updating PR branch and retrying once..."
+            gh pr update-branch "$pr" --repo "${{ github.repository }}"
+            gh pr merge "$pr" \
+              --repo "${{ github.repository }}" \
+              --squash \
+              --delete-branch \
+              --admin
+          fi
 
       # If chart was not updated, create a new pull request for docs changes
       - name: Create pull request for docs-only changes
