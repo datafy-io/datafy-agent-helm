@@ -283,6 +283,32 @@ jobs:
           git commit -m "regenerate helm docs [skip ci]"
           git push origin HEAD:${{ env.UPDATE_PR_BRANCH }}
 
+      - name: Wait for chart update pull request merge state
+        if: needs.determine_update_mode.outputs.update_chart == 'true' && needs.update_helm_chart.outputs.pr_number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+        run: |
+          set -euo pipefail
+          pr="${{ needs.update_helm_chart.outputs.pr_number }}"
+
+          for i in {1..12}; do
+            state="$(gh pr view "$pr" \
+              --repo "${{ github.repository }}" \
+              --json mergeStateStatus \
+              --jq .mergeStateStatus)"
+
+            echo "PR merge state: $state"
+
+            if [[ "$state" == "CLEAN" || "$state" == "HAS_HOOKS" || "$state" == "UNSTABLE" ]]; then
+              exit 0
+            fi
+
+            sleep 5
+          done
+
+          echo "PR did not reach a mergeable state before timeout."
+          exit 1
+
       - name: Merge chart update pull request (single merge)
         if: needs.determine_update_mode.outputs.update_chart == 'true' && needs.update_helm_chart.outputs.pr_number != ''
         env:
@@ -337,11 +363,6 @@ jobs:
             --squash \
             --delete-branch \
             --admin
-
-      # - name: Switch workspace to latest target branch
-      #   run: |
-      #     git fetch origin "${{ env.TARGET_BRANCH }}"
-      #     git checkout -B "${{ env.TARGET_BRANCH }}" "origin/${{ env.TARGET_BRANCH }}"
 
       - name: Configure AWS Management Credentials
         uses: aws-actions/configure-aws-credentials@v6
