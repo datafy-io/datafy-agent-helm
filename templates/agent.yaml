@@ -102,6 +102,10 @@ spec:
             - name: DATAFY_MOCKS_CORE_ENABLED
               value: {{ .Values.agent.coreMockEnabled | quote }}
             {{- end }}
+            - name: HELM_CHART_VERSION
+              value: {{ .Chart.Version | quote }}
+            - name: HELM_RELEASE_REVISION
+              value: {{ .Release.Revision | quote }}
           resources:
             requests:
               cpu: 10m
