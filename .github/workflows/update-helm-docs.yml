@@ -1,0 +1,117 @@
+name: Update Helm Docs
+
+on:
+  workflow_call:
+    inputs:
+      release_the_chart:
+        description: "If true, call the Release workflow after docs are updated"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      GH_PUBLIC_ACCESS_TOKEN:
+        required: true
+      PRODUCTION_AWS_ROLE_ARN:
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      release_the_chart:
+        description: "If true, call the Release workflow after docs are updated"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: update-helm-docs-${{ github.repository }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+
+env:
+  TARGET_BRANCH: ${{ github.ref_name }}
+  DOCS_PR_BRANCH: automation/release-helm-docs
+
+jobs:
+  regenerate_docs:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_changed: ${{ steps.diff.outputs.docs_changed }}
+      pr_number: ${{ steps.cpr_docs.outputs.pull-request-number }}
+    steps:
+      - name: Validate GH token
+        run: |
+          if [[ -z "${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}" ]]; then
+            echo "❌ Error: GH_PUBLIC_ACCESS_TOKEN is required for docs sync and PR merge."
+            exit 1
+          fi
+
+      - name: Checkout target branch
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Verify helm-docs installation
+        run: |
+          if command -v helm-docs >/dev/null 2>&1; then
+            echo "helm-docs already installed: $(helm-docs --version)"
+          else
+            curl -sSL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | tar -xz
+            sudo mv helm-docs /usr/local/bin/
+            helm-docs --version
+          fi
+
+      - name: Regenerate Helm docs
+        run: helm-docs
+
+      - name: Detect README changes
+        id: diff
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "No README.md changes after helm-docs generation."
+            echo "docs_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "README.md changed."
+            echo "docs_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request for docs changes
+        id: cpr_docs
+        if: steps.diff.outputs.docs_changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          commit-message: "regenerate helm docs [skip ci]"
+          title: "Regenerate Helm docs"
+          body: |
+            Automated Helm docs regeneration.
+          branch: ${{ env.DOCS_PR_BRANCH }}
+          delete-branch: true
+          base: ${{ env.TARGET_BRANCH }}
+          add-paths: |
+            README.md
+
+      - name: Merge docs pull request (admin bypass)
+        if: steps.diff.outputs.docs_changed == 'true' && steps.cpr_docs.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+        run: |
+          gh pr merge "${{ steps.cpr_docs.outputs.pull-request-number }}" \
+            --repo "${{ github.repository }}" \
+            --squash \
+            --delete-branch \
+            --admin
+
+  # call_release:
+  #   needs: [regenerate_docs]
+  #   if: always() && inputs.release_the_chart == true && needs.regenerate_docs.result == 'success'
+  #   uses: ./.github/workflows/release.yaml
+  #   secrets:
+  #     PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
