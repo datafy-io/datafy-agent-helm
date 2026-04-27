@@ -1,7 +1,7 @@
 apiVersion: v2
 name: datafy-agent
-version: 3.3.1
-appVersion: 1.35.1_1.3.0
+version: 3.3.2
+appVersion: 1.35.2_1.3.0
 home: https://datafy.io
 maintainers:
   - name: Datafy.io, Inc. All Rights Reserved.
