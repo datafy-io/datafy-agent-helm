@@ -82,6 +82,13 @@ jobs:
             echo "docs_changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Read current chart version
+        id: read_chart_version
+        run: |
+          current_chart_version=$(yq '.version' Chart.yaml)
+          echo "current chart version=$current_chart_version"
+          echo "current_chart_version=$current_chart_version" >> "$GITHUB_OUTPUT"          
+
       - name: Create pull request for docs changes
         id: cpr_docs
         if: steps.diff.outputs.docs_changed == 'true'
@@ -89,7 +96,7 @@ jobs:
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
           commit-message: "regenerate helm docs [skip ci]"
-          title: "Regenerate Helm docs"
+          title: "Regenerate Helm docs for chart ${{ steps.read_chart_version.outputs.current_chart_version }}"
           body: |
             Automated Helm docs regeneration.
           branch: ${{ env.DOCS_PR_BRANCH }}
@@ -109,9 +116,9 @@ jobs:
             --delete-branch \
             --admin
 
-  # call_release:
-  #   needs: [regenerate_docs]
-  #   if: always() && inputs.release_the_chart == true && needs.regenerate_docs.result == 'success'
-  #   uses: ./.github/workflows/release.yaml
-  #   secrets:
-  #     PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+  call_release:
+    needs: [regenerate_docs]
+    if: always() && inputs.release_the_chart == true && needs.regenerate_docs.result == 'success'
+    uses: ./.github/workflows/release.yaml
+    secrets:
+      PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
