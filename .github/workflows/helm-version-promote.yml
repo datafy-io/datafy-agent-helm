@@ -209,39 +209,11 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
         run: |
-          set -euo pipefail
-          pr="${{ steps.cpr.outputs.pull-request-number }}"
-
-          state="$(gh pr view "$pr" \
-            --repo "${{ github.repository }}" \
-            --json mergeStateStatus \
-            --jq .mergeStateStatus)"
-
-          echo "PR merge state: $state"
-
-          if ! gh pr merge "$pr" \
+          gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" \
             --repo "${{ github.repository }}" \
             --squash \
             --delete-branch \
-            --admin; then
-            echo "Merge failed (likely stale base). Syncing PR branch with latest base and retrying once..."
-
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git fetch origin "${{ env.TARGET_BRANCH }}" "${{ env.UPDATE_PR_BRANCH }}"
-            git checkout -B "${{ env.UPDATE_PR_BRANCH }}" "origin/${{ env.UPDATE_PR_BRANCH }}"
-            git merge --no-edit "origin/${{ env.TARGET_BRANCH }}"
-            git push origin HEAD:${{ env.UPDATE_PR_BRANCH }}
-
-            # Allow GitHub to finish recalculating whether the PR is mergeable after the push
-            sleep 10
-
-            gh pr merge "$pr" \
-              --repo "${{ github.repository }}" \
-              --squash \
-              --delete-branch \
-              --admin
-          fi
+            --admin
 
   call_update_helm_docs:
     needs: [update_helm_chart]
