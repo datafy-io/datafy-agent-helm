@@ -13,7 +13,7 @@ on:
         type: string
       semantic_bump_type:
         description: "What version type (major, minor, or patch) to bump"
-        required: false
+        required: true
         type: string
     secrets:
       GH_PUBLIC_ACCESS_TOKEN:
@@ -33,7 +33,7 @@ on:
         type: string
       semantic_bump_type:
         description: what version type (major, minor, or patch) to bump
-        required: false
+        required: true
         type: choice
         options:
           - ''
