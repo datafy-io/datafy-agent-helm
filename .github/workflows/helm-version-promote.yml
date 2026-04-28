@@ -1,4 +1,4 @@
-name: Helm Chart App Version
+name: Update Helm Chart
 
 on:
   workflow_call:
@@ -11,17 +11,14 @@ on:
         description: "New controller version (optional)"
         required: false
         type: string
-      csi_proxy_version:
-        description: "New CSI proxy version (optional)"
-        required: false
-        type: string
       semantic_bump_type:
         description: "What version type (major, minor, or patch) to bump"
         required: true
         type: string
     secrets:
       GH_PUBLIC_ACCESS_TOKEN:
-        description: "PAT used for checkout/push to protected branches"
+        required: true
+      PRODUCTION_AWS_ROLE_ARN:
         required: true
 
   workflow_dispatch:
@@ -34,10 +31,6 @@ on:
         description: "New controller version (optional)"
         required: false
         type: string
-      csi_proxy_version:
-        description: "New CSI proxy version (optional)"
-        required: false
-        type: string
       semantic_bump_type:
         description: what version type (major, minor, or patch) to bump
         required: true
@@ -48,164 +41,185 @@ on:
           - Minor
           - Patch
 
+concurrency:
+  group: update-helm-chart-${{ github.repository }}-${{ github.ref_name }}
+  cancel-in-progress: false
+
 permissions:
+  id-token: write
   contents: write
   pull-requests: write
-  
+
+env:
+  TARGET_BRANCH: ${{ github.ref_name }}
+  UPDATE_PR_BRANCH: automation/release-chart-update
+
 jobs:
-  update_helm_chart:
+  validate:
     runs-on: ubuntu-latest
+    outputs:
+      bump_type: ${{ steps.bump_type.outputs.bump_type }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          repository: datafy-io/datafy-agent-helm
-          ref: master
-          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-          persist-credentials: true
-
-      - name: Validate inputs
+      - name: Log Inputs
         run: |
-          if [[ -z "${{ inputs.agent_version }}" && -z "${{ inputs.controller_version }}" && -z "${{ inputs.csi_proxy_version }}" ]]; then
-            echo "Error: At least one of agent_version, controller_version, or csi_proxy_version must be provided."
+          echo "${{ tojson(inputs) }}"
+          echo "Target branch: ${{ env.TARGET_BRANCH }}"
+
+      - name: Require at least one version input
+        run: |
+          if [[ -z "${{ inputs.agent_version }}" && -z "${{ inputs.controller_version }}" ]]; then
+            echo "❌ Error: at least one of agent_version or controller_version must be provided."
             exit 1
           fi
 
-          AGENT_VERSION="${{ inputs.agent_version }}"
-          if [ -n "$AGENT_VERSION" ] && ! echo "$AGENT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "❌ Error: Agent version '$AGENT_VERSION' does not match stable release format (x.x.x)"
-            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
-            exit 1
-          fi
-
-          CONTROLLER_VERSION="${{ inputs.controller_version }}"
-          if [ -n "$CONTROLLER_VERSION" ] && ! echo "$CONTROLLER_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "❌ Error: Controller version '$CONTROLLER_VERSION' does not match stable release format (x.x.x)"
-            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
-            exit 1
-          fi
-
-          CSI_PROXY_VERSION="${{ inputs.csi_proxy_version }}"
-          if [ -n "$CSI_PROXY_VERSION" ] && ! echo "$CSI_PROXY_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "❌ Error: CSI proxy version '$CSI_PROXY_VERSION' does not match stable release format (x.x.x)"
-            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
-            exit 1
-          fi
+      - name: Normalize bump type
+        id: bump_type
+        run: |
+          bump_type_raw="${{ inputs.semantic_bump_type }}"
+          bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
+          echo "bump_type=$bump_type" >> "$GITHUB_OUTPUT"
 
       - name: Validate semantic bump type
         run: |
-          SEMANTIC_BUMP_TYPE="${{ inputs.semantic_bump_type }}"
-
+          SEMANTIC_BUMP_TYPE="${{ steps.bump_type.outputs.bump_type }}"
           case "$SEMANTIC_BUMP_TYPE" in
-            Major|Minor|Patch)
+            major|minor|patch)
               echo "✅ Semantic bump type '$SEMANTIC_BUMP_TYPE' is valid"
               ;;
             *)
-              echo "❌ Error: You must select a valid semantic bump type (Major, Minor, or Patch)"
+              echo "❌ Error: semantic_bump_type is required when agent_version or controller_version is provided."
+              echo "Allowed values: Major, Minor, Patch"
               echo "Received: '$SEMANTIC_BUMP_TYPE'"
               exit 1
               ;;
           esac
 
-      - name: Read current appVersion
-        id: read_version
+      - name: Validate provided versions
         run: |
-          current=$(yq '.appVersion' Chart.yaml)
-          echo "current=$current" >> $GITHUB_OUTPUT
+          AGENT_VERSION="${{ inputs.agent_version }}"
+          CONTROLLER_VERSION="${{ inputs.controller_version }}"
 
-      - name: Compute new appVersion
-        id: new_version
+          if [[ -n "$AGENT_VERSION" ]] && ! echo "$AGENT_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: Agent version '$AGENT_VERSION' does not match stable release format (x.x.x)"
+            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
+            exit 1
+          fi
+
+          if [[ -n "$CONTROLLER_VERSION" ]] && ! echo "$CONTROLLER_VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "❌ Error: Controller version '$CONTROLLER_VERSION' does not match stable release format (x.x.x)"
+            echo "Expected format: major.minor.patch (e.g., 1.30.0)"
+            exit 1
+          fi
+
+  update_helm_chart:
+    needs: [validate]
+    runs-on: ubuntu-latest
+    outputs:
+      pr_number: ${{ steps.cpr.outputs.pull-request-number }}
+    steps:
+      - name: Validate GH token for chart update flow
         run: |
-          current="${{ steps.read_version.outputs.current }}"
+          if [[ -z "${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}" ]]; then
+            echo "❌ Error: GH_PUBLIC_ACCESS_TOKEN is required when updating chart versions."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ env.TARGET_BRANCH }}
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set resulting appVersion
+        id: app_version
+        run: |
+          current_app_version="$(yq '.appVersion' Chart.yaml)"
+          current_agent="$(echo "$current_app_version" | cut -d'_' -f1)"
+          current_controller="$(echo "$current_app_version" | cut -d'_' -f2)"
+          echo "Current appVersion: $current_app_version"
+
           agent="${{ inputs.agent_version }}"
-          csi="${{ inputs.csi_proxy_version }}"
           controller="${{ inputs.controller_version }}"
 
-          agent_part=$(echo "$current" | cut -d'_' -f1)
-          csi_part=$(echo "$current" | cut -d'_' -f2)
-          controller_part=$(echo "$current" | cut -d'_' -f3)
+          if [[ -z "$agent" ]]; then agent="$current_agent"; fi
+          if [[ -z "$controller" ]]; then controller="$current_controller"; fi
 
-          if [ -n "$agent" ]; then agent_part="$agent"; fi
-          if [ -n "$csi" ]; then csi_part="$csi"; fi
-          if [ -n "$controller" ]; then controller_part="$controller"; fi
+          new_app_version="${agent}_${controller}"
+          echo "new_app_version=$new_app_version" >> "$GITHUB_OUTPUT"
+          echo "Resulting appVersion: $new_app_version"
 
-          new="${agent_part}_${csi_part}_${controller_part}"
-          echo "new=$new" >> $GITHUB_OUTPUT
-          echo "$new"
+      - name: Fail when appVersion is unchanged
+        run: |
+          current_app_version="$(yq '.appVersion' Chart.yaml)"
+          new_app_version="${{ steps.app_version.outputs.new_app_version }}"
+
+          if [[ "$current_app_version" == "$new_app_version" ]]; then
+            echo "No appVersion change detected: $current_app_version"
+            exit 1
+          fi
 
       - name: Update Chart.yaml appVersion
         run: |
-          yq -i ".appVersion = \"${{ steps.new_version.outputs.new }}\"" Chart.yaml
+          yq -i ".appVersion = \"${{ steps.app_version.outputs.new_app_version }}\"" Chart.yaml
 
       - name: Read current chart version
-        id: update_chart_version
+        id: read_chart_version
         run: |
           current_chart_version=$(yq '.version' Chart.yaml)
           echo "current chart version=$current_chart_version"
-          echo "current_chart_version=$current_chart_version" >> $GITHUB_ENV
-
-          bump_type_raw="${{ inputs.semantic_bump_type }}"
-          bump_type=$(echo "$bump_type_raw" | tr '[:upper:]' '[:lower:]')
-          echo "bump_type=$bump_type" >> $GITHUB_ENV
+          echo "current_chart_version=$current_chart_version" >> "$GITHUB_OUTPUT"
 
       - name: Bump Version
         id: bump
         uses: cbrgm/semver-bump-action@main
         with:
-          current-version: ${{ env.current_chart_version }}
-          bump-level: ${{ env.bump_type }}
+          current-version: ${{ steps.read_chart_version.outputs.current_chart_version }}
+          bump-level: ${{ needs.validate.outputs.bump_type }}
 
       - name: Update chart version
         run: |
           NEW_CHART_VERSION=${{ steps.bump.outputs.new_version }}
-          echo $NEW_CHART_VERSION
-
-          echo "new chart version=$NEW_CHART_VERSION (bump: ${{ env.bump_type }})"
+          echo "new chart version=$NEW_CHART_VERSION"
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
 
-      - name: Install helm-docs
-        run: |
-         curl -sSL https://github.com/norwoodj/helm-docs/releases/download/v1.14.2/helm-docs_1.14.2_Linux_x86_64.tar.gz | tar -xz
-          sudo mv helm-docs /usr/local/bin/
-
-      - name: Regenerate Helm docs
-        run: helm-docs
-
-      - name: Create pull request
+      - name: Create chart update pull request
         id: cpr
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
-          commit-message: "update chart for appVersion ${{ steps.new_version.outputs.new }} [skip ci]"
-          title: "Update chart for appVersion ${{ steps.new_version.outputs.new }}"
+          commit-message: "update chart metadata ${{ steps.app_version.outputs.new_app_version }} [skip ci]"
+          title: "Release chart update ${{ steps.app_version.outputs.new_app_version }}"
           body: |
-            Automated chart update from `helm-version-promote.yml`.
+            Automated chart update.
 
-            - appVersion: `${{ steps.new_version.outputs.new }}`
-            - chart version bump: `${{ env.current_chart_version }}` -> `${{ steps.bump.outputs.new_version }}`
-          branch: "automation/helm-version-promote"
+            - appVersion: `${{ steps.app_version.outputs.new_app_version }}`
+            - chart version bump: `${{ steps.read_chart_version.outputs.current_chart_version }}` -> `${{ steps.bump.outputs.new_version }}`
+            - semantic bump type: `${{ needs.validate.outputs.bump_type }}`
+          branch: ${{ env.UPDATE_PR_BRANCH }}
           delete-branch: true
-          base: master
+          base: ${{ env.TARGET_BRANCH }}
           add-paths: |
             Chart.yaml
-            README.md
 
-      - name: Merge pull request (admin bypass)
-        if: steps.cpr.outputs.pull-request-number
+      - name: Merge chart update pull request (single merge)
+        if: steps.cpr.outputs.pull-request-number != ''
         env:
           GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
         run: |
           gh pr merge "${{ steps.cpr.outputs.pull-request-number }}" \
-            --repo datafy-io/datafy-agent-helm \
+            --repo "${{ github.repository }}" \
             --squash \
             --delete-branch \
             --admin
 
-  release_helm_chart:
-    needs: [ update_helm_chart ]
-    permissions:
-      id-token: write
-      contents: write
-    uses: datafy-io/datafy-agent-helm/.github/workflows/release.yaml@master
+  call_update_helm_docs:
+    needs: [update_helm_chart]
+    uses: ./.github/workflows/update-helm-docs.yml
+    with:
+      release_the_chart: true
     secrets:
+      GH_PUBLIC_ACCESS_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
       PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}

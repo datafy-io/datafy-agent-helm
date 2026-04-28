@@ -18,17 +18,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
+
       - name: Configure AWS Management Credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+
       - name: Add datafyio-s3 Helm repository
         run: |
           helm plugin install https://github.com/hypnoglow/helm-s3.git
           helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
+
       - name: Push Helm chart
         run: |
           helm package .
-          helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+          if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
+            echo "We are on the default branch - Publishing chart ..."
+            helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+          else
+            echo "Skipping helm s3 push: current ref '${{ github.ref_name }}' is not the default branch '${{ github.event.repository.default_branch }}'."
+          fi
