@@ -1,6 +1,11 @@
 {{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
-{{- $configChecksum := include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum}}
+{{- $configChecksum := include (print $.Template.BasePath "/controller-config.yaml") . | sha256sum }}
 {{- $datafyTokenChecksum := include (print $.Template.BasePath "/datafy-token.yaml") . | sha256sum }}
+
+{{- $gardenerGenericKubeconfigSecretName := "" -}}
+{{- if and (eq .Values.gardener.enabled true) (eq (include "datafy-agent.gardenerModeNormalized" .) "seed") }}
+  {{ $gardenerGenericKubeconfigSecretName = (include "datafy-agent.gardenerGenericKubeconfigSecretName" . ) }}
+{{- end}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -16,6 +21,8 @@ metadata:
   {{- end }}
 spec:
   replicas: {{ .Values.controller.replicas }}
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: datafy-controller
@@ -90,6 +97,16 @@ spec:
               value: {{ $configChecksum | quote }}
             - name: DATAFY_WEBHOOK_CERT_DIR
               value: /etc/datafy-controller/tls
+            {{- if .Values.gardener.enabled}}
+            - name: GARDENER_ENABLED
+              value: {{ .Values.gardener.enabled | quote }}
+            - name: GARDENER_MODE
+              value: {{ include "datafy-agent.gardenerModeNormalized" . | quote }}
+            {{- if $gardenerGenericKubeconfigSecretName }}
+            - name: GARDENER_SHOOT_ACCESS_KUBECONFIG
+              value: /var/run/secrets/gardener.cloud/shoot/generic-kubeconfig/kubeconfig
+            {{- end }}
+            {{- end }}
           resources:
             requests:
               cpu: 10m
@@ -106,6 +123,11 @@ spec:
             - name: datafy-controller-webhook-tls
               mountPath: /etc/datafy-controller/tls
               readOnly: true
+            {{- if $gardenerGenericKubeconfigSecretName }}
+            - name: kubeconfig-datafy-controller
+              mountPath: /var/run/secrets/gardener.cloud/shoot/generic-kubeconfig
+              readOnly: true
+            {{- end }}
       volumes:
         - name: datafy-controller-config
           configMap:
@@ -113,6 +135,24 @@ spec:
         - name: datafy-controller-webhook-tls
           secret:
             secretName: datafy-controller-webhook-tls
+        {{- if $gardenerGenericKubeconfigSecretName }}
+        - name: kubeconfig-datafy-controller
+          projected:
+            defaultMode: 420
+            sources:
+              - secret:
+                  name: {{ $gardenerGenericKubeconfigSecretName }}
+                  items:
+                    - key: kubeconfig
+                      path: kubeconfig
+                  optional: false
+              - secret:
+                  name: shoot-access-datafy-controller
+                  items:
+                    - key: token
+                      path: token
+                  optional: false
+        {{- end }}
 ---
 apiVersion: v1
 kind: Service

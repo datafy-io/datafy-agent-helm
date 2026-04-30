@@ -1,3 +1,4 @@
+{{- if eq (include "datafy-agent.agentInstallEnabled" .) "true" }}
 {{- $enableCore := and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") (not .Values.agent.coreMockEnabled) }}
 apiVersion: apps/v1
 kind: DaemonSet
@@ -167,3 +168,4 @@ spec:
       {{- end }}
       hostPID: true
       hostNetwork: true
+{{- end }}
