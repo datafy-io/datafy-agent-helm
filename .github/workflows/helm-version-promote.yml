@@ -227,3 +227,4 @@ jobs:
     uses: ./.github/workflows/release.yaml
     secrets:
       PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+      GH_PUBLIC_ACCESS_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN}}
