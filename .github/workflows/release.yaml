@@ -92,7 +92,7 @@ jobs:
           helm package .
           if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
             echo " This is on the default branch"
-            # helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+            helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
           else
             echo "Skipping helm s3 push: current ref '${{ github.ref_name }}' is not the default branch '${{ github.event.repository.default_branch }}'."
           fi
