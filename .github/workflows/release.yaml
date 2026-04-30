@@ -6,10 +6,19 @@ on:
     secrets:
       PRODUCTION_AWS_ROLE_ARN:
         required: true
+      GH_PUBLIC_ACCESS_TOKEN:
+        required: true
 
 permissions:
   id-token: write
   contents: write  # Grant write access to the repository contents
+  pull-requests: write
+
+env:
+  TARGET_BRANCH: ${{ github.ref_name }}
+  DOCS_PR_BRANCH: automation/release-helm-docs
+
+
 
 jobs:
   release:
@@ -21,23 +30,69 @@ jobs:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
+      - name: Run helm-docs
+        uses: losisin/helm-docs-github-action@v1
+
+      - name: Detect README changes
+        id: diff
+        run: |
+          if git diff --quiet -- README.md; then
+            echo "No README.md changes after helm-docs generation."
+            echo "docs_changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "README.md changed."
+            echo "docs_changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Read current chart version
+        id: read_chart_version
+        run: |
+          current_chart_version=$(yq '.version' Chart.yaml)
+          echo "current chart version=$current_chart_version"
+          echo "current_chart_version=$current_chart_version" >> "$GITHUB_OUTPUT"          
+
+      - name: Create pull request for docs changes
+        id: cpr_docs
+        if: steps.diff.outputs.docs_changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+          commit-message: "regenerate helm docs [skip ci]"
+          title: "Regenerate Helm docs for chart ${{ steps.read_chart_version.outputs.current_chart_version }}"
+          body: |
+            Automated Helm docs regeneration.
+          branch: ${{ env.DOCS_PR_BRANCH }}
+          delete-branch: true
+          base: ${{ env.TARGET_BRANCH }}
+          add-paths: |
+            README.md
+
+      - name: Merge docs pull request (admin bypass)
+        if: steps.diff.outputs.docs_changed == 'true' && steps.cpr_docs.outputs.pull-request-number
+        env:
+          GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
+        run: |
+          gh pr merge "${{ steps.cpr_docs.outputs.pull-request-number }}" \
+            --repo "${{ github.repository }}" \
+            --squash \
+            --delete-branch \
+            --admin
+
       - name: Configure AWS Management Credentials
         uses: aws-actions/configure-aws-credentials@v6
         with:
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
-
       - name: Add datafyio-s3 Helm repository
         run: |
           helm plugin install https://github.com/hypnoglow/helm-s3.git
           helm repo add datafyio-s3 s3://helm.datafy.io/datafy-agent
-
       - name: Push Helm chart
         run: |
           helm package .
           if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
-            echo "We are on the default branch - Publishing chart ..."
-            helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+            echo " This is on the default branch"
+            # helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
           else
             echo "Skipping helm s3 push: current ref '${{ github.ref_name }}' is not the default branch '${{ github.event.repository.default_branch }}'."
           fi

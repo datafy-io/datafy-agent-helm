@@ -185,6 +185,9 @@ jobs:
           echo "new chart version=$NEW_CHART_VERSION"
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
 
+      - name: Run helm-docs
+        uses: losisin/helm-docs-github-action@v1
+
       - name: Create chart update pull request
         id: cpr
         uses: peter-evans/create-pull-request@v8
@@ -203,8 +206,9 @@ jobs:
           base: ${{ env.TARGET_BRANCH }}
           add-paths: |
             Chart.yaml
+            README.md
 
-      - name: Merge chart update pull request (single merge)
+      - name: Merge chart update pull request
         if: steps.cpr.outputs.pull-request-number != ''
         env:
           GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
@@ -215,11 +219,10 @@ jobs:
             --delete-branch \
             --admin
 
-  call_update_helm_docs:
+  call_release:
     needs: [update_helm_chart]
-    uses: ./.github/workflows/update-helm-docs.yml
-    with:
-      release_the_chart: true
+    if: always() && needs.update_helm_chart.result == 'success'
+    uses: ./.github/workflows/release.yaml
     secrets:
-      GH_PUBLIC_ACCESS_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
       PRODUCTION_AWS_ROLE_ARN: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+      GH_PUBLIC_ACCESS_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
