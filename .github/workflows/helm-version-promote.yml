@@ -187,8 +187,6 @@ jobs:
 
       - name: Run helm-docs
         uses: losisin/helm-docs-github-action@v1
-        with:
-          fail-on-diff: true
 
       - name: Create chart update pull request
         id: cpr
