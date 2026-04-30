@@ -98,7 +98,7 @@ helm uninstall datafy-agent --namespace <namespace>
 | ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |
 | ebsCsiProxy.image.tag | string | `nil` |  |
 | ebsCsiProxy.resources.limits.memory | string | `"256Mi"` |  |
-| ebsCsiProxy.resources.requests.cpu | string | `"10m"` |  |
+| ebsCsiProxy.resources.requests.cpu | string | `"11m"` |  |
 | ebsCsiProxy.resources.requests.memory | string | `"40Mi"` |  |
 | extendedInstallOnSensor | bool | `true` |  |
 | extraAnnotations | object | `{}` |  |
