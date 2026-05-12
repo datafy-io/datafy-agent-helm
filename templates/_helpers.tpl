@@ -89,6 +89,26 @@ Create chart name and version as used by the chart label.
 {{- end -}}
 
 {{/*
+Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
+*/}}
+{{- define "datafy-agent.proxyEnv" -}}
+{{- with .Values.proxy -}}
+{{- if .httpsProxy }}
+- name: HTTPS_PROXY
+  value: {{ .httpsProxy | quote }}
+- name: https_proxy
+  value: {{ .httpsProxy | quote }}
+{{- end }}
+{{- if .noProxy }}
+- name: NO_PROXY
+  value: {{ .noProxy | quote }}
+- name: no_proxy
+  value: {{ .noProxy | quote }}
+{{- end }}
+{{- end }}
+{{- end -}}
+
+{{/*
 Common labels for all resources
 */}}
 {{- define "datafy-agent.labels" -}}

@@ -90,6 +90,7 @@ spec:
               value: {{ $configChecksum | quote }}
             - name: DATAFY_WEBHOOK_CERT_DIR
               value: /etc/datafy-controller/tls
+            {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           resources:
             requests:
               cpu: 10m
