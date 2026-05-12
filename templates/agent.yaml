@@ -44,6 +44,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           command:
             - /bin/sh
             - -ec
@@ -72,6 +73,7 @@ spec:
                 secretKeyRef:
                   name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           resources:
             requests:
               cpu: 10m
@@ -111,6 +113,7 @@ spec:
               value: {{ .Chart.Version | quote }}
             - name: HELM_RELEASE_REVISION
               value: {{ .Release.Revision | quote }}
+            {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           resources:
             requests:
               cpu: 10m
@@ -144,6 +147,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           volumeMounts:
             - name: datafy-run
               mountPath: /run/datafy

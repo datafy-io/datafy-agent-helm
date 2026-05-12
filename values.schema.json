@@ -36,6 +36,26 @@
           }
         }
       }
+    },
+    "proxy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "httpsProxy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "HTTPS proxy URL"
+        },
+        "noProxy": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Comma-separated host/IP/CIDR list to bypass the proxy"
+        }
+      }
     }
   }
 }
