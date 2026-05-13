@@ -51,6 +51,32 @@ spec:
               {{- (.Files.Get "files/agent-preflight.sh") | nindent 14 }}
       containers:
         {{- if $enableCore }}
+        # datafy-convertor: thin, stateless header-conversion service. The core
+        # container's bootstrap.sh waits for the convertor process to be alive
+        # in the host PID namespace (the convertor runs via nsenter, same as
+        # core) before it starts agent-core. Declared BEFORE the core
+        # container so the kubelet creates it first (k8s does not guarantee
+        # container start ordering, but kubelet processes the list in order).
+        - name: convertor
+          args: [ convertor ]
+          image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
+          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
+          {{- with .Values.agent.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: DATAFY_DSO_URL
+              value: {{ .Values.agent.dsoUrl }}
+            - name: DATAFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 20Mi
         - name: core
           args: [ core ]
           image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
