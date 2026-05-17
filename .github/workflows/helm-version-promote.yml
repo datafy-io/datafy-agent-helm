@@ -186,7 +186,7 @@ jobs:
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
 
       - name: Run helm-docs
-        uses: losisin/helm-docs-github-action@v1
+        uses: losisin/helm-docs-github-action@v2
 
       - name: Create chart update pull request
         id: cpr
