@@ -19,6 +19,13 @@ imagePullSecrets: []
 ##
 extendedInstallOnSensor: true
 
+## @param proxy.httpsProxy HTTPS proxy URL
+## @param proxy.noProxy Comma-separated host/IP/CIDR/DNS-suffix list to bypass the proxy
+##
+proxy:
+  httpsProxy: ""
+  noProxy: ""
+
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
 ## @param agent.env Environment variables to add to datafy-agent daemon set

@@ -65,6 +65,14 @@ helm uninstall datafy-agent --namespace <namespace>
 ```
 ---
 
+## Proxy
+
+Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The chart renders both the uppercase and lowercase env vars (`HTTPS_PROXY`/`https_proxy`, `NO_PROXY`/`no_proxy`) on each chart-managed container.
+
+`noProxy` is a comma-separated list passed through verbatim. Because Helm's `--set` splits on commas, escape them or pass values via a values file.
+
+---
+
 {{ template "chart.valuesSection" . }}
 
 ## Notes

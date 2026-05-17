@@ -27,4 +27,12 @@ data:
       {{- end }}
       controller:
         service_address: {{ printf "datafy-controller.%s:50051" .Release.Namespace | quote }}
+      {{- with .Values.proxy }}
+      {{- if .httpsProxy }}
+      https_proxy: {{ .httpsProxy | quote }}
+      {{- end }}
+      {{- if .noProxy }}
+      no_proxy: {{ .noProxy | quote }}
+      {{- end }}
+      {{- end }}
 {{- end }}
