@@ -82,7 +82,7 @@ monitor:
   probe:
     interval: 5s
     timeout: 4s
-    failureThreshold: 4
+    failureThreshold: 12
     successThreshold: 2
 
   image:
