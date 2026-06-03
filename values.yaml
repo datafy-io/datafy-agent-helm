@@ -162,3 +162,7 @@ ebsCsiProxy:
     requests:
       cpu: 10m
       memory: 40Mi
+
+  ## @param ebsCsiProxy.volumeResolution.source Backend that drives CSI proxy volume resolution: "tags" or "saas". Empty uses the proxy default (tags).
+  volumeResolution:
+    source: ""
