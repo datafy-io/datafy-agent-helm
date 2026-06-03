@@ -131,6 +131,10 @@ spec:
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
+            - name: DATAFY_NOTIFICATIONS_WAIT_FOR_ACK
+              value: "true"
+            - name: DATAFY_NOTIFICATIONS_WAIT_FOR_ACK_TIMEOUT
+              value: "5s"
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
               value: {{ .Values.agent.hqMockEnabled | quote }}
