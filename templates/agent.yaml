@@ -122,6 +122,10 @@ spec:
                 secretKeyRef:
                   name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            - name: DATAFY_NOTIFICATIONS_WAIT_FOR_ACK
+              value: "true"
+            - name: DATAFY_NOTIFICATIONS_WAIT_FOR_ACK_TIMEOUT
+              value: "5s"
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
               value: {{ .Values.agent.hqMockEnabled | quote }}
