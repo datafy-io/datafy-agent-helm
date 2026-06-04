@@ -1,0 +1,23 @@
+name: master-protection
+
+on:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  master-validate:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Require release-* source branch
+        if: ${{ !startsWith(github.head_ref, 'release-') }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "PRs into master must come from release-* branches"
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --repo "${{ github.repository }}" \
+            --body ":no_entry: This PR cannot be merged into \`master\`. Only \`release-*\` branches are allowed to merge into \`master\`, but the source branch is \`${{ github.head_ref }}\`. To proceed, either retarget this PR to a \`release-*\` branch, or reopen it from a \`release-*\` source branch."
+          exit 1
