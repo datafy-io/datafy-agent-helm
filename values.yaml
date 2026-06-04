@@ -54,6 +54,12 @@ agent:
   # @ignored
   hqMockEnabled: false
 
+  ## @param agent.notifications.defer_until_csi_ack Wait for the CSI proxy to ack a notification before the agent considers it handled. Defaults to "true".
+  ## @param agent.notifications.wait_for_ack_timeout How long the agent waits for the CSI proxy ack before giving up. Defaults to "5s".
+  notifications:
+    defer_until_csi_ack: "true"
+    wait_for_ack_timeout: "5s"
+
   ## @param agent.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ##
@@ -166,3 +172,9 @@ ebsCsiProxy:
   ## @param ebsCsiProxy.volumeResolution.source Backend that drives CSI proxy volume resolution: "tags" or "saas". Empty uses the proxy default (tags).
   volumeResolution:
     source: ""
+
+  ## @param ebsCsiProxy.notifications.wait_before_tag Testing-only: delay (e.g. "2s") the CSI proxy waits before sending the tag update when handling a notification. Empty disables the delay.
+  ## @param ebsCsiProxy.notifications.wait_before_ack Testing-only: delay (e.g. "2s") the CSI proxy waits before acking a notification. Empty disables the delay.
+  notifications:
+    wait_before_tag: ""
+    wait_before_ack: ""
