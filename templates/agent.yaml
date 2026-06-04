@@ -176,3 +176,6 @@ spec:
       {{- end }}
       hostPID: true
       hostNetwork: true
+      {{- if .Values.proxy.httpsProxy }}
+      dnsPolicy: ClusterFirstWithHostNet
+      {{- end }}
