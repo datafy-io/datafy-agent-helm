@@ -132,9 +132,9 @@ spec:
             - name: DATAFY_AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
             - name: DATAFY_NOTIFICATIONS_WAIT_FOR_ACK
-              value: "true"
+              value: {{ dig "notifications" "defer_until_csi_ack" "true" .Values.agent | quote }}
             - name: DATAFY_NOTIFICATIONS_WAIT_FOR_ACK_TIMEOUT
-              value: "5s"
+              value: {{ dig "notifications" "wait_for_ack_timeout" "5s" .Values.agent | quote }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
               value: {{ .Values.agent.hqMockEnabled | quote }}
