@@ -16,6 +16,10 @@ metadata:
   {{- end }}
 spec:
   replicas: {{ .Values.controller.replicas }}
+  {{- with .Values.controller.strategy }}
+  strategy:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
   selector:
     matchLabels:
       app.kubernetes.io/name: datafy-controller
