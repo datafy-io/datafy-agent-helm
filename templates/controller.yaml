@@ -76,6 +76,7 @@ spec:
                   fieldPath: metadata.namespace
             - name: DATAFY_TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
+            {{- if eq (include "datafy-agent.hasToken" .) "true" }}
             - name: DATAFY_TOKEN_SECRET_NAME
               value: {{ default "datafy-token" .Values.agent.externalTokenSecret.name | quote }}
             - name: DATAFY_TOKEN_SECRET_KEY
@@ -87,6 +88,7 @@ spec:
                 secretKeyRef:
                   name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            {{- end }}
             - name: DATAFY_IAC_URL
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
             - name: DATAFY_AGENT_MODE

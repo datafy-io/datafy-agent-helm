@@ -81,11 +81,13 @@ spec:
             - name: DATAFY_CONVERTER_VERSION
               value: {{ .Values.agent.converterVersion | quote }}
             {{- end }}
+            {{- if eq (include "datafy-agent.hasToken" .) "true" }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           resources:
             requests:
@@ -109,11 +111,13 @@ spec:
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
+            {{- if eq (include "datafy-agent.hasToken" .) "true" }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            {{- end }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
               value: {{ .Values.agent.hqMockEnabled | quote }}
@@ -151,11 +155,13 @@ spec:
               value: {{ .Values.monitor.probe.successThreshold | quote }}
             - name: DATAFY_IAC_URL
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
+            {{- if eq (include "datafy-agent.hasToken" .) "true" }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            {{- end }}
             - name: DATAFY_NODE_NAME
               valueFrom:
                 fieldRef:

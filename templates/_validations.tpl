@@ -13,8 +13,6 @@
     {{ fail "invalid values: when using agent.externalTokenSecret.name, agent.externalTokenSecret.key must also be set" }}
   {{- else if and $hasExternalSecretKey (not $hasExternalSecretName) }}
     {{ fail "invalid values: when using agent.externalTokenSecret.key, agent.externalTokenSecret.name must also be set" }}
-  {{- else if and (not $hasToken) (not $hasExternalSecretName) }}
-    {{ fail "invalid values: one of agent.token or agent.externalTokenSecret.name must be set" }}
   {{- else if and $hasToken $hasExternalSecretName }}
     {{ fail "invalid values: only one of agent.token or agent.externalTokenSecret.name can be set" }}
   {{- end }}

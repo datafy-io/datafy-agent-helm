@@ -85,6 +85,20 @@ true
 {{- end -}}
 
 {{/*
+Whether a token is configured, either inline (agent.token) or via an external secret.
+Returns "true"/"false"
+*/}}
+{{- define "datafy-agent.hasToken" -}}
+{{- $hasToken := not (empty (trim (default "" .Values.agent.token))) -}}
+{{- $hasExternalSecretName := not (empty (trim (default "" .Values.agent.externalTokenSecret.name))) -}}
+{{- if or $hasToken $hasExternalSecretName -}}
+true
+{{- else -}}
+false
+{{- end -}}
+{{- end -}}
+
+{{/*
 Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiNamespace" -}}
