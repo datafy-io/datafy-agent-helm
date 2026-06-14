@@ -49,6 +49,13 @@ spec:
       tolerations:
         {{- toYaml .Values.controller.tolerations | nindent 8 }}
       {{- end }}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: datafy-controller
       containers:
         - name: controller
           image: "{{ .Values.controller.image.repository }}:{{ include "datafy-agent.controllerImageTag" . }}"
@@ -90,6 +97,7 @@ spec:
               value: {{ $configChecksum | quote }}
             - name: DATAFY_WEBHOOK_CERT_DIR
               value: /etc/datafy-controller/tls
+            {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           resources:
             requests:
               cpu: 10m
@@ -99,6 +107,28 @@ spec:
               containerPort: 9443
             - name: grpc
               containerPort: 50051
+            - name: health
+              containerPort: 8081
+          {{- if .Values.controller.health.enabled }}
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: {{ .Values.controller.health.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.controller.health.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.controller.health.livenessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.controller.health.livenessProbe.successThreshold }}
+            failureThreshold: {{ .Values.controller.health.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: {{ .Values.controller.health.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.controller.health.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.controller.health.readinessProbe.timeoutSeconds }}
+            successThreshold: {{ .Values.controller.health.readinessProbe.successThreshold }}
+            failureThreshold: {{ .Values.controller.health.readinessProbe.failureThreshold }}
+          {{- end }}
           volumeMounts:
             - name: datafy-controller-config
               mountPath: /etc/datafy-controller

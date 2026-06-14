@@ -19,6 +19,13 @@ imagePullSecrets: []
 ##
 extendedInstallOnSensor: true
 
+## @param proxy.httpsProxy HTTPS proxy URL
+## @param proxy.noProxy Comma-separated host/IP/CIDR/DNS-suffix list to bypass the proxy
+##
+proxy:
+  httpsProxy: ""
+  noProxy: ""
+
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
 ## @param agent.env Environment variables to add to datafy-agent daemon set
@@ -82,7 +89,7 @@ monitor:
   probe:
     interval: 5s
     timeout: 4s
-    failureThreshold: 4
+    failureThreshold: 12
     successThreshold: 2
 
   image:
@@ -98,6 +105,24 @@ controller:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/datafy-controller
     tag:
+
+  ## @param controller.readinessProbe
+  ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
+  ##
+  health:
+    enabled: true
+    livenessProbe:
+      initialDelaySeconds: 20
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 5
+    readinessProbe:
+      initialDelaySeconds: 10
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 2
 
   ## @param controller.affinity Affinity for pod assignment
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
