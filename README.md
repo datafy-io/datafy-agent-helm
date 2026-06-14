@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 3.4.0](https://img.shields.io/badge/Version-3.4.0-informational?style=flat-square) ![AppVersion: 1.36.1_1.4.1](https://img.shields.io/badge/AppVersion-1.36.1_1.4.1-informational?style=flat-square)
+![Version: 3.5.0](https://img.shields.io/badge/Version-3.5.0-informational?style=flat-square) ![AppVersion: 1.37.0_1.5.0](https://img.shields.io/badge/AppVersion-1.37.0_1.5.0-informational?style=flat-square)
 
 **App Version:**
 
-1.36.1_1.4.1
+1.37.0_1.5.0
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -29,7 +29,7 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent --version 3.4.0 datafyio/datafy-agent \
+helm install datafy-agent --version 3.5.0 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
 --set agent.token=<your_token> \
@@ -39,12 +39,12 @@ helm install datafy-agent --version 3.4.0 datafyio/datafy-agent \
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 3.4.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
+helm upgrade --install datafy-agent --version 3.5.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 3.4.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
+helm upgrade --install datafy-agent --version 3.5.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
 ```
 
 Rollback:
@@ -93,6 +93,17 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | agent.token | string | `nil` |  |
 | agent.tolerations[0].operator | string | `"Exists"` |  |
 | controller.affinity | string | `nil` |  |
+| controller.health.enabled | bool | `true` |  |
+| controller.health.livenessProbe.failureThreshold | int | `5` |  |
+| controller.health.livenessProbe.initialDelaySeconds | int | `20` |  |
+| controller.health.livenessProbe.periodSeconds | int | `10` |  |
+| controller.health.livenessProbe.successThreshold | int | `1` |  |
+| controller.health.livenessProbe.timeoutSeconds | int | `5` |  |
+| controller.health.readinessProbe.failureThreshold | int | `2` |  |
+| controller.health.readinessProbe.initialDelaySeconds | int | `10` |  |
+| controller.health.readinessProbe.periodSeconds | int | `10` |  |
+| controller.health.readinessProbe.successThreshold | int | `1` |  |
+| controller.health.readinessProbe.timeoutSeconds | int | `5` |  |
 | controller.image.pullPolicy | string | `"IfNotPresent"` |  |
 | controller.image.repository | string | `"public.ecr.aws/datafy-io/datafy-controller"` |  |
 | controller.image.tag | string | `nil` |  |
@@ -115,7 +126,7 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | monitor.image.pullPolicy | string | `"IfNotPresent"` |  |
 | monitor.image.repository | string | `"public.ecr.aws/datafy-io/datafy-monitor"` |  |
 | monitor.image.tag | string | `nil` |  |
-| monitor.probe.failureThreshold | int | `4` |  |
+| monitor.probe.failureThreshold | int | `12` |  |
 | monitor.probe.interval | string | `"5s"` |  |
 | monitor.probe.successThreshold | int | `2` |  |
 | monitor.probe.timeout | string | `"4s"` |  |
