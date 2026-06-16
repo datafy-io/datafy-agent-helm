@@ -35,6 +35,14 @@ agent:
   mode: AutoScaler
   dsoUrl: wss://dso.datafy.io
 
+  ## @param agent.updateStrategy Update strategy for the agent DaemonSet
+  ## Ref: https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/
+  ##
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
   ## @param agent.externalTokenSecret.name The name of an existing secret that contains the token
   ## @param agent.externalTokenSecret.key The key in the secret that contains the token
   externalTokenSecret:
