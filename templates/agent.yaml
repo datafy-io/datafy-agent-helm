@@ -70,6 +70,10 @@ spec:
                 command:
                   - /datafy/prestop.sh
           env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_TOKEN
