@@ -88,7 +88,7 @@ true
 Token mode: how the datafy token is provided.
   static   - inline agent.token; chart creates and owns the datafy-token secret.
   external - agent.externalTokenSecret.{name,key}; chart references an existing secret it does not own.
-  role     - controller.serviceAccount.roleArn (IRSA); chart creates an empty datafy-token secret the controller populates.
+  irsa     - controller.serviceAccount.roleArn (IRSA); chart creates an empty datafy-token secret the controller populates.
   none     - nothing configured (rejected by validation).
 */}}
 {{- define "datafy-agent.tokenMode" -}}
@@ -100,7 +100,7 @@ static
 {{- else if $hasExternal -}}
 external
 {{- else if $hasRole -}}
-role
+irsa
 {{- else -}}
 none
 {{- end -}}

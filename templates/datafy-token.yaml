@@ -4,12 +4,12 @@
 #
 # Created for:
 #   static - inline agent.token; the token value is written here.
-#   role   - controller.serviceAccount.roleArn (IRSA); an empty secret the controller populates
+#   irsa   - controller.serviceAccount.roleArn (IRSA); an empty secret the controller populates
 #            itself. We intentionally omit `data` so helm upgrades do not wipe the
 #            token the controller writes.
 # Not created for the external mode (the customer owns that secret).
 {{- $tokenMode := include "datafy-agent.tokenMode" . }}
-{{- if or (eq $tokenMode "static") (eq $tokenMode "role") }}
+{{- if or (eq $tokenMode "static") (eq $tokenMode "irsa") }}
 apiVersion: v1
 kind: Secret
 metadata:

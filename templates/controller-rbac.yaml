@@ -11,7 +11,7 @@ metadata:
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
-  {{- if eq (include "datafy-agent.tokenMode" .) "role" }}
+  {{- if eq (include "datafy-agent.tokenMode" .) "irsa" }}
     eks.amazonaws.com/role-arn: {{ .Values.controller.serviceAccount.roleArn | quote }}
   {{- end }}
   {{- with .Values.extraAnnotations }}
@@ -48,7 +48,7 @@ rules:
     resources: [ "secrets" ]
     resourceNames:
       {{- if ne (include "datafy-agent.tokenMode" .) "external" }}
-      - "datafy-token"
+      - "datafy-token" # Chart owns this secret (static/irsa mode); the controller updates it. In external mode the customer owns the secret and the controller gets no write access.
       {{- end }}
       - "datafy-controller-webhook-tls"
     verbs: [ "get", "update", "patch", "delete" ]

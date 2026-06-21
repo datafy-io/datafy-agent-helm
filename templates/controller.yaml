@@ -81,10 +81,8 @@ spec:
               value: {{ include "datafy-agent.tokenSecretName" . | quote }}
             - name: DATAFY_TOKEN_SECRET_KEY
               value: {{ include "datafy-agent.tokenSecretKey" . | quote }}
-            - name: DATAFY_TOKEN_EXTERNAL_ENABLED
-              value: {{ (eq (include "datafy-agent.tokenMode" .) "external") | quote }}
-            - name: DATAFY_TOKEN_TOKENLESS_ENABLED
-              value: {{ (eq (include "datafy-agent.tokenMode" .) "role") | quote }}
+            - name: DATAFY_TOKEN_MODE
+              value: {{ include "datafy-agent.tokenMode" . | quote }}
             - name: DATAFY_IAC_URL
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
             - name: DATAFY_AGENT_MODE
