@@ -32,10 +32,11 @@ spec:
         checksum/controller-config: {{ $configChecksum }}
         checksum/datafy-token-secret: {{ $datafyTokenChecksum }}
     spec:
-      serviceAccountName: {{ .Values.controller.serviceAccountName }}
+      serviceAccountName: {{ .Values.controller.serviceAccount.name }}
       priorityClassName: system-node-critical
       schedulerName: default-scheduler
       restartPolicy: Always
+      hostPID: true
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- range .Values.imagePullSecrets }}
@@ -76,19 +77,14 @@ spec:
                   fieldPath: metadata.namespace
             - name: DATAFY_TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
-            {{- if eq (include "datafy-agent.hasToken" .) "true" }}
             - name: DATAFY_TOKEN_SECRET_NAME
-              value: {{ default "datafy-token" .Values.agent.externalTokenSecret.name | quote }}
+              value: {{ include "datafy-agent.tokenSecretName" . | quote }}
             - name: DATAFY_TOKEN_SECRET_KEY
-              value: {{ default "token" .Values.agent.externalTokenSecret.key | quote }}
+              value: {{ include "datafy-agent.tokenSecretKey" . | quote }}
             - name: DATAFY_TOKEN_EXTERNAL_ENABLED
-              value: {{ empty .Values.agent.token | quote }}
-            - name: DATAFY_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
-                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
-            {{- end }}
+              value: {{ (eq (include "datafy-agent.tokenMode" .) "external") | quote }}
+            - name: DATAFY_TOKEN_TOKENLESS_ENABLED
+              value: {{ (eq (include "datafy-agent.tokenMode" .) "role") | quote }}
             - name: DATAFY_IAC_URL
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
             - name: DATAFY_AGENT_MODE
@@ -143,6 +139,9 @@ spec:
             - name: datafy-controller-webhook-tls
               mountPath: /etc/datafy-controller/tls
               readOnly: true
+            - name: datafy-token
+              mountPath: /etc/datafy-controller/token
+              readOnly: true
       volumes:
         - name: datafy-controller-config
           configMap:
@@ -150,6 +149,10 @@ spec:
         - name: datafy-controller-webhook-tls
           secret:
             secretName: datafy-controller-webhook-tls
+        - name: datafy-token
+          secret:
+            secretName: {{ include "datafy-agent.tokenSecretName" . }}
+            optional: true
 ---
 apiVersion: v1
 kind: Service

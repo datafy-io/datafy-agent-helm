@@ -1,7 +1,15 @@
 # The controller hashes this template to trigger rollout when the token changes.
 # Any edit here forces a rolling update of the controller deployment.
 # Keep it minimal: only include the agent token and required fields.
-{{- if .Values.agent.token }}
+#
+# Created for:
+#   static - inline agent.token; the token value is written here.
+#   role   - controller.serviceAccount.roleArn (IRSA); an empty secret the controller populates
+#            itself. We intentionally omit `data` so helm upgrades do not wipe the
+#            token the controller writes.
+# Not created for the external mode (the customer owns that secret).
+{{- $tokenMode := include "datafy-agent.tokenMode" . }}
+{{- if or (eq $tokenMode "static") (eq $tokenMode "role") }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -16,6 +24,8 @@ metadata:
   {{- toYaml . | nindent 4 }}
   {{- end }}
 type: Opaque
+{{- if eq $tokenMode "static" }}
 data:
-  token: {{ .Values.agent.token | b64enc | quote }}
+  {{ include "datafy-agent.tokenSecretKey" . }}: {{ .Values.agent.token | b64enc | quote }}
+{{- end }}
 {{- end }}

@@ -9,12 +9,17 @@
   {{- $hasToken := not (empty (trim (default "" .Values.agent.token))) }}
   {{- $hasExternalSecretName := not (empty (trim (default "" .Values.agent.externalTokenSecret.name))) }}
   {{- $hasExternalSecretKey := not (empty (trim (default "" .Values.agent.externalTokenSecret.key))) }}
+  {{- $hasRoleArn := not (empty (trim (default "" .Values.controller.serviceAccount.roleArn))) }}
   {{- if and $hasExternalSecretName (not $hasExternalSecretKey) }}
     {{ fail "invalid values: when using agent.externalTokenSecret.name, agent.externalTokenSecret.key must also be set" }}
   {{- else if and $hasExternalSecretKey (not $hasExternalSecretName) }}
     {{ fail "invalid values: when using agent.externalTokenSecret.key, agent.externalTokenSecret.name must also be set" }}
   {{- else if and $hasToken $hasExternalSecretName }}
     {{ fail "invalid values: only one of agent.token or agent.externalTokenSecret.name can be set" }}
+  {{- else if and $hasRoleArn (or $hasToken $hasExternalSecretName) }}
+    {{ fail "invalid values: controller.serviceAccount.roleArn cannot be combined with a token (agent.token or agent.externalTokenSecret); set exactly one token source" }}
+  {{- else if not (or $hasToken $hasExternalSecretName $hasRoleArn) }}
+    {{ fail "invalid values: a token source is required - set one of agent.token, agent.externalTokenSecret, or controller.serviceAccount.roleArn" }}
   {{- end }}
 
   {{- if $hasExternalSecretName }}
