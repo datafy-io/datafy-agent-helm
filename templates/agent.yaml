@@ -57,6 +57,26 @@ spec:
             - -ec
             - |
               {{- (.Files.Get "files/agent-preflight.sh") | nindent 14 }}
+        - name: wait-for-token
+          image: "{{ .Values.agent.image.repository }}:{{ include "datafy-agent.agentImageTag" . }}"
+          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
+          {{- with .Values.agent.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: DATAFY_TOKEN_FILE
+              value: {{ $tokenFile }}
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              {{- (.Files.Get "files/agent-wait-for-token.sh") | nindent 14 }}
+          volumeMounts:
+            - name: {{ $tokenVolume }}
+              mountPath: {{ $tokenFile }}
+              subPath: {{ include "datafy-agent.tokenSecretKey" . }}
+              readOnly: true
       containers:
         {{- if $enableCore }}
         - name: core
