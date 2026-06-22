@@ -189,15 +189,16 @@ monitor:
 controller:
   replicas: 2
 
-  ## @param controller.serviceAccount.name Name of the controller ServiceAccount
-  ## @param controller.serviceAccount.roleArn IAM role ARN for tokenless (IRSA) mode.
-  ## When set, the role is attached to the controller ServiceAccount, and the controller fetches the datafy
-  ## token itself and writes it into the datafy-token secret.
-  ## Mutually exclusive with agent.token / agent.externalTokenSecret. Exactly one
-  ## of (agent.token, agent.externalTokenSecret, controller.serviceAccount.roleArn) must be set.
   serviceAccount:
+    ## @param controller.serviceAccount.name Name of the controller ServiceAccount
     name: datafy-controller-sa
+    ## @param controller.serviceAccount.roleArn IAM role ARN for tokenless (IRSA) mode.
+    ## When set, the role is attached to the controller ServiceAccount via the
+    ## eks.amazonaws.com/role-arn annotation.
     roleArn:
+    ## @param controller.serviceAccount.tokenless When enabled, token validation is skipped to
+    ## allow installation without a token. Works only on EKS clusters with IMDS hop limit greater than 1.
+    tokenless: false
 
   image:
     pullPolicy: IfNotPresent

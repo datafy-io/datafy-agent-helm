@@ -11,8 +11,8 @@ metadata:
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
-  {{- if eq (include "datafy-agent.tokenMode" .) "irsa" }}
-    eks.amazonaws.com/role-arn: {{ .Values.controller.serviceAccount.roleArn | quote }}
+  {{- with .Values.controller.serviceAccount.roleArn }}
+    eks.amazonaws.com/role-arn: {{ . | quote }}
   {{- end }}
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
