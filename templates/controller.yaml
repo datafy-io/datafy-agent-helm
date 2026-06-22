@@ -36,7 +36,6 @@ spec:
       priorityClassName: system-node-critical
       schedulerName: default-scheduler
       restartPolicy: Always
-      hostPID: true
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- range .Values.imagePullSecrets }}
@@ -83,6 +82,13 @@ spec:
               value: {{ include "datafy-agent.tokenSecretKey" . | quote }}
             - name: DATAFY_TOKEN_MODE
               value: {{ include "datafy-agent.tokenMode" . | quote }}
+            {{- if eq (include "datafy-agent.tokenMode" .) "static" }}
+            - name: DATAFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
+                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            {{- end }}
             - name: DATAFY_IAC_URL
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
             - name: DATAFY_AGENT_MODE
@@ -137,9 +143,6 @@ spec:
             - name: datafy-controller-webhook-tls
               mountPath: /etc/datafy-controller/tls
               readOnly: true
-            - name: datafy-token
-              mountPath: /etc/datafy-controller/token
-              readOnly: true
       volumes:
         - name: datafy-controller-config
           configMap:
@@ -147,10 +150,6 @@ spec:
         - name: datafy-controller-webhook-tls
           secret:
             secretName: datafy-controller-webhook-tls
-        - name: datafy-token
-          secret:
-            secretName: {{ include "datafy-agent.tokenSecretName" . }}
-            optional: true
 ---
 apiVersion: v1
 kind: Service
