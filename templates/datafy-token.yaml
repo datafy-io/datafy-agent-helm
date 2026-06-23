@@ -18,6 +18,7 @@ metadata:
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
+    datafy.io/token-mode: {{ $tokenMode | quote }}
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
   {{- end }}
