@@ -41,6 +41,37 @@ Normalized agent mode
 {{- end -}}
 
 {{/*
+Node affinity for the agent DaemonSet.
+If agent.affinity is set it is used verbatim. Otherwise the default is built:
+  - never schedule on denied compute types (all modes)
+  - in AutoScaler mode, also exclude denied instance types (Xen / undersized nodes)
+Both rules share one matchExpressions block so they AND together.
+*/}}
+{{- define "datafy-agent.agentAffinity" -}}
+{{- if .Values.agent.affinity -}}
+{{- toYaml .Values.agent.affinity -}}
+{{- else -}}
+{{- $isAutoscaler := eq (include "datafy-agent.agentModeNormalized" .) "autoscaler" -}}
+nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+      - matchExpressions:
+        {{- with .Values.agent.deniedComputeTypes }}
+          - key: eks.amazonaws.com/compute-type
+            operator: NotIn
+            values:
+            {{- toYaml . | nindent 14 }}
+        {{- end }}
+        {{- if and $isAutoscaler .Values.agent.autoScalerDeniedInstanceTypes }}
+          - key: node.kubernetes.io/instance-type
+            operator: NotIn
+            values:
+            {{- toYaml .Values.agent.autoScalerDeniedInstanceTypes | nindent 14 }}
+        {{- end }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Whether extended install resources should be created.
 Skip only when mode is sensor and extendedInstallOnSensor is false.
 */}}

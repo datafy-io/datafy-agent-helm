@@ -23,9 +23,10 @@ spec:
       labels:
         {{- include "datafy-agent.labels" . | nindent 8 }}
     spec:
-      {{- if .Values.agent.affinity }}
+      {{- $affinity := include "datafy-agent.agentAffinity" . | trim }}
+      {{- if $affinity }}
       affinity:
-        {{- with .Values.agent.affinity }}{{ toYaml . | nindent 8 }}{{- end }}
+        {{- $affinity | nindent 8 }}
       {{- end }}
       {{- if .Values.agent.nodeSelector }}
       nodeSelector:
