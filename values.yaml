@@ -61,13 +61,6 @@ agent:
   affinity: {}
 
   # @ignored
-  # Compute types the agent must never be scheduled on (applies to all modes).
-  deniedComputeTypes:
-    - fargate
-    - auto
-    - hybrid
-
-  # @ignored
   # In AutoScaler mode, instance types the agent must not be scheduled on.
   # These are the Xen-based / previous-generation instances (no Nitro equivalent
   # matching, so they are enumerated). Nitro equivalents (e.g. i3en, i4i, m5, c5,

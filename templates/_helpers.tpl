@@ -56,12 +56,12 @@ nodeAffinity:
   requiredDuringSchedulingIgnoredDuringExecution:
     nodeSelectorTerms:
       - matchExpressions:
-        {{- with .Values.agent.deniedComputeTypes }}
           - key: eks.amazonaws.com/compute-type
             operator: NotIn
             values:
-            {{- toYaml . | nindent 14 }}
-        {{- end }}
+              - fargate
+              - auto
+              - hybrid
         {{- if and $isAutoscaler .Values.agent.autoScalerDeniedInstanceTypes }}
           - key: node.kubernetes.io/instance-type
             operator: NotIn
