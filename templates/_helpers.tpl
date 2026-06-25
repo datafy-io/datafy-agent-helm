@@ -41,34 +41,130 @@ Normalized agent mode
 {{- end -}}
 
 {{/*
+Instance types the agent must not be scheduled on in AutoScaler mode.
+These are the Xen-based / previous-generation instances (no Nitro hypervisor
+label exists on managed node groups, so they are enumerated). Nitro equivalents
+(e.g. i3en, i4i, m5, c5, r5 and newer) are intentionally absent and stay eligible.
+This is a chart-enforced invariant and is intentionally not exposed as a value.
+*/}}
+{{- define "datafy-agent.autoScalerDeniedInstanceTypes" -}}
+- m1.small
+- m1.medium
+- m1.large
+- m1.xlarge
+- m2.xlarge
+- m2.2xlarge
+- m2.4xlarge
+- m3.medium
+- m3.large
+- m3.xlarge
+- m3.2xlarge
+- m4.large
+- m4.xlarge
+- m4.2xlarge
+- m4.4xlarge
+- m4.10xlarge
+- m4.16xlarge
+- t1.micro
+- t2.nano
+- t2.micro
+- t2.small
+- t2.medium
+- t2.large
+- t2.xlarge
+- t2.2xlarge
+- c1.medium
+- c1.xlarge
+- c3.large
+- c3.xlarge
+- c3.2xlarge
+- c3.4xlarge
+- c3.8xlarge
+- c4.large
+- c4.xlarge
+- c4.2xlarge
+- c4.4xlarge
+- c4.8xlarge
+- r3.large
+- r3.xlarge
+- r3.2xlarge
+- r3.4xlarge
+- r3.8xlarge
+- r4.large
+- r4.xlarge
+- r4.2xlarge
+- r4.4xlarge
+- r4.8xlarge
+- r4.16xlarge
+- x1.16xlarge
+- x1.32xlarge
+- x1e.xlarge
+- x1e.2xlarge
+- x1e.4xlarge
+- x1e.8xlarge
+- x1e.16xlarge
+- x1e.32xlarge
+- d2.xlarge
+- d2.2xlarge
+- d2.4xlarge
+- d2.8xlarge
+- h1.2xlarge
+- h1.4xlarge
+- h1.8xlarge
+- h1.16xlarge
+- i2.xlarge
+- i2.2xlarge
+- i2.4xlarge
+- i2.8xlarge
+- i3.large
+- i3.xlarge
+- i3.2xlarge
+- i3.4xlarge
+- i3.8xlarge
+- i3.16xlarge
+- g3.4xlarge
+- g3.8xlarge
+- g3.16xlarge
+- g3s.xlarge
+- p3.2xlarge
+- p3.8xlarge
+- p3.16xlarge
+{{- end -}}
+
+{{/*
 Node affinity for the agent DaemonSet.
-If agent.affinity is set it is used verbatim. Otherwise the default is built:
-  - never schedule on denied compute types (all modes)
-  - in AutoScaler mode, also exclude denied instance types (Xen / undersized nodes)
-Both rules share one matchExpressions block so they AND together.
+The chart enforces non-overridable node-affinity rules:
+  - never schedule on denied compute types: fargate, auto, hybrid (all modes)
+  - in AutoScaler mode, also exclude denied instance types (Xen / previous-gen)
+These required matchExpressions are ANDed into the affinity. A customer-supplied
+agent.affinity is merged on top (it can only further restrict): its pod (anti-)
+affinity is preserved, and the enforced expressions are injected into every
+nodeSelectorTerm. Note nodeSelectorTerms are ORed by Kubernetes, so injecting
+into each term (rather than adding a sibling term) is what preserves the AND.
 */}}
 {{- define "datafy-agent.agentAffinity" -}}
-{{- if .Values.agent.affinity -}}
-{{- toYaml .Values.agent.affinity -}}
-{{- else -}}
 {{- $isAutoscaler := eq (include "datafy-agent.agentModeNormalized" .) "autoscaler" -}}
-nodeAffinity:
-  requiredDuringSchedulingIgnoredDuringExecution:
-    nodeSelectorTerms:
-      - matchExpressions:
-          - key: eks.amazonaws.com/compute-type
-            operator: NotIn
-            values:
-              - fargate
-              - auto
-              - hybrid
-        {{- if and $isAutoscaler .Values.agent.autoScalerDeniedInstanceTypes }}
-          - key: node.kubernetes.io/instance-type
-            operator: NotIn
-            values:
-            {{- toYaml .Values.agent.autoScalerDeniedInstanceTypes | nindent 14 }}
-        {{- end }}
+{{- $enforced := list (dict "key" "eks.amazonaws.com/compute-type" "operator" "NotIn" "values" (list "fargate" "auto" "hybrid")) -}}
+{{- if $isAutoscaler -}}
+{{- $deniedInstanceTypes := include "datafy-agent.autoScalerDeniedInstanceTypes" . | fromYamlArray -}}
+{{- $enforced = append $enforced (dict "key" "node.kubernetes.io/instance-type" "operator" "NotIn" "values" $deniedInstanceTypes) -}}
 {{- end -}}
+{{- $affinity := deepCopy (default (dict) .Values.agent.affinity) -}}
+{{- $nodeAffinity := default (dict) $affinity.nodeAffinity -}}
+{{- $required := default (dict) $nodeAffinity.requiredDuringSchedulingIgnoredDuringExecution -}}
+{{- $terms := default (list) $required.nodeSelectorTerms -}}
+{{- if not $terms -}}
+{{- $terms = list (dict "matchExpressions" (list)) -}}
+{{- end -}}
+{{- $mergedTerms := list -}}
+{{- range $term := $terms -}}
+{{- $term = set $term "matchExpressions" (concat (default (list) $term.matchExpressions) $enforced) -}}
+{{- $mergedTerms = append $mergedTerms $term -}}
+{{- end -}}
+{{- $required = set $required "nodeSelectorTerms" $mergedTerms -}}
+{{- $nodeAffinity = set $nodeAffinity "requiredDuringSchedulingIgnoredDuringExecution" $required -}}
+{{- $affinity = set $affinity "nodeAffinity" $nodeAffinity -}}
+{{- toYaml $affinity -}}
 {{- end -}}
 
 {{/*
