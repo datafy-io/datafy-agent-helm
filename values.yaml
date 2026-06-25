@@ -73,7 +73,6 @@ agent:
   # matching, so they are enumerated). Nitro equivalents (e.g. i3en, i4i, m5, c5,
   # r5 and newer) are intentionally absent and remain eligible.
   autoScalerDeniedInstanceTypes:
-    # Xen - General purpose
     - m1.small
     - m1.medium
     - m1.large
@@ -99,7 +98,6 @@ agent:
     - t2.large
     - t2.xlarge
     - t2.2xlarge
-    # Xen - Compute optimized
     - c1.medium
     - c1.xlarge
     - c3.large
@@ -112,7 +110,6 @@ agent:
     - c4.2xlarge
     - c4.4xlarge
     - c4.8xlarge
-    # Xen - Memory optimized
     - r3.large
     - r3.xlarge
     - r3.2xlarge
@@ -132,7 +129,6 @@ agent:
     - x1e.8xlarge
     - x1e.16xlarge
     - x1e.32xlarge
-    # Xen - Storage optimized
     - d2.xlarge
     - d2.2xlarge
     - d2.4xlarge
@@ -151,7 +147,6 @@ agent:
     - i3.4xlarge
     - i3.8xlarge
     - i3.16xlarge
-    # Xen - Accelerated computing
     - g3.4xlarge
     - g3.8xlarge
     - g3.16xlarge
