@@ -2,6 +2,12 @@ name: Check Chart Version
 
 on:
   pull_request:
+    branches:
+      - master
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   check-version:
