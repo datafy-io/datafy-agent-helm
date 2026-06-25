@@ -32,7 +32,7 @@ spec:
         checksum/controller-config: {{ $configChecksum }}
         checksum/datafy-token-secret: {{ $datafyTokenChecksum }}
     spec:
-      serviceAccountName: {{ .Values.controller.serviceAccountName }}
+      serviceAccountName: {{ .Values.controller.serviceAccount.name }}
       priorityClassName: system-node-critical
       schedulerName: default-scheduler
       restartPolicy: Always
@@ -77,16 +77,18 @@ spec:
             - name: DATAFY_TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
             - name: DATAFY_TOKEN_SECRET_NAME
-              value: {{ default "datafy-token" .Values.agent.externalTokenSecret.name | quote }}
+              value: {{ include "datafy-agent.tokenSecretName" . | quote }}
             - name: DATAFY_TOKEN_SECRET_KEY
-              value: {{ default "token" .Values.agent.externalTokenSecret.key | quote }}
-            - name: DATAFY_TOKEN_EXTERNAL_ENABLED
-              value: {{ empty .Values.agent.token | quote }}
+              value: {{ include "datafy-agent.tokenSecretKey" . | quote }}
+            - name: DATAFY_TOKEN_MODE
+              value: {{ include "datafy-agent.tokenMode" . | quote }}
+            {{- if eq (include "datafy-agent.tokenMode" .) "static" }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
                   key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+            {{- end }}
             - name: DATAFY_IAC_URL
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
             - name: DATAFY_AGENT_MODE
