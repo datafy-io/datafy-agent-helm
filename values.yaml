@@ -42,6 +42,9 @@ agent:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
+      
+  ## @param agent.converterVersion Pin the datafy-converter version (empty = gateway default: "latest" on prod, agent version on dev/staging)
+  converterVersion:
 
   ## @param agent.externalTokenSecret.name The name of an existing secret that contains the token
   ## @param agent.externalTokenSecret.key The key in the secret that contains the token
