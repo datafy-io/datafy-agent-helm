@@ -76,6 +76,10 @@ spec:
                   fieldPath: spec.nodeName
             - name: DATAFY_DSO_URL
               value: {{ .Values.agent.dsoUrl }}
+            {{- if .Values.agent.converterVersion }}
+            - name: DATAFY_CONVERTER_VERSION
+              value: {{ .Values.agent.converterVersion | quote }}
+            {{- end }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
