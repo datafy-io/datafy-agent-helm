@@ -140,14 +140,6 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
-Derive the agent download URL from the DSO URL.
-Pattern: wss://dso*.datafy.io -> https://agent*.datafy.io
-*/}}
-{{- define "datafy-agent.downloadUrl" -}}
-{{- .Values.agent.dsoUrl | replace "wss://dso" "https://agent" | replace "ws://dso" "http://agent" -}}
-{{- end -}}
-
-{{/*
 Common labels for all resources
 */}}
 {{- define "datafy-agent.labels" -}}
