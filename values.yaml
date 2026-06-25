@@ -42,7 +42,7 @@ agent:
     type: RollingUpdate
     rollingUpdate:
       maxUnavailable: 1
-      
+
   ## @param agent.converterVersion (default: "latest")
   converterVersion:
 
