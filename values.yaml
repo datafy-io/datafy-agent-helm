@@ -52,6 +52,10 @@ agent:
     name:
     key:
 
+  ## @param agent.skipUpgradeMatrixCheck Skip the pre-upgrade version compatibility check.
+  ##
+  skipUpgradeMatrixCheck: false
+
   # @ignored
   coreMockEnabled: false
   # @ignored

@@ -49,6 +49,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: TARGET_VERSION
+              value: {{ include "datafy-agent.agentImageTag" . | quote }}
+            - name: AGENT_MODE
+              value: {{ include "datafy-agent.agentModeNormalized" . | quote }}
+            - name: DOWNLOAD_URL
+              value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://agent" | replace "ws://dso" "http://agent" | quote }}
+            - name: SKIP_UPGRADE_MATRIX_CHECK
+              value: {{ .Values.agent.skipUpgradeMatrixCheck | quote }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           command:
             - /bin/sh
