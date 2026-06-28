@@ -9,14 +9,22 @@
   {{- $hasToken := not (empty (trim (default "" .Values.agent.token))) }}
   {{- $hasExternalSecretName := not (empty (trim (default "" .Values.agent.externalTokenSecret.name))) }}
   {{- $hasExternalSecretKey := not (empty (trim (default "" .Values.agent.externalTokenSecret.key))) }}
+  {{- $hasRoleArn := not (empty (trim (default "" .Values.controller.serviceAccount.roleArn))) }}
+  {{- $tokenless := .Values.controller.serviceAccount.tokenless }}
+  {{- $sources := 0 }}
+  {{- if $hasToken }}{{- $sources = add1 $sources }}{{- end }}
+  {{- if $hasExternalSecretName }}{{- $sources = add1 $sources }}{{- end }}
+  {{- if $hasRoleArn }}{{- $sources = add1 $sources }}{{- end }}
   {{- if and $hasExternalSecretName (not $hasExternalSecretKey) }}
     {{ fail "invalid values: when using agent.externalTokenSecret.name, agent.externalTokenSecret.key must also be set" }}
   {{- else if and $hasExternalSecretKey (not $hasExternalSecretName) }}
     {{ fail "invalid values: when using agent.externalTokenSecret.key, agent.externalTokenSecret.name must also be set" }}
-  {{- else if and (not $hasToken) (not $hasExternalSecretName) }}
-    {{ fail "invalid values: one of agent.token or agent.externalTokenSecret.name must be set" }}
-  {{- else if and $hasToken $hasExternalSecretName }}
-    {{ fail "invalid values: only one of agent.token or agent.externalTokenSecret.name can be set" }}
+  {{- else if $tokenless }}
+    {{- if gt $sources 0 }}
+    {{ fail "invalid values: controller.serviceAccount.tokenless cannot be combined with a token source (agent.token, agent.externalTokenSecret, or controller.serviceAccount.roleArn); when tokenless is enabled all other token sources must be unset" }}
+    {{- end }}
+  {{- else if ne $sources 1 }}
+    {{ fail "invalid values: exactly one token source must be set - one of agent.token, agent.externalTokenSecret, or controller.serviceAccount.roleArn (or enable controller.serviceAccount.tokenless to configure none)" }}
   {{- end }}
 
   {{- if $hasExternalSecretName }}
