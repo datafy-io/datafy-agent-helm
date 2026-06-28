@@ -1,7 +1,7 @@
 {{- $enableCore := and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") (not .Values.agent.coreMockEnabled) }}
 {{- $tokenMode := include "datafy-agent.tokenMode" . }}
 {{- $tokenVolume := "datafy-token" }}
-{{- $tokenDir := printf "/etc/datafy" }}
+{{- $tokenDir := "/etc/datafy" }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
