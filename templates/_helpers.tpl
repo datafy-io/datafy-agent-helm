@@ -181,6 +181,43 @@ true
 {{- end -}}
 
 {{/*
+Token mode: how the datafy token is provided.
+  static   - inline agent.token; chart creates and owns the datafy-token secret.
+  external - agent.externalTokenSecret.{name,key}; chart references an existing secret it does not own.
+  irsa     - controller.serviceAccount.roleArn (IRSA); chart creates an empty datafy-token secret the controller populates.
+  none     - nothing configured.
+*/}}
+{{- define "datafy-agent.tokenMode" -}}
+{{- $hasStatic := not (empty (trim (default "" .Values.agent.token))) -}}
+{{- $hasExternal := or (not (empty (trim (default "" .Values.agent.externalTokenSecret.name)))) (not (empty (trim (default "" .Values.agent.externalTokenSecret.key)))) -}}
+{{- $hasRole := not (empty (trim (default "" .Values.controller.serviceAccount.roleArn))) -}}
+{{- if $hasStatic -}}
+static
+{{- else if $hasExternal -}}
+external
+{{- else if $hasRole -}}
+irsa
+{{- else -}}
+none
+{{- end -}}
+{{- end -}}
+
+{{/*
+Name of the secret holding the datafy token. The external secret name when one is
+configured, otherwise the chart-managed "datafy-token".
+*/}}
+{{- define "datafy-agent.tokenSecretName" -}}
+{{- default "datafy-token" .Values.agent.externalTokenSecret.name -}}
+{{- end -}}
+
+{{/*
+Key within the token secret that holds the token value.
+*/}}
+{{- define "datafy-agent.tokenSecretKey" -}}
+{{- default "token" .Values.agent.externalTokenSecret.key -}}
+{{- end -}}
+
+{{/*
 Determine ebs csi installed namespace
 */}}
 {{- define "datafy-agent.ebsCsiNamespace" -}}

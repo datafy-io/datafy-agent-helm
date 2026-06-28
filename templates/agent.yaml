@@ -1,4 +1,7 @@
 {{- $enableCore := and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") (not .Values.agent.coreMockEnabled) }}
+{{- $tokenMode := include "datafy-agent.tokenMode" . }}
+{{- $tokenVolume := "datafy-token" }}
+{{- $tokenDir := "/etc/datafy" }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -89,12 +92,23 @@ spec:
             - name: DATAFY_CONVERTER_VERSION
               value: {{ .Values.agent.converterVersion | quote }}
             {{- end }}
+            {{- if eq $tokenMode "static" }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
-                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+                  name: {{ include "datafy-agent.tokenSecretName" . }}
+                  key: {{ include "datafy-agent.tokenSecretKey" . }}
+            {{- else }}
+            - name: DATAFY_WAIT_FOR_TOKEN
+              value: "true"
+            {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
+          {{- if ne $tokenMode "static" }}
+          volumeMounts:
+            - name: {{ $tokenVolume }}
+              mountPath: {{ $tokenDir }}
+              readOnly: true
+          {{- end }}
           resources:
             requests:
               cpu: 10m
@@ -117,11 +131,6 @@ spec:
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
-            - name: DATAFY_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
-                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
               value: {{ .Values.agent.hqMockEnabled | quote }}
@@ -134,7 +143,23 @@ spec:
               value: {{ .Chart.Version | quote }}
             - name: HELM_RELEASE_REVISION
               value: {{ .Release.Revision | quote }}
+            {{- if eq $tokenMode "static" }}
+            - name: DATAFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "datafy-agent.tokenSecretName" . }}
+                  key: {{ include "datafy-agent.tokenSecretKey" . }}
+            {{- else }}
+            - name: DATAFY_WAIT_FOR_TOKEN
+              value: "true"
+            {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
+          {{- if ne $tokenMode "static" }}
+          volumeMounts:
+            - name: {{ $tokenVolume }}
+              mountPath: {{ $tokenDir }}
+              readOnly: true
+          {{- end }}
           resources:
             requests:
               cpu: 10m
@@ -159,17 +184,27 @@ spec:
               value: {{ .Values.monitor.probe.successThreshold | quote }}
             - name: DATAFY_IAC_URL
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
-            - name: DATAFY_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
-                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
             - name: DATAFY_NODE_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            {{- if eq $tokenMode "static" }}
+            - name: DATAFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "datafy-agent.tokenSecretName" . }}
+                  key: {{ include "datafy-agent.tokenSecretKey" . }}
+            {{- else }}
+            - name: DATAFY_WAIT_FOR_TOKEN
+              value: "true"
+            {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           volumeMounts:
+            {{- if ne $tokenMode "static" }}
+            - name: {{ $tokenVolume }}
+              mountPath: {{ $tokenDir }}
+              readOnly: true
+            {{- end }}
             - name: datafy-run
               mountPath: /run/datafy
           resources:
@@ -178,6 +213,15 @@ spec:
               memory: 40Mi
         {{- end }}
       volumes:
+        {{- if ne $tokenMode "static" }}
+        - name: {{ $tokenVolume }}
+          secret:
+            secretName: {{ include "datafy-agent.tokenSecretName" . }}
+            optional: false
+            items:
+              - key: {{ include "datafy-agent.tokenSecretKey" . }}
+                path: ".token"
+        {{- end }}
         - name: datafy-run
           hostPath:
             path: /run/datafy
