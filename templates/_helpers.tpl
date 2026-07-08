@@ -290,24 +290,3 @@ app.agent.version: {{ include "datafy-agent.agentImageTag" . }}
 {{ toYaml .Values.extraLabels }}
 {{- end }}
 {{- end -}}
-
-{{/*
-Object selector for the controller webhook configurations
-*/}}
-{{- define "datafy-agent.webhookObjectSelector" -}}
-matchExpressions:
-  - key: "app.kubernetes.io/name"
-    operator: "NotIn"
-    values:
-      - datafy-controller
-      - datafy-agent
-      - aws-cluster-autoscaler
-      - aws-node
-  - key: "k8s-app"
-    operator: "NotIn"
-    values:
-      - kube-dns
-      - kube-proxy
-      - coredns
-      - aws-node
-{{- end -}}

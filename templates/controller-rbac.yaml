@@ -77,7 +77,7 @@ rules:
     verbs: [ "list", "watch" ]
   - apiGroups: [ "apps" ]
     resources: [ "replicasets" ]
-    verbs: [ "list", "delete" ]
+    verbs: [ "list", "watch", "delete" ]
   - apiGroups: [ "apps" ]
     resources: [ "deployments" ]
     resourceNames: [ "ebs-csi-controller" ]
