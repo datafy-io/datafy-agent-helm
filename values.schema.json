@@ -37,6 +37,24 @@
         }
       }
     },
+    "controller": {
+      "type": "object",
+      "properties": {
+        "serviceAccount": {
+          "type": "object",
+          "properties": {
+            "roleArn": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "pattern": "^$|^arn:aws[a-zA-Z-]*:iam::[0-9]{12}:role/.+$",
+              "description": "IAM role ARN for tokenless (IRSA) mode, attached to the controller ServiceAccount via the eks.amazonaws.com/role-arn annotation"
+            }
+          }
+        }
+      }
+    },
     "proxy": {
       "type": "object",
       "additionalProperties": false,

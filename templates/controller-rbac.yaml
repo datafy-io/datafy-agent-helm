@@ -11,9 +11,7 @@ metadata:
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
-  {{- with .Values.controller.serviceAccount.roleArn }}
-    eks.amazonaws.com/role-arn: {{ . | quote }}
-  {{- end }}
+    eks.amazonaws.com/role-arn: {{ default "" .Values.controller.serviceAccount.roleArn | quote }}
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}
   {{- end }}
