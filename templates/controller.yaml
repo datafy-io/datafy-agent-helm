@@ -149,7 +149,12 @@ spec:
             name: datafy-controller-config
         - name: datafy-controller-webhook-tls
           secret:
+            # The controller creates and populates this secret at runtime
+            # optional lets the pod start before the secret exists on a fresh install;
+            # kubelet syncs the certs into the mount once the controller
+            # writes them, and the webhook server waits for them.
             secretName: datafy-controller-webhook-tls
+            optional: true
 ---
 apiVersion: v1
 kind: Service

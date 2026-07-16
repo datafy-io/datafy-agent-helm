@@ -1,25 +1,4 @@
 {{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
-{{- $name := "datafy-controller-webhook" }}
-{{- $fqdn := printf "%s.%s.svc" $name .Release.Namespace }}
-{{- $ca := genSelfSignedCert $fqdn (list) (list $fqdn $name (printf "%s.%s" $name .Release.Namespace)) 365 }}
-kind: Secret
-apiVersion: v1
-metadata:
-  name: datafy-controller-webhook-tls
-  namespace: {{ .Release.Namespace }}
-  labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
-  annotations:
-    helm.sh/resource-policy: keep
-    argocd.argoproj.io/sync-options: Delete=false
-  {{- with .Values.extraAnnotations }}
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
-type: kubernetes.io/tls
-data:
-  tls.crt: {{ b64enc (trim $ca.Cert) }}
-  tls.key: {{ b64enc (trim $ca.Key) }}
----
 apiVersion: admissionregistration.k8s.io/v1
 kind: MutatingWebhookConfiguration
 metadata:
@@ -68,7 +47,8 @@ webhooks:
         name: datafy-controller-webhook
         path: /mutate-v1-pods
         port: 443
-      caBundle: {{ b64enc (trim $ca.Cert) }}
+      # caBundle is generated, injected and rotated by the datafy-controller (cert-controller rotator).
+      # It is intentionally omitted here
   - name: datafy-controller-agent-delete.datafy.io
     admissionReviewVersions: [ "v1" ]
     sideEffects: NoneOnDryRun
@@ -93,5 +73,5 @@ webhooks:
         name: datafy-controller-webhook
         path: /taint-agent-node
         port: 443
-      caBundle: {{ b64enc (trim $ca.Cert) }}
+      # caBundle (see above)
 {{- end }}

@@ -105,6 +105,9 @@ rules:
   # admissionregistration.k8s.io API group
   - apiGroups: [ "admissionregistration.k8s.io" ]
     resources: [ "mutatingwebhookconfigurations" ]
+    verbs: [ "list", "watch" ]
+  - apiGroups: [ "admissionregistration.k8s.io" ]
+    resources: [ "mutatingwebhookconfigurations" ]
     resourceNames: [ "datafy-controller-webhook" ]
     verbs: [ "get", "update", "patch", "delete" ]
 
