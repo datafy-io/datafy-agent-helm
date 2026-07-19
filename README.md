@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 3.6.0](https://img.shields.io/badge/Version-3.6.0-informational?style=flat-square) ![AppVersion: 1.39.0_1.7.0](https://img.shields.io/badge/AppVersion-1.39.0_1.7.0-informational?style=flat-square)
+![Version: 3.6.0](https://img.shields.io/badge/Version-3.6.0-informational?style=flat-square) ![AppVersion: 1.39.0_1.6.0](https://img.shields.io/badge/AppVersion-1.39.0_1.6.0-informational?style=flat-square)
 
 **App Version:**
 
-1.39.0_1.7.0
+1.39.0_1.6.0
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
