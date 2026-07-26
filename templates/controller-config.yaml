@@ -27,6 +27,13 @@ data:
       {{- end }}
       controller:
         service_address: {{ printf "datafy-controller.%s:50051" .Release.Namespace | quote }}
+      volume_resolution:
+        source: {{ .Values.ebsCsiProxy.volumeResolution.source }}
+      {{- with .Values.ebsCsiProxy.notifications }}
+      notifications:
+        wait_before_tag: {{ .wait_before_tag }}
+        wait_before_ack: {{ .wait_before_ack }}
+      {{- end }}
       {{- with .Values.proxy }}
       {{- if .httpsProxy }}
       https_proxy: {{ .httpsProxy | quote }}
