@@ -142,7 +142,6 @@ spec:
               readOnly: true
             - name: datafy-controller-webhook-tls
               mountPath: /etc/datafy-controller/tls
-              readOnly: true
       volumes:
         - name: datafy-controller-config
           configMap:
