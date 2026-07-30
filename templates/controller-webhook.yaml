@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: Secret
 metadata:
-  name: datafy-controller-webhook-tls
+  name: datafy-controller-webhook-certificate
   namespace: {{ .Release.Namespace }}
   labels:
   {{- include "datafy-agent.labels" . | nindent 4 }}
