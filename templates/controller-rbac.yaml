@@ -48,7 +48,8 @@ rules:
       {{- if ne (include "datafy-agent.tokenMode" .) "external" }}
       - "datafy-token" # Chart owns this secret (static/irsa mode); the controller updates it. In external mode the customer owns the secret and the controller gets no write access.
       {{- end }}
-      - "datafy-controller-webhook-tls"
+      - "datafy-controller-webhook-certificate"
+      - "datafy-controller-webhook-tls" # deprecated secret; new controllers will delete it on startup if it exists.
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "configmaps" ]
