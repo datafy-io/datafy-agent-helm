@@ -40,7 +40,7 @@ rules:
     resources: [ "persistentvolumeclaims" ]
     verbs: [ "get", "list", "watch", "patch", "delete", "create" ]
   - apiGroups: [ "" ]
-    resources: [ "secrets", "configmaps" ]
+    resources: [ "configmaps" ]
     verbs: [ "create" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
   - apiGroups: [ "" ]
     resources: [ "secrets" ]
@@ -49,7 +49,7 @@ rules:
       - "datafy-token" # Chart owns this secret (static/irsa mode); the controller updates it. In external mode the customer owns the secret and the controller gets no write access.
       {{- end }}
       - "datafy-controller-webhook-certificate"
-      - "datafy-controller-webhook-tls" # deprecated secret; new controllers will delete it on startup if it exists.
+      - "datafy-controller-webhook-tls" # legacy secret; new controllers will delete it on startup if it exists.
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "configmaps" ]
