@@ -102,8 +102,8 @@ spec:
               value: /etc/datafy-controller/config.yaml
             - name: DATAFY_CONFIG_CHECKSUM
               value: {{ $configChecksum | quote }}
-            - name: DATAFY_WEBHOOK_CERT_DIR
-              value: /etc/datafy-controller/tls
+            - name: DATAFY_WEBHOOK_CERTIFICATE_DIR
+              value: /etc/datafy-controller/certificate
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           resources:
             requests:
@@ -140,16 +140,15 @@ spec:
             - name: datafy-controller-config
               mountPath: /etc/datafy-controller
               readOnly: true
-            - name: datafy-controller-webhook-tls
-              mountPath: /etc/datafy-controller/tls
-              readOnly: true
+            - name: datafy-controller-webhook-certificate
+              mountPath: /etc/datafy-controller/certificate
       volumes:
         - name: datafy-controller-config
           configMap:
             name: datafy-controller-config
-        - name: datafy-controller-webhook-tls
+        - name: datafy-controller-webhook-certificate
           secret:
-            secretName: datafy-controller-webhook-tls
+            secretName: datafy-controller-webhook-certificate
 ---
 apiVersion: v1
 kind: Service
