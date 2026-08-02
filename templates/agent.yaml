@@ -131,9 +131,9 @@ spec:
               value: {{ .Values.agent.dsoUrl }}
             - name: DATAFY_AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
-            - name: DATAFY_NOTIFICATIONS_WAIT_FOR_ACK
+            - name: DATAFY_NOTIFICATIONS_DEFER_UNTIL_CSI_ACK
               value: {{ dig "notifications" "defer_until_csi_ack" "true" .Values.agent | quote }}
-            - name: DATAFY_NOTIFICATIONS_WAIT_FOR_ACK_TIMEOUT
+            - name: DATAFY_NOTIFICATIONS_DEFER_UNTIL_CSI_ACK_TIMEOUT
               value: {{ dig "notifications" "wait_for_ack_timeout" "5s" .Values.agent | quote }}
             {{- if .Values.agent.hqMockEnabled }}
             - name: DATAFY_MOCKS_HQ_ENABLED
