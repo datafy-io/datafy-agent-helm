@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 3.6.0](https://img.shields.io/badge/Version-3.6.0-informational?style=flat-square) ![AppVersion: 1.39.0_1.6.0](https://img.shields.io/badge/AppVersion-1.39.0_1.6.0-informational?style=flat-square)
+![Version: 3.7.0](https://img.shields.io/badge/Version-3.7.0-informational?style=flat-square) ![AppVersion: 1.40.0_1.7.0](https://img.shields.io/badge/AppVersion-1.40.0_1.7.0-informational?style=flat-square)
 
 **App Version:**
 
-1.39.0_1.6.0
+1.40.0_1.7.0
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -29,7 +29,7 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent --version 3.6.0 datafyio/datafy-agent \
+helm install datafy-agent --version 3.7.0 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
 --set agent.token=<your_token> \
@@ -39,12 +39,12 @@ helm install datafy-agent --version 3.6.0 datafyio/datafy-agent \
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 3.6.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
+helm upgrade --install datafy-agent --version 3.7.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 3.6.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
+helm upgrade --install datafy-agent --version 3.7.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
 ```
 
 Rollback:
@@ -94,6 +94,8 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | agent.skipUpgradeMatrixCheck | bool | `false` |  |
 | agent.token | string | `nil` |  |
 | agent.tolerations[0].operator | string | `"Exists"` |  |
+| agent.updateStrategy.rollingUpdate.maxUnavailable | int | `1` |  |
+| agent.updateStrategy.type | string | `"RollingUpdate"` |  |
 | controller.affinity | string | `nil` |  |
 | controller.health.enabled | bool | `true` |  |
 | controller.health.livenessProbe.failureThreshold | int | `5` |  |
