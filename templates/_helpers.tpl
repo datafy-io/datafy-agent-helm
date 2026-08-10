@@ -273,33 +273,22 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
-Install identity.
+Install identity. The controller replaces "unclaimed" with the install marker's
+UID and only deletes resources carrying its own UID, so a controller left running
+by a previous install cannot tear down the release that replaced it (DT-11266).
 
-Marks a resource as belonging to whichever install currently owns it. The
-controller replaces "unclaimed" with the install marker ConfigMap's UID, and only
-ever deletes resources carrying its own UID — so a controller left running by a
-previous install cannot tear down the release that replaced it (DT-11266).
+A constant, not a generated ID: the identity must be unique per install and stable
+across upgrades, which is the marker's UID, and only the API server can assign it.
+`lookup` cannot substitute — `helm template` has no cluster access, so under Argo CD
+a random ID would be reissued on every sync.
 
-The value is a constant on purpose. The identity has to be unique per install and
-stable across upgrades, which is exactly the marker's UID, and that is assigned by
-the API server — no render-time value can be it. Generating one with `lookup` was
-the alternative, and it does not survive this chart's install paths: `helm template`
-has no cluster access, so under Argo CD (see the sync-options annotations on the
-kept resources) a random ID would be reissued on every sync, rewriting every label
-and rolling the controller Deployment continuously.
+The constant is also what makes the hand-off safe. An uninstall leaves kept
+resources carrying the previous UID; the next install adopts them and writes this
+manifest, resetting them to "unclaimed" as part of the install itself. On upgrade
+the label is unchanged between manifests, so helm's three-way merge leaves a live
+claim alone.
 
-Rendering the constant is what makes the hand-off safe. `helm uninstall` leaves the
-kept resources behind still carrying the previous install's UID; the next install
-adopts them and writes this manifest, which resets them to "unclaimed" as part of
-the install itself. The previous install's controller stops matching them at that
-moment, with no window to race. On upgrade the label is unchanged between the old
-and new manifests, so helm's three-way merge leaves the live claim alone.
-
-"unclaimed" matches no controller, so the failure direction is always a resource
-nobody deletes, never a resource the wrong install deletes.
-
-Deliberately outside the kustomize guard below: a kustomize-rendered install would
-otherwise get no label at all and fall back to name-based teardown.
+Outside the kustomize guard below, which would otherwise render no label at all.
 */}}
 {{- define "datafy-agent.installIdLabel" -}}
 datafy.io/install-id: unclaimed

@@ -57,10 +57,9 @@ rules:
     resources: [ "configmaps" ]
     resourceNames: [ "datafy-volume-replacements", "datafy-controller-config" ]
     verbs: [ "get", "update", "patch", "delete" ]
-  # list is what lets the controller find its own resources by the datafy.io/install-id
-  # label rather than by hard-coded name. RBAC cannot constrain a collection request by
-  # name, so list is necessarily unrestricted; the delete below stays name-scoped.
-  # Every other kind the controller sweeps already has list/watch elsewhere in this role.
+  # list lets the controller find its own resources by the datafy.io/install-id label
+  # instead of by name. RBAC cannot constrain a collection request by name, so it is
+  # necessarily unrestricted; the delete below stays name-scoped.
   - apiGroups: [ "" ]
     resources: [ "services" ]
     verbs: [ "list", "watch" ]
