@@ -273,20 +273,14 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
-Install identity. The controller replaces "unclaimed" with the install marker's
-UID and only deletes resources carrying its own UID, so a controller left running
-by a previous install cannot tear down the release that replaced it (DT-11266).
+Install identity. The controller replaces "unclaimed" with the install marker's UID
+and only deletes resources carrying its own UID, so a controller left running by a
+previous install cannot tear down the release that replaced it (DT-11266).
 
-A constant, not a generated ID: the identity must be unique per install and stable
-across upgrades, which is the marker's UID, and only the API server can assign it.
-`lookup` cannot substitute — `helm template` has no cluster access, so under Argo CD
-a random ID would be reissued on every sync.
-
-The constant is also what makes the hand-off safe. An uninstall leaves kept
-resources carrying the previous UID; the next install adopts them and writes this
-manifest, resetting them to "unclaimed" as part of the install itself. On upgrade
-the label is unchanged between manifests, so helm's three-way merge leaves a live
-claim alone.
+A constant, not a generated ID: `helm template` has no cluster access, so `lookup`
+cannot reach the marker and a random would be reissued on every Argo CD sync. The
+constant is also what makes the hand-off safe — the next install writes it over the
+previous claim as part of adopting the resource.
 
 Outside the kustomize guard below, which would otherwise render no label at all.
 */}}
