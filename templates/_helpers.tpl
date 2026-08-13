@@ -273,6 +273,46 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
+Install identity. The controller replaces "unclaimed" with the install marker's UID
+and only deletes resources carrying its own UID, so a controller left running by a
+previous install cannot tear down the release that replaced it (DT-11266).
+
+A constant, not a generated ID: `helm template` has no cluster access, so `lookup`
+cannot reach the marker and a random would be reissued on every Argo CD sync. The
+constant is also what makes the hand-off safe — the next install writes it over the
+previous claim as part of adopting the resource.
+
+Outside the kustomize guard below, which would otherwise render no label at all.
+*/}}
+{{- define "datafy-agent.installIdUnclaimed" -}}
+unclaimed
+{{- end -}}
+
+{{- define "datafy-agent.installIdLabel" -}}
+datafy.io/install-id: {{ include "datafy-agent.installIdUnclaimed" . }}
+{{- end -}}
+
+{{/*
+Labels for the resources the datafy-controller owns and may delete on uninstall:
+the common labels plus the install identity.
+
+Separate from datafy-agent.labels rather than folded into it, because that helper is
+also used for the agent DaemonSet's pod template. A label there changes the
+pod-template hash, so every agent pod would roll on upgrade to this chart version —
+and agents being restarted mid-operation is what DT-11266 was reported for.
+
+Keeping the two apart also keeps the stamped set exactly the set the controller
+sweeps, which is the property the teardown depends on.
+*/}}
+{{- define "datafy-agent.controllerLabels" -}}
+{{ include "datafy-agent.installIdLabel" . }}
+{{- $shared := include "datafy-agent.labels" . -}}
+{{- if $shared }}
+{{ $shared }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Common labels for all resources
 */}}
 {{- define "datafy-agent.labels" -}}

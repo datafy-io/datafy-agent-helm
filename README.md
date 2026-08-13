@@ -64,6 +64,38 @@ helm uninstall datafy-agent --namespace <namespace>
 ```
 ---
 
+## Argo CD
+
+The chart renders `datafy.io/install-id: unclaimed` on the controller's resources. The running controller replaces that value with the install marker's UID and will only delete resources carrying its own UID — which is what stops a controller left behind by a previous install from tearing down the release that replaced it.
+
+Argo CD compares the rendered manifest against the cluster, so it sees `unclaimed` where the cluster has a UID and reports the application **OutOfSync**. With `selfHeal` enabled it goes further: Argo rewrites the label, the controller re-claims it, Argo sees drift again — a write loop across every controller resource.
+
+Nothing is at risk while that happens. `unclaimed` matches no controller, so the failure direction is a resource nobody deletes, never a resource the wrong install deletes. But the loop is noise, and it costs API writes.
+
+To silence it, tell Argo to ignore the field this controller owns:
+
+```yaml
+spec:
+  ignoreDifferences:
+    - group: "*"
+      kind: "*"
+      managedFieldsManagers:
+        - datafy-install-id
+```
+
+The controller writes the label under that field manager specifically so one rule covers every resource and kind.
+
+For Argo versions without `managedFieldsManagers`, match the label directly instead — note that `/` is escaped as `~1` in a JSON pointer:
+
+```yaml
+spec:
+  ignoreDifferences:
+    - group: "*"
+      kind: "*"
+      jsonPointers:
+        - /metadata/labels/datafy.io~1install-id
+```
+
 ## Proxy
 
 Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The chart renders both the uppercase and lowercase env vars (`HTTPS_PROXY`/`https_proxy`, `NO_PROXY`/`no_proxy`) on each chart-managed container.
