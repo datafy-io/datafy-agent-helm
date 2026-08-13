@@ -284,8 +284,12 @@ previous claim as part of adopting the resource.
 
 Outside the kustomize guard below, which would otherwise render no label at all.
 */}}
+{{- define "datafy-agent.installIdUnclaimed" -}}
+unclaimed
+{{- end -}}
+
 {{- define "datafy-agent.installIdLabel" -}}
-datafy.io/install-id: unclaimed
+datafy.io/install-id: {{ include "datafy-agent.installIdUnclaimed" . }}
 {{- end -}}
 
 {{/*
