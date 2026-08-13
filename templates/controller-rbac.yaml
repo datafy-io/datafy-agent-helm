@@ -7,7 +7,7 @@ metadata:
   name: {{ .Values.controller.serviceAccount.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -21,7 +21,7 @@ kind: ClusterRole
 metadata:
   name: {{ $roleName }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -55,6 +55,12 @@ rules:
     resources: [ "configmaps" ]
     resourceNames: [ "datafy-volume-replacements", "datafy-controller-config" ]
     verbs: [ "get", "update", "patch", "delete" ]
+  # list lets the controller find its own resources by the datafy.io/install-id label
+  # instead of by name. RBAC cannot constrain a collection request by name, so it is
+  # necessarily unrestricted; the delete below stays name-scoped.
+  - apiGroups: [ "" ]
+    resources: [ "services" ]
+    verbs: [ "list", "watch" ]
   - apiGroups: [ "" ]
     resources: [ "services" ]
     resourceNames: [ "datafy-controller", "datafy-controller-webhook" ]
@@ -142,7 +148,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ $roleBindingName }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
