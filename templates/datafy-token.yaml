@@ -14,8 +14,7 @@ metadata:
   name: datafy-token
   namespace: {{ .Release.Namespace | quote }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- include "datafy-agent.installIdLabel" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false

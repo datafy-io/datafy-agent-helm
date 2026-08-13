@@ -7,8 +7,7 @@ metadata:
   name: datafy-controller-webhook-certificate
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- include "datafy-agent.installIdLabel" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -22,8 +21,7 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: datafy-controller-webhook
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- include "datafy-agent.installIdLabel" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false

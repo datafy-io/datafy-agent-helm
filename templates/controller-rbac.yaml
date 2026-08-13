@@ -7,8 +7,7 @@ metadata:
   name: {{ .Values.controller.serviceAccount.name }}
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- include "datafy-agent.installIdLabel" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -22,8 +21,7 @@ kind: ClusterRole
 metadata:
   name: {{ $roleName }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- include "datafy-agent.installIdLabel" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -150,8 +148,7 @@ kind: ClusterRoleBinding
 metadata:
   name: {{ $roleBindingName }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
-  {{- include "datafy-agent.installIdLabel" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
