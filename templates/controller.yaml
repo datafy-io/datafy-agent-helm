@@ -156,7 +156,7 @@ spec:
             name: datafy-controller-config
         - name: datafy-controller-webhook-certificate
           secret:
-            secretName: datafy-controller-webhook-certificate
+            secretName: datafy-controller-webhook-tls
 ---
 apiVersion: v1
 kind: Service
