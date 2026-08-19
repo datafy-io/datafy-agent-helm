@@ -76,14 +76,6 @@ spec:
                   fieldPath: metadata.namespace
             - name: DATAFY_TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
-            # Rendered so that `helm install` resets it, the same way it resets the
-            # datafy.io/install-id label. The controller overwrites it with the install
-            # marker's UID when it transitions to transparent mode, so the wind-down pod
-            # still knows which install it belongs to once the marker is gone. Without a
-            # manifest entry there is nothing for a later install to overwrite, and a
-            # fresh controller could inherit its predecessor's identity.
-            - name: DATAFY_INSTALL_ID
-              value: {{ include "datafy-agent.installIdUnclaimed" . | quote }}
             - name: DATAFY_TOKEN_SECRET_NAME
               value: {{ include "datafy-agent.tokenSecretName" . | quote }}
             - name: DATAFY_TOKEN_SECRET_KEY

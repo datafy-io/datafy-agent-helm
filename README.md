@@ -66,13 +66,13 @@ helm uninstall datafy-agent --namespace <namespace>
 
 ## Argo CD
 
-The chart renders `datafy.io/install-id: unclaimed` on the controller's resources. The running controller replaces that value with the install marker's UID and will only delete resources carrying its own UID — which is what stops a controller left behind by a previous install from tearing down the release that replaced it.
+The running controller stamps `datafy.io/install-id` on the resources it owns, using its
+own field manager (`datafy-install-id`). The chart does not render that label, so Helm
+never claims the field and the two never fight over it — a `helm upgrade` leaves the
+controller's value in place, and Argo CD sees a live-only label rather than drift.
 
-Argo CD compares the rendered manifest against the cluster, so it sees `unclaimed` where the cluster has a UID and reports the application **OutOfSync**. With `selfHeal` enabled it goes further: Argo rewrites the label, the controller re-claims it, Argo sees drift again — a write loop across every controller resource.
-
-Nothing is at risk while that happens. `unclaimed` matches no controller, so the failure direction is a resource nobody deletes, never a resource the wrong install deletes. But the loop is noise, and it costs API writes.
-
-To silence it, tell Argo to ignore the field this controller owns:
+If your Argo configuration surfaces live-only fields as **OutOfSync**, tell it to ignore
+the field the controller owns:
 
 ```yaml
 spec:
@@ -83,9 +83,11 @@ spec:
         - datafy-install-id
 ```
 
-The controller writes the label under that field manager specifically so one rule covers every resource and kind.
+The controller writes the label under that field manager specifically so one rule covers
+every resource and kind.
 
-For Argo versions without `managedFieldsManagers`, match the label directly instead — note that `/` is escaped as `~1` in a JSON pointer:
+For Argo versions without `managedFieldsManagers`, match the label directly instead —
+note that `/` is escaped as `~1` in a JSON pointer:
 
 ```yaml
 spec:

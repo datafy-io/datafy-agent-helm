@@ -229,3 +229,115 @@ jobs:
           kubectl get events -n datafy-agent --sort-by=.lastTimestamp | tail -50 || true
           helm list -n datafy-agent -a || true
           helm history datafy-agent -n datafy-agent 2>/dev/null || true
+
+  # In-place upgrade of the PR chart while the controller holds its own fields.
+  # The published-chart job above cannot catch field-ownership regressions: nothing
+  # has ever claimed a field on those resources, so every apply is uncontested.
+  # Helm is pinned to 4.x because that is where a contested field is a hard error
+  # (server-side apply); Helm 3 reverts the claim silently instead.
+  test-inplace-upgrade:
+    runs-on: ubuntu-latest
+    name: test_inplace_upgrade_with_controller_claim
+    env:
+      NS: datafy-agent
+      CLAIM: 00000000-1111-2222-3333-444444444444
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5.0.0
+        with:
+          version: v4.2.4
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.14.0
+
+      - name: Apply fake EBS CSI resources
+        run: kubectl apply -f scripts/helm-validation/fake-ebs-csi.yaml
+
+      - name: Fake EC2 IMDS on Kind nodes
+        run: bash scripts/helm-validation/setup-kind-fake-ec2-imds.sh
+
+      - name: Helm install (PR branch chart)
+        run: |
+          set -euo pipefail
+          helm install datafy-agent . \
+            --namespace "$NS" \
+            --create-namespace \
+            --timeout 5m \
+            --wait \
+            --set agent.dsoUrl='wss://dso-stg.datafy.io' \
+            --set agent.token=${{ secrets.STGN_SECRET }} \
+            --set agent.mode=AutoScaler \
+            --set agent.coreMockEnabled=true \
+            --set agent.hqMockEnabled=true
+
+      # Stand in for the running controller: claim datafy.io/install-id on the
+      # resources it owns, under the field manager it uses in production.
+      - name: Simulate the controller claiming its install identity
+        run: |
+          set -euo pipefail
+          for r in serviceaccount/datafy-controller-sa \
+                   configmap/datafy-controller-config \
+                   configmap/datafy-volume-replacements \
+                   secret/datafy-token \
+                   deployment/datafy-controller \
+                   service/datafy-controller \
+                   service/datafy-controller-webhook; do
+            kubectl -n "$NS" patch "$r" --type=merge --field-manager=datafy-install-id \
+              -p "{\"metadata\":{\"labels\":{\"datafy.io/install-id\":\"$CLAIM\"}}}"
+          done
+          for r in clusterrole/datafy-controller-role \
+                   clusterrolebinding/datafy-controller-binding \
+                   mutatingwebhookconfiguration/datafy-controller-webhook; do
+            kubectl patch "$r" --type=merge --field-manager=datafy-install-id \
+              -p "{\"metadata\":{\"labels\":{\"datafy.io/install-id\":\"$CLAIM\"}}}"
+          done
+
+      - name: Helm upgrade in place (must not conflict with the controller)
+        run: |
+          set -euo pipefail
+          helm upgrade datafy-agent . \
+            --namespace "$NS" \
+            --timeout 5m \
+            --wait \
+            --set agent.dsoUrl='wss://dso-stg.datafy.io' \
+            --set agent.token=${{ secrets.STGN_SECRET }} \
+            --set agent.mode=AutoScaler \
+            --set agent.coreMockEnabled=true \
+            --set agent.hqMockEnabled=true
+
+      - name: Verify the controller's claim survived the upgrade
+        run: |
+          set -euo pipefail
+          fail=0
+          check() {
+            actual=$(kubectl ${2:+-n "$NS"} get "$1" \
+              -o jsonpath='{.metadata.labels.datafy\.io/install-id}' 2>/dev/null || true)
+            if [[ "$actual" != "$CLAIM" ]]; then
+              echo "::error::$1 lost its install-id claim (got '${actual:-<empty>}', want '$CLAIM')"
+              fail=1
+            else
+              echo "ok: $1"
+            fi
+          }
+          check serviceaccount/datafy-controller-sa ns
+          check configmap/datafy-controller-config ns
+          check secret/datafy-token ns
+          check deployment/datafy-controller ns
+          check service/datafy-controller ns
+          check clusterrole/datafy-controller-role
+          check mutatingwebhookconfiguration/datafy-controller-webhook
+          if [[ "$fail" != "0" ]]; then
+            echo "The chart is writing a field the controller owns. See templates/_helpers.tpl." >&2
+            exit 1
+          fi
+
+      - name: Debug in-place upgrade failure
+        if: failure()
+        run: |
+          helm history datafy-agent -n "$NS" 2>/dev/null || true
+          kubectl get pods -n "$NS" -o wide || true
+          kubectl get events -n "$NS" --sort-by=.lastTimestamp | tail -50 || true
+          kubectl -n "$NS" get deployment/datafy-controller -o yaml | grep -A40 managedFields || true
