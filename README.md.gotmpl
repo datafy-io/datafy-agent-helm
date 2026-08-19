@@ -68,9 +68,10 @@ helm uninstall datafy-agent --namespace <namespace>
 ## Argo CD
 
 The running controller stamps `datafy.io/install-id` on the resources it owns, using its
-own field manager (`datafy-install-id`). The chart does not render that label, so Helm
-never claims the field and the two never fight over it — a `helm upgrade` leaves the
-controller's value in place, and Argo CD sees a live-only label rather than drift.
+own field manager (`datafy-install-id`). The chart does not render that label, so it is
+not part of any release manifest and `helm upgrade` neither overwrites nor removes it —
+the controller's value stays put. Argo CD likewise sees a label it never rendered, which
+surfaces as a live-only field rather than as drift.
 
 If your Argo configuration surfaces live-only fields as **OutOfSync**, tell it to ignore
 the field the controller owns:
