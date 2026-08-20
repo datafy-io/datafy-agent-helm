@@ -1,9 +1,9 @@
 {{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
 # Rules for the "datafy.io/autoscaling-native" annotation on PVCs:
 #   CREATE: annotation may be absent, or present with value "true" or "false".
-#   UPDATE: - cannot be added if it wasn't set at creation
-#           - cannot change value (true <-> false)
-#           - CAN be removed, but only if the PVC is not datafied (datafy.io/state=managed), to allow off-boarding.
+#   UPDATE: - cannot be added if it wasn't set at creation, since it is only read when
+#             the volume is created and adding it later would be misleading.
+#           - may be changed or removed freely; we drop it ourselves after creation.
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
 metadata:
@@ -41,24 +41,9 @@ spec:
         variables.newAnn[?'datafy.io/autoscaling-native'].orValue('true') in ['true', 'false']
       message: "datafy.io/autoscaling-native must be \"true\" or \"false\""
       reason: Invalid
-    # 2. Cannot be added after creation.
+    # 2. Cannot be added after creation. Changing or removing it is allowed.
     - expression: "!variables.isUpdate || variables.hadIt || !variables.hasIt"
-      message: "datafy.io/autoscaling-native cannot be added after the PVC is created"
-      reason: Forbidden
-    # 3. Cannot change value once set.
-    - expression: >-
-        !variables.isUpdate || !variables.hadIt || !variables.hasIt ||
-        variables.newAnn['datafy.io/autoscaling-native'] == variables.oldAnn['datafy.io/autoscaling-native']
-      message: "datafy.io/autoscaling-native cannot be changed once set (it may only be removed)"
-      reason: Forbidden
-    # 4. Removal is allowed only when the PVC is not datafied
-    #    (checked on both the old and the new object, so dropping
-    #    datafy.io/state in the same request doesn't bypass the rule).
-    - expression: >-
-        !variables.isUpdate || !variables.hadIt || variables.hasIt ||
-        (variables.oldAnn[?'datafy.io/state'].orValue('') != 'managed' &&
-         variables.newAnn[?'datafy.io/state'].orValue('') != 'managed')
-      message: "datafy.io/autoscaling-native cannot be removed while datafy.io/state=managed"
+      message: "datafy.io/autoscaling-native must be set when the PVC is created; it cannot be added afterwards"
       reason: Forbidden
 ---
 apiVersion: admissionregistration.k8s.io/v1
