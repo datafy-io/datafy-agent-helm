@@ -67,13 +67,19 @@ helm uninstall datafy-agent --namespace <namespace>
 
 ## Argo CD
 
-The running controller stamps `datafy.io/install-id` on the resources it owns, using its
-own field manager (`datafy-install-id`). The chart does not render that label, so it is
-not part of any release manifest and `helm upgrade` neither overwrites nor removes it —
-the controller's value stays put. Argo CD likewise sees a label it never rendered, which
-surfaces as a live-only field rather than as drift.
+The chart renders `datafy.io/install-id: unclaimed` on the controller's resources. It marks
+them as chart-owned, and Helm is its only writer.
 
-If your Argo configuration surfaces live-only fields as **OutOfSync**, tell it to ignore
+The running controller claims those resources under a key of its own — `datafy.io/install-claim`,
+set to the install marker's UID, written with the field manager `datafy-install-id` — and only
+deletes resources carrying its own UID. That is what stops a controller left behind by a previous
+install from tearing down the release that replaced it. Two keys, one writer each: server-side
+apply sees no contested field, so `helm upgrade` and a reinstall over the kept resources both
+apply cleanly.
+
+Argo CD compares the rendered manifest against the cluster. `datafy.io/install-id` matches what
+the chart renders, so it is never drift; `datafy.io/install-claim` is a live-only field Argo never
+rendered. If your Argo configuration surfaces live-only fields as **OutOfSync**, tell it to ignore
 the field the controller owns:
 
 ```yaml
@@ -85,7 +91,7 @@ spec:
         - datafy-install-id
 ```
 
-The controller writes the label under that field manager specifically so one rule covers
+The controller writes the claim under that field manager specifically so one rule covers
 every resource and kind.
 
 For Argo versions without `managedFieldsManagers`, match the label directly instead —
@@ -97,7 +103,7 @@ spec:
     - group: "*"
       kind: "*"
       jsonPointers:
-        - /metadata/labels/datafy.io~1install-id
+        - /metadata/labels/datafy.io~1install-claim
 ```
 
 ## Proxy

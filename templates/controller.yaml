@@ -7,7 +7,7 @@ metadata:
   name: datafy-controller
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -76,6 +76,13 @@ spec:
                   fieldPath: metadata.namespace
             - name: DATAFY_TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
+            # Rendered so that `helm install` resets it. The controller overwrites it
+            # with the install marker's UID when it transitions to transparent mode, so
+            # the wind-down pod still knows which install it belongs to once the marker
+            # is gone. Without a manifest entry there is nothing for a later install to
+            # overwrite, and a fresh controller would inherit its predecessor's identity.
+            - name: DATAFY_INSTALL_ID
+              value: {{ include "datafy-agent.installIdUnclaimed" . | quote }}
             - name: DATAFY_TOKEN_SECRET_NAME
               value: {{ include "datafy-agent.tokenSecretName" . | quote }}
             - name: DATAFY_TOKEN_SECRET_KEY
@@ -156,7 +163,7 @@ metadata:
   name: datafy-controller-webhook
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -177,7 +184,7 @@ metadata:
   name: datafy-controller
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
   {{- with .Values.extraAnnotations }}

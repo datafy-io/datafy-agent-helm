@@ -273,6 +273,44 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
+Install identity, as the chart renders it.
+
+`datafy.io/install-id: unclaimed` marks a resource as chart-owned. Helm is its only
+writer — the controller claims under datafy.io/install-claim instead, a key this chart
+never renders — so server-side apply sees one manager per field and `helm upgrade` and
+`helm install` over the kept set both stay conflict-free.
+
+A constant, not a generated ID: `helm template` has no cluster access, so `lookup`
+cannot reach the install marker, and a random would be reissued on every Argo CD sync.
+
+Outside the kustomize guard below, which would otherwise render no label at all.
+*/}}
+{{- define "datafy-agent.installIdUnclaimed" -}}
+unclaimed
+{{- end -}}
+
+{{- define "datafy-agent.installIdLabel" -}}
+datafy.io/install-id: {{ include "datafy-agent.installIdUnclaimed" . }}
+{{- end -}}
+
+{{/*
+Labels for the resources the datafy-controller owns and may delete on uninstall:
+the common labels plus the chart-owned marker.
+
+Separate from datafy-agent.labels rather than folded into it, because that helper also
+feeds the agent DaemonSet's pod template, where an extra label changes the pod-template
+hash and rolls every agent pod on upgrade. Keeping them apart also keeps the marked set
+exactly the set the controller claims and later sweeps.
+*/}}
+{{- define "datafy-agent.controllerLabels" -}}
+{{ include "datafy-agent.installIdLabel" . }}
+{{- $shared := include "datafy-agent.labels" . -}}
+{{- if $shared }}
+{{ $shared }}
+{{- end -}}
+{{- end -}}
+
+{{/*
 Common labels for all resources
 */}}
 {{- define "datafy-agent.labels" -}}

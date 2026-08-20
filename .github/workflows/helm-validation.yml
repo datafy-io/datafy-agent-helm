@@ -273,8 +273,9 @@ jobs:
             --set agent.coreMockEnabled=true \
             --set agent.hqMockEnabled=true
 
-      # Stand in for the running controller: claim datafy.io/install-id on the
-      # resources it owns, under the field manager it uses in production.
+      # Stand in for the running controller: claim the resources it owns under
+      # datafy.io/install-claim, with the field manager it uses in production. The
+      # chart never renders that key, and it must never take it over.
       - name: Simulate the controller claiming its install identity
         run: |
           set -euo pipefail
@@ -286,13 +287,13 @@ jobs:
                    service/datafy-controller \
                    service/datafy-controller-webhook; do
             kubectl -n "$NS" patch "$r" --type=merge --field-manager=datafy-install-id \
-              -p "{\"metadata\":{\"labels\":{\"datafy.io/install-id\":\"$CLAIM\"}}}"
+              -p "{\"metadata\":{\"labels\":{\"datafy.io/install-claim\":\"$CLAIM\"}}}"
           done
           for r in clusterrole/datafy-controller-role \
                    clusterrolebinding/datafy-controller-binding \
                    mutatingwebhookconfiguration/datafy-controller-webhook; do
             kubectl patch "$r" --type=merge --field-manager=datafy-install-id \
-              -p "{\"metadata\":{\"labels\":{\"datafy.io/install-id\":\"$CLAIM\"}}}"
+              -p "{\"metadata\":{\"labels\":{\"datafy.io/install-claim\":\"$CLAIM\"}}}"
           done
 
       - name: Helm upgrade in place (must not conflict with the controller)
@@ -312,11 +313,20 @@ jobs:
         run: |
           set -euo pipefail
           fail=0
+          label() {
+            kubectl ${3:+-n "$NS"} get "$1" \
+              -o jsonpath="{.metadata.labels.datafy\.io/$2}" 2>/dev/null || true
+          }
+          # The controller's key must survive, and the chart's must still be the
+          # sentinel: one writer each is what keeps server-side apply uncontested.
           check() {
-            actual=$(kubectl ${2:+-n "$NS"} get "$1" \
-              -o jsonpath='{.metadata.labels.datafy\.io/install-id}' 2>/dev/null || true)
-            if [[ "$actual" != "$CLAIM" ]]; then
-              echo "::error::$1 lost its install-id claim (got '${actual:-<empty>}', want '$CLAIM')"
+            claim=$(label "$1" install-claim "${2:-}")
+            owned=$(label "$1" install-id "${2:-}")
+            if [[ "$claim" != "$CLAIM" ]]; then
+              echo "::error::$1 lost its install-claim (got '${claim:-<empty>}', want '$CLAIM')"
+              fail=1
+            elif [[ "$owned" != "unclaimed" ]]; then
+              echo "::error::$1 has install-id '${owned:-<empty>}', want 'unclaimed' — the chart's own field was overwritten"
               fail=1
             else
               echo "ok: $1"
@@ -330,7 +340,7 @@ jobs:
           check clusterrole/datafy-controller-role
           check mutatingwebhookconfiguration/datafy-controller-webhook
           if [[ "$fail" != "0" ]]; then
-            echo "The chart is writing a field the controller owns. See templates/_helpers.tpl." >&2
+            echo "Chart and controller are contending for one field. See templates/_helpers.tpl." >&2
             exit 1
           fi
 
