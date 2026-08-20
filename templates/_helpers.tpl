@@ -273,24 +273,6 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
-Labels for the resources the datafy-controller owns and may delete on uninstall.
-
-Identical to datafy-agent.labels today, but kept as its own helper so controller-owned
-resources have a place for labels the agent DaemonSet must not inherit — that helper
-also feeds the DaemonSet's pod template.
-
-No install identity is rendered here. The controller writes datafy.io/install-id under
-its own field manager, so declaring it in the chart made Helm and the controller two
-writers of one field: Helm 4 refuses the apply outright, Helm 3 silently reverts the
-claim on every upgrade. The controller takes its identity from the datafy-install-marker
-ConfigMap's UID instead — Helm owns that object alone and reissues it on every install,
-which is what invalidates a previous install's claim (DT-11266).
-*/}}
-{{- define "datafy-agent.controllerLabels" -}}
-{{- include "datafy-agent.labels" . -}}
-{{- end -}}
-
-{{/*
 Common labels for all resources
 */}}
 {{- define "datafy-agent.labels" -}}
