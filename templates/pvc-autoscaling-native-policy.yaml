@@ -1,9 +1,9 @@
 {{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
 # Rules for the "datafy.io/autoscaling-native" annotation on PVCs:
-#   CREATE: annotation may be absent, or present with value "true" or "false".
-#   UPDATE: - cannot be added if it wasn't set at creation, since it is only read when
-#             the volume is created and adding it later would be misleading.
-#           - may be changed or removed freely; we drop it ourselves after creation.
+#   Whenever it is set, the value must be "true" or "false" (absent is fine).
+#   While the PVC is unbound (spec.volumeName empty, i.e. no PV behind it yet) the
+#   annotation may be freely added, changed or removed -- it is not too late to matter.
+#   Once a volume is bound it cannot be added any more; (csi-proxy drops the annotation after creation)
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingAdmissionPolicy
 metadata:
@@ -34,16 +34,28 @@ spec:
       expression: "'datafy.io/autoscaling-native' in variables.oldAnn"
     - name: hasIt
       expression: "'datafy.io/autoscaling-native' in variables.newAnn"
+    # Untouched by this request -- such values are grandfathered by rule 1 so an
+    # unrelated update to an already-bad PVC is not rejected.
+    - name: unchanged
+      expression: >-
+        variables.hadIt && variables.hasIt &&
+        variables.newAnn['datafy.io/autoscaling-native'] == variables.oldAnn['datafy.io/autoscaling-native']
+    # A bound PVC has a PV behind it. volumeName is immutable once set, and reading it
+    # from oldObject means a request that binds and annotates at once still counts as unbound.
+    - name: wasBound
+      expression: "variables.isUpdate ? oldObject.spec.?volumeName.orValue('') != '' : false"
   validations:
-    # 1. On CREATE the value must be "true" or "false" (absent is fine).
+    # 1. Whenever the annotation is written, the value must be "true" or "false".
+    #    A value left untouched by the request is grandfathered, so an unrelated
+    #    update to an already-bad PVC is not rejected.
     - expression: >-
-        variables.isUpdate ||
-        variables.newAnn[?'datafy.io/autoscaling-native'].orValue('true') in ['true', 'false']
+        !variables.hasIt || variables.unchanged ||
+        variables.newAnn['datafy.io/autoscaling-native'] in ['true', 'false']
       message: "datafy.io/autoscaling-native must be \"true\" or \"false\""
       reason: Invalid
-    # 2. Cannot be added after creation.
-    - expression: "!variables.isUpdate || variables.hadIt || !variables.hasIt"
-      message: "datafy.io/autoscaling-native must be set when the PVC is created; it cannot be added afterwards"
+    # 2. Cannot be added once a volume is bound.
+    - expression: "!variables.wasBound || variables.hadIt || !variables.hasIt"
+      message: "datafy.io/autoscaling-native must be set before the volume is provisioned; it cannot be added to a PVC that is already bound to a PV"
       reason: Forbidden
 ---
 apiVersion: admissionregistration.k8s.io/v1
