@@ -26,6 +26,8 @@ kubectl delete serviceaccount datafy-controller-sa -n "${NS}" --ignore-not-found
 kubectl delete clusterrolebinding datafy-controller-binding --ignore-not-found
 kubectl delete clusterrole datafy-controller-role --ignore-not-found
 kubectl delete mutatingwebhookconfiguration datafy-controller-webhook --ignore-not-found
+kubectl delete validatingadmissionpolicybinding datafy-pvc-autoscaling-native --ignore-not-found
+kubectl delete validatingadmissionpolicy datafy-pvc-autoscaling-native --ignore-not-found
 
 csi_namespace=$(kubectl get deployment,daemonset -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,KIND:.kind --no-headers 2>/dev/null \
   | awk '($2=="ebs-csi-controller" && $3=="Deployment") || ($2=="ebs-csi-node" && $3=="DaemonSet") {print $1}' \
