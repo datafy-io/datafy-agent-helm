@@ -41,7 +41,7 @@ spec:
         variables.newAnn[?'datafy.io/autoscaling-native'].orValue('true') in ['true', 'false']
       message: "datafy.io/autoscaling-native must be \"true\" or \"false\""
       reason: Invalid
-    # 2. Cannot be added after creation. Changing or removing it is allowed.
+    # 2. Cannot be added after creation.
     - expression: "!variables.isUpdate || variables.hadIt || !variables.hasIt"
       message: "datafy.io/autoscaling-native must be set when the PVC is created; it cannot be added afterwards"
       reason: Forbidden
