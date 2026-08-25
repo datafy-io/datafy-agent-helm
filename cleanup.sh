@@ -19,13 +19,16 @@ kubectl delete deployment datafy-controller -n "${NS}" --ignore-not-found
 kubectl delete configmap datafy-controller-config -n "${NS}" --ignore-not-found
 kubectl delete configmap datafy-volume-replacements -n "${NS}" --ignore-not-found
 kubectl delete secret datafy-controller-webhook-tls -n "${NS}" --ignore-not-found
+kubectl delete secret datafy-controller-webhook-certificate -n "${NS}" --ignore-not-found
 kubectl delete secret datafy-token -n "${NS}" --ignore-not-found
 kubectl delete serviceaccount datafy-controller-sa -n "${NS}" --ignore-not-found
+kubectl delete lease datafy-controller-leader -n "${NS}" --ignore-not-found
 
 # Cluster-scoped resources
 kubectl delete clusterrolebinding datafy-controller-binding --ignore-not-found
 kubectl delete clusterrole datafy-controller-role --ignore-not-found
 kubectl delete mutatingwebhookconfiguration datafy-controller-webhook --ignore-not-found
+kubectl delete mutatingwebhookconfiguration datafy-controller-mutating-webhook --ignore-not-found
 kubectl delete validatingadmissionpolicybinding datafy-pvc-autoscaling-native --ignore-not-found
 kubectl delete validatingadmissionpolicy datafy-pvc-autoscaling-native --ignore-not-found
 
