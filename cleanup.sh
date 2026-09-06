@@ -17,7 +17,6 @@ kubectl delete service datafy-controller-webhook -n "${NS}" --ignore-not-found
 kubectl delete service datafy-controller -n "${NS}" --ignore-not-found
 kubectl delete deployment datafy-controller -n "${NS}" --ignore-not-found
 kubectl delete configmap datafy-controller-config -n "${NS}" --ignore-not-found
-kubectl delete configmap datafy-volume-replacements -n "${NS}" --ignore-not-found
 kubectl delete secret datafy-controller-webhook-tls -n "${NS}" --ignore-not-found
 kubectl delete secret datafy-token -n "${NS}" --ignore-not-found
 kubectl delete serviceaccount datafy-controller-sa -n "${NS}" --ignore-not-found
@@ -33,7 +32,6 @@ csi_namespace=$(kubectl get deployment,daemonset -A -o custom-columns=NS:.metada
 )
 if [[ -n "$csi_namespace" ]]; then
   echo "Deleting Datafy [namespace ${csi_namespace}] kept resources"
-  kubectl delete configmap datafy-volume-replacements -n "${csi_namespace}" --ignore-not-found
   kubectl delete secret datafy-token -n "${csi_namespace}" --ignore-not-found
 
   echo "Patching AWS EBS CSI [namespace ${csi_namespace}] labels and annotations"

@@ -101,11 +101,6 @@ spec:
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
             - name: DATAFY_AGENT_MODE
               value: {{ (include "datafy-agent.agentModeNormalized" . ) | quote }}
-            - name: DATAFY_VOLUME_REPLACEMENTS
-              valueFrom:
-                configMapKeyRef:
-                  name: datafy-volume-replacements
-                  key: replacements
             - name: DATAFY_CONFIG_FILE
               value: /etc/datafy-controller/config.yaml
             - name: DATAFY_CONFIG_CHECKSUM
