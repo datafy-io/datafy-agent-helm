@@ -40,7 +40,7 @@ rules:
     resources: [ "persistentvolumeclaims" ]
     verbs: [ "get", "list", "watch", "patch", "delete", "create" ]
   - apiGroups: [ "" ]
-    resources: [ "secrets", "configmaps" ]
+    resources: [ "secrets" ]
     verbs: [ "create" ] # Create cannot be constrained by resourceNames because the name is not known until creation time.
   - apiGroups: [ "" ]
     resources: [ "secrets" ]
@@ -53,7 +53,7 @@ rules:
     verbs: [ "get", "update", "patch", "delete" ]
   - apiGroups: [ "" ]
     resources: [ "configmaps" ]
-    resourceNames: [ "datafy-volume-replacements", "datafy-controller-config" ]
+    resourceNames: [ "datafy-controller-config" ]
     verbs: [ "get", "update", "patch", "delete" ]
   # list lets the controller find its own resources by the datafy.io/install-id label
   # instead of by name. RBAC cannot constrain a collection request by name, so it is
