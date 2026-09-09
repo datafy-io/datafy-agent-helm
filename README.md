@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 3.7.0](https://img.shields.io/badge/Version-3.7.0-informational?style=flat-square) ![AppVersion: 1.40.0_1.7.0](https://img.shields.io/badge/AppVersion-1.40.0_1.7.0-informational?style=flat-square)
+![Version: 4.0.0](https://img.shields.io/badge/Version-4.0.0-informational?style=flat-square) ![AppVersion: 2.0.0_2.0.0](https://img.shields.io/badge/AppVersion-2.0.0_2.0.0-informational?style=flat-square)
 
 **App Version:**
 
-1.40.0_1.7.0
+2.0.0_2.0.0
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -29,7 +29,7 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent --version 3.7.0 datafyio/datafy-agent \
+helm install datafy-agent --version 4.0.0 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
 --set agent.token=<your_token> \
@@ -39,12 +39,12 @@ helm install datafy-agent --version 3.7.0 datafyio/datafy-agent \
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 3.7.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
+helm upgrade --install datafy-agent --version 4.0.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 3.7.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
+helm upgrade --install datafy-agent --version 4.0.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
 ```
 
 Rollback:
@@ -118,6 +118,8 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | agent.image.tag | string | `nil` |  |
 | agent.mode | string | `"AutoScaler"` |  |
 | agent.nodeSelector | object | `{}` |  |
+| agent.notifications.defer_until_csi_ack | bool | `true` |  |
+| agent.notifications.wait_for_ack_timeout | string | `"5s"` |  |
 | agent.securityContext.privileged | bool | `true` |  |
 | agent.securityContext.runAsGroup | int | `1000` |  |
 | agent.securityContext.runAsUser | int | `1000` |  |
@@ -154,9 +156,12 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | ebsCsiProxy.image.pullPolicy | string | `"IfNotPresent"` |  |
 | ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |
 | ebsCsiProxy.image.tag | string | `nil` |  |
+| ebsCsiProxy.notifications.wait_before_ack | string | `nil` |  |
+| ebsCsiProxy.notifications.wait_before_tag | string | `nil` |  |
 | ebsCsiProxy.resources.limits.memory | string | `"256Mi"` |  |
 | ebsCsiProxy.resources.requests.cpu | string | `"10m"` |  |
 | ebsCsiProxy.resources.requests.memory | string | `"40Mi"` |  |
+| ebsCsiProxy.volumeResolution.source | string | `"tags"` |  |
 | extendedInstallOnSensor | bool | `true` |  |
 | extraAnnotations | object | `{}` |  |
 | extraLabels | object | `{}` |  |
