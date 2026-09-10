@@ -56,5 +56,5 @@ jobs:
           else
             echo "✅ No need to update Chart version."
             exit 0
-          fi 
-          
+          fi
+

@@ -49,7 +49,7 @@ jobs:
         run: |
           current_chart_version=$(yq '.version' Chart.yaml)
           echo "current chart version=$current_chart_version"
-          echo "current_chart_version=$current_chart_version" >> "$GITHUB_OUTPUT"          
+          echo "current_chart_version=$current_chart_version" >> "$GITHUB_OUTPUT"
 
       - name: Create pull request for docs changes
         id: cpr_docs

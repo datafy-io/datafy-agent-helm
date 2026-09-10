@@ -187,5 +187,5 @@ ebsCsiProxy:
   ## @param ebsCsiProxy.notifications.wait_before_tag Testing-only: delay (e.g. "2s") the CSI proxy waits before sending the tag update when handling a notification. Empty disables the delay.
   ## @param ebsCsiProxy.notifications.wait_before_ack Testing-only: delay (e.g. "2s") the CSI proxy waits before acking a notification. Empty disables the delay.
   notifications:
-    wait_before_tag: 
-    wait_before_ack: 
+    wait_before_tag:
+    wait_before_ack:
