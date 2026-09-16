@@ -85,6 +85,9 @@ spec:
             - name: DATAFY_MOCKS_CORE_ENABLED
               value: {{ .Values.agent.coreMockEnabled | quote }}
             {{- end }}
+            {{- with .Values.agent.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
           resources:
             requests:
               cpu: 10m
