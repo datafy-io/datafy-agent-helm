@@ -194,7 +194,7 @@ jobs:
             --timeout 5m \
             --wait \
             --debug \
-            --server-side=false \
+            --force-conflicts \
             --set agent.dsoUrl='wss://dso-stg.datafy.io' \
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
