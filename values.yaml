@@ -17,7 +17,7 @@ imagePullSecrets: []
 ## @param extendedInstallOnSensor Enable controller/webhook-related resources
 ## If false, chart skips controller config, RBAC, webhook secret/config, and controller deployment/service.
 ##
-extendedInstallOnSensor: true
+extendedInstallOnSensor: false
 
 ## @param proxy.httpsProxy HTTPS proxy URL
 ## @param proxy.noProxy Comma-separated host/IP/CIDR/DNS-suffix list to bypass the proxy
