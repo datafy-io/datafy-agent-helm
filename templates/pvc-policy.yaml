@@ -1,0 +1,99 @@
+{{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
+# Rules for the datafy annotations on PVCs:
+#   Whenever one is written, its value must be legal.
+#   While the PVC is unbound (spec.volumeName empty, i.e. no PV behind it yet) they may be
+#   freely added, changed or removed -- it is not too late to matter.
+#   Once a volume is bound they cannot be added/changed anymore.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: datafy-pvc
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [ "" ]
+        apiVersions: [ "v1" ]
+        operations: [ "CREATE", "UPDATE" ]
+        resources: [ "persistentvolumeclaims" ]
+  variables:
+    - name: isUpdate
+      expression: "request.operation == 'UPDATE'"
+    # oldObject is null on CREATE; the ternary short-circuits so it is never touched there.
+    - name: oldAnn
+      expression: "variables.isUpdate ? oldObject.metadata.?annotations.orValue({}) : {}"
+    - name: newAnn
+      expression: "object.metadata.?annotations.orValue({})"
+    - name: boolKeys
+      expression: "['datafy.io/autoscaling', 'datafy.io/performance']"
+    - name: allKeys
+      expression: "variables.boolKeys + ['datafy.io/performance-tier']"
+    # A bound PVC has a PV behind it. volumeName is immutable once set, and reading it
+    # from oldObject means a request that binds and annotates at once still counts as unbound.
+    - name: wasBound
+      expression: "variables.isUpdate ? oldObject.spec.?volumeName.orValue('') != '' : false"
+    - name: perf
+      expression: "variables.newAnn[?'datafy.io/performance'].orValue('')"
+    - name: tier
+      expression: "variables.newAnn[?'datafy.io/performance-tier'].orValue('')"
+    # Untouched by this request -- such a pair is grandfathered so an unrelated update to an
+    # already-bad PVC is not rejected.
+    - name: pairUnchanged
+      expression: >-
+        variables.perf == variables.oldAnn[?'datafy.io/performance'].orValue('') &&
+        variables.tier == variables.oldAnn[?'datafy.io/performance-tier'].orValue('')
+  validations:
+    # 1. Whenever a boolean annotation is written, the value must be "true" or "false".
+    #    A value left untouched by the request is grandfathered, so an unrelated
+    #    update to an already-bad PVC is not rejected.
+    - expression: >-
+        variables.boolKeys.all(k,
+          !(k in variables.newAnn) ||
+          (k in variables.oldAnn && variables.oldAnn[k] == variables.newAnn[k]) ||
+          variables.newAnn[k] in ['true', 'false'])
+      message: "datafy.io/autoscaling and datafy.io/performance must be \"true\" or \"false\""
+      reason: Invalid
+    # 2. The performance tier is the number of volumes backing the array. Tiers below a pair
+    #    are not among the legal values: that is what a volume with no performance
+    #    optimization already has.
+    - expression: >-
+        variables.tier == '' || variables.pairUnchanged ||
+        variables.tier in ['4', '6', '8']
+      message: "datafy.io/performance-tier must be 4, 6 or 8"
+      reason: Invalid
+    # 3. An array is what performance optimization IS, so the tier means nothing without
+    #    the flag. The converse (the flag without a tier) is refused by csi-proxy, which
+    #    also sees the StorageClass parameters this policy cannot.
+    - expression: >-
+        variables.tier == '' || variables.pairUnchanged ||
+        variables.perf == 'true'
+      message: "datafy.io/performance-tier is only valid when datafy.io/performance is \"true\""
+      reason: Invalid
+    # 4. None of them can be added once a volume is bound -- the request has already been
+    #    honored, or was never seen. Removal stays allowed: that is how csi-proxy clears them.
+    - expression: >-
+        !variables.wasBound ||
+        variables.allKeys.all(k, k in variables.oldAnn || !(k in variables.newAnn))
+      message: "the datafy.io annotations must be set before the volume is provisioned; they cannot be added to a PVC that is already bound to a PV"
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: datafy-pvc
+  labels:
+  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- with .Values.extraAnnotations }}
+  annotations:
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  policyName: datafy-pvc
+  validationActions: [ "Deny" ]
+{{- end }}
