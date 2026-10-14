@@ -19,7 +19,7 @@ imagePullSecrets: []
 ##
 extendedInstallOnSensor: true
 
-## @param installId Pin the datafy.io/install-id of the controller-owned resources
+## @param installId Pin the datafy.io/installation-id of the chart's resources
 ## Empty (default) generates a new ID on every render. Set it for Argo CD to avoid a new
 ## ID on every re-render; change it whenever the app is recreated, or a controller left
 ## from the previous install can delete the new install's resources.

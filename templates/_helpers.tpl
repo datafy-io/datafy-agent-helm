@@ -274,12 +274,15 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 
 {{/*
 Install identity. Stamped on every resource the chart renders and passed to the
-controller as DATAFY_INSTALL_ID; the controller only deletes resources carrying its
+controller as DATAFY_INSTALLATION_ID; the controller only deletes resources carrying its
 own ID, so a controller left running by a previous install cannot tear down the
 release that replaced it (DT-11266).
 
 Helm is the only writer (DT-12308). When the controller also wrote it, Helm 4's
 server-side apply failed upgrades and reinstalls on the field-manager conflict.
+Renamed from datafy.io/install-id: on clusters upgraded from 4.1.x the old key is
+still owned by the controller's "datafy-install-id" field manager, so Helm cannot
+take it over; a key no manager has ever owned applies cleanly.
 
 A new random per render unless .Values.installId pins it, so every install gets a
 fresh ID and every upgrade replaces it. No `lookup`: `helm template` (Argo CD) has no
@@ -298,7 +301,7 @@ Outside the kustomize guard below, which would otherwise render no label at all.
 {{- end -}}
 
 {{- define "datafy-agent.installIdLabel" -}}
-datafy.io/install-id: {{ include "datafy-agent.installId" . | quote }}
+datafy.io/installation-id: {{ include "datafy-agent.installId" . | quote }}
 {{- end -}}
 
 {{/*

@@ -227,5 +227,5 @@ jobs:
         run: |
           kubectl get pods -n datafy-agent -o wide || true
           kubectl get events -n datafy-agent --sort-by=.lastTimestamp | tail -50 || true
-          helm list -n datafy-agent -a || true
+          helm list -n datafy-agent || true
           helm history datafy-agent -n datafy-agent 2>/dev/null || true

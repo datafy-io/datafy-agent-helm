@@ -67,7 +67,7 @@ helm uninstall datafy-agent --namespace <namespace>
 
 ## Install identity
 
-The chart labels every resource it renders with `datafy.io/install-id` (not pod templates, so agent pods don't restart on upgrade) and passes the same value to the controller as `DATAFY_INSTALL_ID`. The controller only deletes resources carrying its own ID, which stops a controller left behind by a previous install from tearing down the release that replaced it.
+The chart labels every resource it renders with `datafy.io/installation-id` (not pod templates, so agent pods don't restart on upgrade) and passes the same value to the controller as `DATAFY_INSTALLATION_ID`. The controller only deletes resources carrying its own ID, which stops a controller left behind by a previous install from tearing down the release that replaced it.
 
 Helm is the only writer of this value. A new ID is generated on every render — install, upgrade, or Argo CD sync — so the controller restarts on every upgrade.
 

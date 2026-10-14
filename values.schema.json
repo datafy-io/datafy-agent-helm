@@ -61,7 +61,7 @@
         "null"
       ],
       "pattern": "^$|^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$",
-      "description": "Pin the datafy.io/install-id of the controller-owned resources. Empty generates a new ID on every render"
+      "description": "Pin the datafy.io/installation-id of the chart's resources. Empty generates a new ID on every render"
     },
     "proxy": {
       "type": "object",

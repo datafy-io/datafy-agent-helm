@@ -76,10 +76,10 @@ spec:
                   fieldPath: metadata.namespace
             - name: DATAFY_TRANSPARENT_MODE_ENABLED
               value: {{ false | quote }}
-            # Same value as the datafy.io/install-id label on the controller-owned
+            # Same value as the datafy.io/installation-id label on the controller-owned
             # resources. Read-only for the controller: it deletes only resources whose
             # label matches, and must not write it back (DT-12308).
-            - name: DATAFY_INSTALL_ID
+            - name: DATAFY_INSTALLATION_ID
               value: {{ include "datafy-agent.installId" . | quote }}
             - name: DATAFY_TOKEN_SECRET_NAME
               value: {{ include "datafy-agent.tokenSecretName" . | quote }}

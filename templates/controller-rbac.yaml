@@ -55,7 +55,7 @@ rules:
     resources: [ "configmaps" ]
     resourceNames: [ "datafy-controller-config" ]
     verbs: [ "get", "update", "patch", "delete" ]
-  # list lets the controller find its own resources by the datafy.io/install-id label
+  # list lets the controller find its own resources by the datafy.io/installation-id label
   # instead of by name. RBAC cannot constrain a collection request by name, so it is
   # necessarily unrestricted; the delete below stays name-scoped.
   - apiGroups: [ "" ]
