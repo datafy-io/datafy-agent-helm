@@ -1,6 +1,6 @@
 # datafy-agent
 
-![Version: 4.1.0](https://img.shields.io/badge/Version-4.1.0-informational?style=flat-square) ![AppVersion: 2.1.0_2.1.0](https://img.shields.io/badge/AppVersion-2.1.0_2.1.0-informational?style=flat-square)
+![Version: 4.2.0](https://img.shields.io/badge/Version-4.2.0-informational?style=flat-square) ![AppVersion: 2.1.0_2.1.0](https://img.shields.io/badge/AppVersion-2.1.0_2.1.0-informational?style=flat-square)
 
 **App Version:**
 
@@ -29,7 +29,7 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent --version 4.1.0 datafyio/datafy-agent \
+helm install datafy-agent --version 4.2.0 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
 --set agent.token=<your_token> \
@@ -39,12 +39,12 @@ helm install datafy-agent --version 4.1.0 datafyio/datafy-agent \
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 4.1.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
+helm upgrade --install datafy-agent --version 4.2.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 4.1.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
+helm upgrade --install datafy-agent --version 4.2.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
 ```
 
 Rollback:
@@ -64,37 +64,23 @@ helm uninstall datafy-agent --namespace <namespace>
 ```
 ---
 
+## Install identity
+
+The chart labels the controller's resources with `datafy.io/install-id` and passes the same value to the controller as `DATAFY_INSTALL_ID`. The controller only deletes resources carrying its own ID, which stops a controller left behind by a previous install from tearing down the release that replaced it.
+
+Helm is the only writer of this value. A new ID is generated on every render — install, upgrade, or Argo CD sync — so the controller restarts on every upgrade.
+
 ## Argo CD
 
-The chart renders `datafy.io/install-id: unclaimed` on the controller's resources. The running controller replaces that value with the install marker's UID and will only delete resources carrying its own UID — which is what stops a controller left behind by a previous install from tearing down the release that replaced it.
+Argo CD renders the chart with `helm template`, so it generates a new ID every time it re-renders the chart, reports the application **OutOfSync**, and with auto-sync restarts the controller. This is safe — the labels and the controller always get the same value — but it is noise.
 
-Argo CD compares the rendered manifest against the cluster, so it sees `unclaimed` where the cluster has a UID and reports the application **OutOfSync**. With `selfHeal` enabled it goes further: Argo rewrites the label, the controller re-claims it, Argo sees drift again — a write loop across every controller resource.
-
-Nothing is at risk while that happens. `unclaimed` matches no controller, so the failure direction is a resource nobody deletes, never a resource the wrong install deletes. But the loop is noise, and it costs API writes.
-
-To silence it, tell Argo to ignore the field this controller owns:
+To keep the ID stable, pin it:
 
 ```yaml
-spec:
-  ignoreDifferences:
-    - group: "*"
-      kind: "*"
-      managedFieldsManagers:
-        - datafy-install-id
+installId: my-cluster-1
 ```
 
-The controller writes the label under that field manager specifically so one rule covers every resource and kind.
-
-For Argo versions without `managedFieldsManagers`, match the label directly instead — note that `/` is escaped as `~1` in a JSON pointer:
-
-```yaml
-spec:
-  ignoreDifferences:
-    - group: "*"
-      kind: "*"
-      jsonPointers:
-        - /metadata/labels/datafy.io~1install-id
-```
+Change `installId` whenever the application is deleted and recreated. Reusing the old value lets a controller left behind by the previous install delete the new install's resources.
 
 ## Proxy
 
@@ -166,6 +152,7 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | extraAnnotations | object | `{}` |  |
 | extraLabels | object | `{}` |  |
 | imagePullSecrets | list | `[]` |  |
+| installId | string | `""` |  |
 | monitor.image.pullPolicy | string | `"IfNotPresent"` |  |
 | monitor.image.repository | string | `"public.ecr.aws/datafy-io/datafy-monitor"` |  |
 | monitor.image.tag | string | `nil` |  |

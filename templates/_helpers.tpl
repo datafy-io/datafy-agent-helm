@@ -273,23 +273,32 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
-Install identity. The controller replaces "unclaimed" with the install marker's UID
-and only deletes resources carrying its own UID, so a controller left running by a
-previous install cannot tear down the release that replaced it (DT-11266).
+Install identity. Stamped on every controller-owned resource and passed to the
+controller as DATAFY_INSTALL_ID; the controller only deletes resources carrying its
+own ID, so a controller left running by a previous install cannot tear down the
+release that replaced it (DT-11266).
 
-A constant, not a generated ID: `helm template` has no cluster access, so `lookup`
-cannot reach the marker and a random would be reissued on every Argo CD sync. The
-constant is also what makes the hand-off safe — the next install writes it over the
-previous claim as part of adopting the resource.
+Helm is the only writer (DT-12308). When the controller also wrote it, Helm 4's
+server-side apply failed upgrades and reinstalls on the field-manager conflict.
+
+A new random per render unless .Values.installId pins it, so every install gets a
+fresh ID and every upgrade replaces it. No `lookup`: `helm template` (Argo CD) has no
+cluster access, and this keeps Helm 3, Helm 4 and Argo behaving the same.
+
+Memoized on .Values so every resource in one render shares the same value — each
+call to randAlphaNum would otherwise return a different one.
 
 Outside the kustomize guard below, which would otherwise render no label at all.
 */}}
-{{- define "datafy-agent.installIdUnclaimed" -}}
-unclaimed
+{{- define "datafy-agent.installId" -}}
+{{- if not (hasKey .Values "_installId") -}}
+{{- $_ := set .Values "_installId" (default (randAlphaNum 16 | lower) .Values.installId) -}}
+{{- end -}}
+{{- .Values._installId -}}
 {{- end -}}
 
 {{- define "datafy-agent.installIdLabel" -}}
-datafy.io/install-id: {{ include "datafy-agent.installIdUnclaimed" . }}
+datafy.io/install-id: {{ include "datafy-agent.installId" . | quote }}
 {{- end -}}
 
 {{/*

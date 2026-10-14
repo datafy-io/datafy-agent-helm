@@ -19,6 +19,13 @@ imagePullSecrets: []
 ##
 extendedInstallOnSensor: true
 
+## @param installId Pin the datafy.io/install-id of the controller-owned resources
+## Empty (default) generates a new ID on every render. Set it for Argo CD to avoid a new
+## ID on every re-render; change it whenever the app is recreated, or a controller left
+## from the previous install can delete the new install's resources.
+##
+installId: ""
+
 ## @param proxy.httpsProxy HTTPS proxy URL
 ## @param proxy.noProxy Comma-separated host/IP/CIDR/DNS-suffix list to bypass the proxy
 ##
