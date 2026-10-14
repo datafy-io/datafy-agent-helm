@@ -8,9 +8,10 @@ metadata:
   # ONLY for transparent uninstall mode.
   name: datafy-install-marker
   namespace: {{ .Release.Namespace }}
-  {{- with .Values.extraLabels }}
   labels:
-  {{ toYaml . | nindent 4 }}
+    {{- include "datafy-agent.installIdLabel" . | nindent 4 }}
+  {{- with .Values.extraLabels }}
+  {{- toYaml . | nindent 4 }}
   {{- end }}
   annotations:
   {{- with .Values.extraAnnotations }}

@@ -273,7 +273,7 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
-Install identity. Stamped on every controller-owned resource and passed to the
+Install identity. Stamped on every resource the chart renders and passed to the
 controller as DATAFY_INSTALL_ID; the controller only deletes resources carrying its
 own ID, so a controller left running by a previous install cannot tear down the
 release that replaced it (DT-11266).
@@ -302,16 +302,13 @@ datafy.io/install-id: {{ include "datafy-agent.installId" . | quote }}
 {{- end -}}
 
 {{/*
-Labels for the resources the datafy-controller owns and may delete on uninstall:
-the common labels plus the install identity.
+Resource metadata labels: the common labels plus the install identity. Used on every
+resource the chart renders (DT-12308).
 
 Separate from datafy-agent.labels rather than folded into it, because that helper is
-also used for the agent DaemonSet's pod template. A label there changes the
-pod-template hash, so every agent pod would roll on upgrade to this chart version —
-and agents being restarted mid-operation is what DT-11266 was reported for.
-
-Keeping the two apart also keeps the stamped set exactly the set the controller
-sweeps, which is the property the teardown depends on.
+also used for the agent DaemonSet's pod template. The ID changes on every render, so
+a label there would change the pod-template hash and roll every agent pod on every
+upgrade — and agents being restarted mid-operation is what DT-11266 was reported for.
 */}}
 {{- define "datafy-agent.controllerLabels" -}}
 {{ include "datafy-agent.installIdLabel" . }}
