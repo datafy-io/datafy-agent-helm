@@ -222,6 +222,45 @@ jobs:
             kubectl get pods -n "$NS" -o wide >&2 || true
           fi
 
+      # Reinstall straight away, while the previous controller may still be winding
+      # down: its kept resources still exist and carry the previous install's writes,
+      # so Helm 4 server-side apply must take them over without conflicts (DT-12308).
+      - name: Show leftovers before reinstall
+        run: |
+          NS=datafy-agent
+          kubectl get deploy,svc,sa,cm,secret -n "$NS" -L datafy.io/installation-id,datafy.io/install-id || true
+          kubectl get deploy datafy-controller -n "$NS" -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' || true
+
+      - name: Helm reinstall (PR branch chart)
+        run: |
+          set -euo pipefail
+          NS=datafy-agent
+          helm install datafy-agent . \
+            --namespace "$NS" \
+            --timeout 5m \
+            --wait \
+            --debug \
+            --set agent.dsoUrl='wss://dso-stg.datafy.io' \
+            --set agent.token=${{ secrets.STGN_SECRET }} \
+            --set agent.mode=AutoScaler \
+            --set agent.coreMockEnabled=true \
+            --set agent.hqMockEnabled=true
+
+      - name: Verify reinstall
+        run: |
+          set -euo pipefail
+          NS=datafy-agent
+          ID=$(kubectl get deploy datafy-controller -n "$NS" -o jsonpath='{.metadata.labels.datafy\.io/installation-id}')
+          echo "installation-id after reinstall: $ID"
+          kubectl get deploy,svc,sa,cm,secret -n "$NS" -L datafy.io/installation-id,datafy.io/install-id
+          kubectl get deploy datafy-controller -n "$NS" -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | grep -E 'INSTALL|TRANSPARENT'
+          kubectl rollout status deploy/datafy-controller -n "$NS" --timeout 3m
+
+      - name: Helm uninstall (after reinstall)
+        run: |
+          set -euo pipefail
+          helm uninstall datafy-agent --namespace datafy-agent --wait --timeout 5m --debug
+
       - name: Debug upgrade / uninstall failure
         if: failure()
         run: |
