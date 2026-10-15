@@ -43,6 +43,19 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1.14.0
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.MANAGEMENT_AWS_ROLE_ARN }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: ECR pull secret for the controller image
+        run: bash scripts/helm-validation/ecr-pull-secret.sh "${{ steps.ecr.outputs.registry }}" test
+
       - name: Apply fake EBS CSI resources
         run: kubectl apply -f scripts/helm-validation/fake-ebs-csi.yaml
 
@@ -92,7 +105,7 @@ jobs:
             --config .ct.yaml \
             --namespace "$NS" \
             --skip-clean-up \
-            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} --set agent.coreMockEnabled=true --set agent.hqMockEnabled=true"
+            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} --set agent.coreMockEnabled=true --set agent.hqMockEnabled=true --set controller.image.repository=${{ steps.ecr.outputs.registry }}/datafy-io/datafy-controller --set imagePullSecrets[0]=ecr-pull"
 
       - name: Debug chart install failure
         if: failure() && steps.ct_install.outcome == 'failure'
@@ -163,6 +176,19 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1.14.0
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.MANAGEMENT_AWS_ROLE_ARN }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: ECR pull secret for the controller image
+        run: bash scripts/helm-validation/ecr-pull-secret.sh "${{ steps.ecr.outputs.registry }}" datafy-agent
+
       - name: Apply fake EBS CSI resources
         run: kubectl apply -f scripts/helm-validation/fake-ebs-csi.yaml
 
@@ -173,6 +199,8 @@ jobs:
         run: |
           set -euo pipefail
           NS=datafy-agent
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm install datafy-agent datafyio/datafy-agent \
             --namespace "$NS" \
             --create-namespace \
@@ -189,6 +217,8 @@ jobs:
         run: |
           set -euo pipefail
           NS=datafy-agent
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm upgrade datafy-agent . \
             --namespace "$NS" \
             --timeout 5m \
@@ -198,7 +228,9 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set controller.image.repository=${{ steps.ecr.outputs.registry }}/datafy-io/datafy-controller \
+            --set imagePullSecrets[0]=ecr-pull
 
       - name: Verify installation-id after upgrade
         run: |
@@ -211,6 +243,8 @@ jobs:
         run: |
           set -euo pipefail
           NS=datafy-agent
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm upgrade datafy-agent . \
             --namespace "$NS" \
             --timeout 5m \
@@ -220,7 +254,9 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set controller.image.repository=${{ steps.ecr.outputs.registry }}/datafy-io/datafy-controller \
+            --set imagePullSecrets[0]=ecr-pull
 
       - name: Verify installation-id changed after second upgrade
         run: |
@@ -252,8 +288,7 @@ jobs:
       - name: Debug upgrade / uninstall failure
         if: failure()
         run: |
-          kubectl get pods -n datafy-agent -o wide || true
-          kubectl get events -n datafy-agent --sort-by=.lastTimestamp | tail -50 || true
+          bash scripts/helm-validation/snapshot.sh datafy-agent || true
           helm list -n datafy-agent || true
           helm history datafy-agent -n datafy-agent 2>/dev/null || true
 
@@ -276,6 +311,19 @@ jobs:
       - name: Create kind cluster
         uses: helm/kind-action@v1.14.0
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ vars.AWS_DEFAULT_REGION }}
+          role-to-assume: ${{ secrets.MANAGEMENT_AWS_ROLE_ARN }}
+
+      - name: Login to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: ECR pull secret for the controller image
+        run: bash scripts/helm-validation/ecr-pull-secret.sh "${{ steps.ecr.outputs.registry }}" datafy-agent
+
       - name: Apply fake EBS CSI resources
         run: kubectl apply -f scripts/helm-validation/fake-ebs-csi.yaml
 
@@ -285,6 +333,8 @@ jobs:
       - name: Helm install (PR branch chart)
         run: |
           set -euo pipefail
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm install datafy-agent . \
             --namespace "$NS" \
             --create-namespace \
@@ -295,7 +345,9 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set controller.image.repository=${{ steps.ecr.outputs.registry }}/datafy-io/datafy-controller \
+            --set imagePullSecrets[0]=ecr-pull
 
       - name: Verify installation-id after install
         run: |
@@ -315,6 +367,8 @@ jobs:
       - name: Helm reinstall (PR branch chart)
         run: |
           set -euo pipefail
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm install datafy-agent . \
             --namespace "$NS" \
             --timeout 5m \
@@ -324,7 +378,9 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set controller.image.repository=${{ steps.ecr.outputs.registry }}/datafy-io/datafy-controller \
+            --set imagePullSecrets[0]=ecr-pull
 
       - name: Verify reinstall
         run: |
@@ -342,8 +398,7 @@ jobs:
       - name: Debug reinstall failure
         if: failure()
         run: |
-          kubectl get pods -n "$NS" -o wide || true
-          kubectl get events -n "$NS" --sort-by=.lastTimestamp | tail -50 || true
+          bash scripts/helm-validation/snapshot.sh "$NS" || true
           helm list -n "$NS" || true
           helm history datafy-agent -n "$NS" 2>/dev/null || true
 
