@@ -230,7 +230,7 @@ jobs:
           helm list -n datafy-agent || true
           helm history datafy-agent -n datafy-agent 2>/dev/null || true
 
-  # PR chart: install → uninstall → install → uninstall (DT-12308).
+  # PR chart: install → uninstall → install → uninstall.
   # The second install lands on the controller resources the first one kept
   # (helm.sh/resource-policy: keep), so Helm 4 server-side apply must take them over
   # without conflicts, and the reinstall must get a new installation-id.
@@ -322,3 +322,17 @@ jobs:
           kubectl get events -n "$NS" --sort-by=.lastTimestamp | tail -50 || true
           helm list -n "$NS" || true
           helm history datafy-agent -n "$NS" 2>/dev/null || true
+
+  # Every rendered resource must carry the datafy.io/installation-id label.
+  testlabels:
+    runs-on: ubuntu-latest
+    name: test_installation_id_label
+    steps:
+      - name: Checkout repository (PR branch chart)
+        uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5.0.0
+
+      - name: Check installation-id label on all resources
+        run: bash scripts/helm-validation/check-installation-id.sh .

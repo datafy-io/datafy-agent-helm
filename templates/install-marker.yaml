@@ -9,10 +9,7 @@ metadata:
   name: datafy-install-marker
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "datafy-agent.installIdLabel" . | nindent 4 }}
-  {{- with .Values.extraLabels }}
-  {{- toYaml . | nindent 4 }}
-  {{- end }}
+  {{- include "datafy-agent.labels" . | nindent 4 }}
   annotations:
   {{- with .Values.extraAnnotations }}
   {{- toYaml . | nindent 4 }}

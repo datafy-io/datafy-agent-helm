@@ -273,25 +273,10 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
-Install identity. Stamped on every resource the chart renders and passed to the
-controller as DATAFY_INSTALLATION_ID; the controller only deletes resources carrying its
-own ID, so a controller left running by a previous install cannot tear down the
-release that replaced it (DT-11266).
-
-Helm is the only writer (DT-12308). When the controller also wrote it, Helm 4's
-server-side apply failed upgrades and reinstalls on the field-manager conflict.
-Renamed from datafy.io/install-id: on clusters upgraded from 4.1.x the old key is
-still owned by the controller's "datafy-install-id" field manager, so Helm cannot
-take it over; a key no manager has ever owned applies cleanly.
-
-A new random per render unless .Values.installId pins it, so every install gets a
-fresh ID and every upgrade replaces it. No `lookup`: `helm template` (Argo CD) has no
-cluster access, and this keeps Helm 3, Helm 4 and Argo behaving the same.
-
-Memoized on .Values so every resource in one render shares the same value — each
-call to randAlphaNum would otherwise return a different one.
-
-Outside the kustomize guard below, which would otherwise render no label at all.
+installId identifies this install: the datafy.io/installation-id label on every
+resource and DATAFY_INSTALLATION_ID on the controller. The controller only deletes
+resources carrying its own ID. A new random ID per render unless .Values.installId
+is set; computed once per render so all resources share it.
 */}}
 {{- define "datafy-agent.installId" -}}
 {{- if not (hasKey .Values "_installId") -}}
@@ -300,31 +285,22 @@ Outside the kustomize guard below, which would otherwise render no label at all.
 {{- .Values._installId -}}
 {{- end -}}
 
-{{- define "datafy-agent.installIdLabel" -}}
-datafy.io/installation-id: {{ include "datafy-agent.installId" . | quote }}
-{{- end -}}
-
-{{/*
-Resource metadata labels: the common labels plus the install identity. Used on every
-resource the chart renders (DT-12308).
-
-Separate from datafy-agent.labels rather than folded into it, because that helper is
-also used for the agent DaemonSet's pod template. The ID changes on every render, so
-a label there would change the pod-template hash and roll every agent pod on every
-upgrade — and agents being restarted mid-operation is what DT-11266 was reported for.
-*/}}
-{{- define "datafy-agent.controllerLabels" -}}
-{{ include "datafy-agent.installIdLabel" . }}
-{{- $shared := include "datafy-agent.labels" . -}}
-{{- if $shared }}
-{{ $shared }}
-{{- end -}}
-{{- end -}}
-
 {{/*
 Common labels for all resources
 */}}
 {{- define "datafy-agent.labels" -}}
+datafy.io/installation-id: {{ include "datafy-agent.installId" . | quote }}
+{{- $pod := include "datafy-agent.podLabels" . }}
+{{- if $pod }}
+{{ $pod }}
+{{- end }}
+{{- end -}}
+
+{{/*
+Pod template labels: the common labels without installation-id, which changes on
+every render and would restart the pods.
+*/}}
+{{- define "datafy-agent.podLabels" -}}
 {{- if ne .Release.Name "kustomize" -}}
 helm.sh/chart: {{ include "datafy-agent.chart" . }}
 {{- if .Chart.AppVersion }}
