@@ -74,14 +74,6 @@ Helm is the only writer of this value. A new ID is generated on every render —
 
 Argo CD renders the chart with `helm template`, so it generates a new ID every time it re-renders the chart, reports the application **OutOfSync**, and with auto-sync restarts the controller. This is safe — the labels and the controller always get the same value — but it is noise.
 
-To keep the ID stable, pin it:
-
-```yaml
-installId: my-cluster-1
-```
-
-Change `installId` whenever the application is deleted and recreated. Reusing the old value lets a controller left behind by the previous install delete the new install's resources.
-
 ## Proxy
 
 Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The chart renders both the uppercase and lowercase env vars (`HTTPS_PROXY`/`https_proxy`, `NO_PROXY`/`no_proxy`) on each chart-managed container.
@@ -152,7 +144,6 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | extraAnnotations | object | `{}` |  |
 | extraLabels | object | `{}` |  |
 | imagePullSecrets | list | `[]` |  |
-| installId | string | `""` |  |
 | monitor.image.pullPolicy | string | `"IfNotPresent"` |  |
 | monitor.image.repository | string | `"public.ecr.aws/datafy-io/datafy-monitor"` |  |
 | monitor.image.tag | string | `nil` |  |

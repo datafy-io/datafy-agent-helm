@@ -275,12 +275,12 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{/*
 installId identifies this install: the datafy.io/installation-id label on every
 resource and DATAFY_INSTALLATION_ID on the controller. The controller only deletes
-resources carrying its own ID. A new random ID per render unless .Values.installId
-is set; computed once per render so all resources share it.
+resources carrying its own ID. A new random ID per render, computed once so all
+resources share it.
 */}}
 {{- define "datafy-agent.installId" -}}
 {{- if not (hasKey .Values "_installId") -}}
-{{- $_ := set .Values "_installId" (default (randAlphaNum 16 | lower) .Values.installId) -}}
+{{- $_ := set .Values "_installId" (randAlphaNum 16 | lower) -}}
 {{- end -}}
 {{- .Values._installId -}}
 {{- end -}}
