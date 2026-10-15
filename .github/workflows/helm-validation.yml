@@ -199,6 +199,8 @@ jobs:
         run: |
           set -euo pipefail
           NS=datafy-agent
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm install datafy-agent datafyio/datafy-agent \
             --namespace "$NS" \
             --create-namespace \
@@ -215,6 +217,8 @@ jobs:
         run: |
           set -euo pipefail
           NS=datafy-agent
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm upgrade datafy-agent . \
             --namespace "$NS" \
             --timeout 5m \
@@ -253,8 +257,7 @@ jobs:
       - name: Debug upgrade / uninstall failure
         if: failure()
         run: |
-          kubectl get pods -n datafy-agent -o wide || true
-          kubectl get events -n datafy-agent --sort-by=.lastTimestamp | tail -50 || true
+          bash scripts/helm-validation/snapshot.sh datafy-agent || true
           helm list -n datafy-agent || true
           helm history datafy-agent -n datafy-agent 2>/dev/null || true
 
@@ -299,6 +302,8 @@ jobs:
       - name: Helm install (PR branch chart)
         run: |
           set -euo pipefail
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm install datafy-agent . \
             --namespace "$NS" \
             --create-namespace \
@@ -328,6 +333,8 @@ jobs:
       - name: Helm reinstall (PR branch chart)
         run: |
           set -euo pipefail
+          ( while true; do sleep 30; bash scripts/helm-validation/snapshot.sh "$NS"; done ) &
+          trap 'kill $! 2>/dev/null || true' EXIT
           helm install datafy-agent . \
             --namespace "$NS" \
             --timeout 5m \
@@ -363,8 +370,7 @@ jobs:
       - name: Debug reinstall failure
         if: failure()
         run: |
-          kubectl get pods -n "$NS" -o wide || true
-          kubectl get events -n "$NS" --sort-by=.lastTimestamp | tail -50 || true
+          bash scripts/helm-validation/snapshot.sh "$NS" || true
           helm list -n "$NS" || true
           helm history datafy-agent -n "$NS" 2>/dev/null || true
 
