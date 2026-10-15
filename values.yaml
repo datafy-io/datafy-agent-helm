@@ -129,7 +129,7 @@ controller:
   image:
     pullPolicy: IfNotPresent
     repository: public.ecr.aws/datafy-io/datafy-controller
-    tag:
+    tag: DT-12308_stop-claim-resources
 
   ## @param controller.readinessProbe
   ## Ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes
