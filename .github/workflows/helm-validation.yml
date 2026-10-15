@@ -200,6 +200,33 @@ jobs:
             --set agent.coreMockEnabled=true \
             --set agent.hqMockEnabled=true
 
+      - name: Verify installation-id after upgrade
+        run: |
+          set -euo pipefail
+          bash scripts/helm-validation/check-cluster-installation-id.sh datafy-agent > /tmp/upgrade-id
+
+      # Upgrading again renders a new installation-id; every resource and the
+      # controller must move to it together.
+      - name: Helm upgrade again (PR branch chart)
+        run: |
+          set -euo pipefail
+          NS=datafy-agent
+          helm upgrade datafy-agent . \
+            --namespace "$NS" \
+            --timeout 5m \
+            --wait \
+            --debug \
+            --set agent.dsoUrl='wss://dso-stg.datafy.io' \
+            --set agent.token=${{ secrets.STGN_SECRET }} \
+            --set agent.mode=AutoScaler \
+            --set agent.coreMockEnabled=true \
+            --set agent.hqMockEnabled=true
+
+      - name: Verify installation-id changed after second upgrade
+        run: |
+          set -euo pipefail
+          bash scripts/helm-validation/check-cluster-installation-id.sh datafy-agent "$(cat /tmp/upgrade-id)"
+
       - name: Helm uninstall
         run: |
           set -euo pipefail
@@ -269,8 +296,11 @@ jobs:
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
             --set agent.hqMockEnabled=true
-          kubectl get deploy datafy-controller -n "$NS" -o jsonpath='{.metadata.labels.datafy\.io/installation-id}' > /tmp/first-id
-          echo "installation-id after install: $(cat /tmp/first-id)"
+
+      - name: Verify installation-id after install
+        run: |
+          set -euo pipefail
+          bash scripts/helm-validation/check-cluster-installation-id.sh "$NS" > /tmp/first-id
 
       - name: Helm uninstall
         run: |
@@ -299,13 +329,7 @@ jobs:
       - name: Verify reinstall
         run: |
           set -euo pipefail
-          FIRST=$(cat /tmp/first-id)
-          ID=$(kubectl get deploy datafy-controller -n "$NS" -o jsonpath='{.metadata.labels.datafy\.io/installation-id}')
-          echo "installation-id: first install $FIRST, reinstall $ID"
-          if [[ -z "$ID" || "$ID" == "$FIRST" ]]; then
-            echo "Reinstall must get a new installation-id" >&2
-            exit 1
-          fi
+          bash scripts/helm-validation/check-cluster-installation-id.sh "$NS" "$(cat /tmp/first-id)"
           kubectl get deploy,svc,sa,cm,secret -n "$NS" -L datafy.io/installation-id,datafy.io/install-id
           kubectl get deploy datafy-controller -n "$NS" -o jsonpath='{range .spec.template.spec.containers[0].env[*]}{.name}={.value}{"\n"}{end}' | grep -E 'INSTALL|TRANSPARENT'
           kubectl rollout status deploy/datafy-controller -n "$NS" --timeout 3m
