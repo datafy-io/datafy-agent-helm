@@ -42,7 +42,7 @@ data:
       no_proxy: {{ .noProxy | quote }}
       {{- end }}
       {{- end }}
-    {{- with .Values.agent.affinity.nodeAffinity }}
+    {{- with (include "datafy-agent.agentAffinity" . | fromYaml).nodeAffinity }}
     agent:
       node_affinity:
         {{- toYaml . | nindent 8 }}
