@@ -25,13 +25,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Run helm-docs
-        uses: losisin/helm-docs-github-action@v1
+        uses: losisin/helm-docs-github-action@v2
 
       - name: Detect README changes
         id: diff

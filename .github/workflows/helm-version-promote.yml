@@ -125,7 +125,7 @@ jobs:
           fi
 
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: ${{ github.repository }}
           ref: ${{ env.TARGET_BRANCH }}
@@ -186,7 +186,7 @@ jobs:
           yq -i ".version = \"${NEW_CHART_VERSION}\"" Chart.yaml
 
       - name: Run helm-docs
-        uses: losisin/helm-docs-github-action@v1
+        uses: losisin/helm-docs-github-action@v2
 
       - name: Create chart update pull request
         id: cpr
