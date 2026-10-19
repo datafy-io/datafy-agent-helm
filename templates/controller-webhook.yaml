@@ -55,6 +55,9 @@ webhooks:
             - datafy-agent
             - aws-cluster-autoscaler
             - aws-node
+            {{- range (((.Values.controller).webhook).excludedPods).appNames }}
+            - {{ . | quote }}
+            {{- end }}
         - key: "k8s-app"
           operator: "NotIn"
           values:
@@ -62,6 +65,9 @@ webhooks:
             - kube-proxy
             - coredns
             - aws-node
+            {{- range (((.Values.controller).webhook).excludedPods).k8sApps }}
+            - {{ . | quote }}
+            {{- end }}
     clientConfig:
       service:
         namespace: {{ .Release.Namespace }}
