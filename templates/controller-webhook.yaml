@@ -68,6 +68,14 @@ webhooks:
             {{- range (((.Values.controller).webhook).excludedPods).k8sApps | default list | compact }}
             - {{ . | quote }}
             {{- end }}
+        {{- with (((.Values.controller).webhook).excludedPods).apps | default list | compact }}
+        - key: "app"
+          operator: "NotIn"
+          values:
+            {{- range . }}
+            - {{ . | quote }}
+            {{- end }}
+        {{- end }}
     clientConfig:
       service:
         namespace: {{ .Release.Namespace }}
