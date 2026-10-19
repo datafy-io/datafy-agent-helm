@@ -169,18 +169,16 @@ controller:
 
   ## Pods the pod mutation webhook must skip, appended to the built-in exclusions.
   ## Use it for node-level datapath components (CNI, mesh) that must start even when
-  ## the webhook is unreachable, e.g. Istio ambient ztunnel or Calico:
-  ##   --set "controller.webhook.excludedPods.appNames={ztunnel,istio-cni}"
-  ##   --set "controller.webhook.excludedPods.k8sApps={calico-node,istio-cni-node}"
-  ##   --set "controller.webhook.excludedPods.apps={ztunnel}"
+  ## the webhook is unreachable, e.g. Istio ambient ztunnel or Calico.
+  ## Map of label key -> list of label values; each key becomes a "NotIn" expression
+  ## (app.kubernetes.io/name and k8s-app extend the built-in lists):
+  ##   --set "controller.webhook.excludedPods.labels.app={ztunnel}"
+  ##   --set "controller.webhook.excludedPods.labels.k8s-app={istio-cni-node,calico-node}"
+  ##   --set "controller.webhook.excludedPods.labels.app\.kubernetes\.io/name={my-app}"
   webhook:
     excludedPods:
-      ## @param controller.webhook.excludedPods.appNames Values of the app.kubernetes.io/name label to exclude
-      appNames: []
-      ## @param controller.webhook.excludedPods.k8sApps Values of the k8s-app label to exclude
-      k8sApps: []
-      ## @param controller.webhook.excludedPods.apps Values of the app label to exclude
-      apps: []
+      ## @param controller.webhook.excludedPods.labels Label key -> values of pods to exclude
+      labels: {}
 
 ebsCsiProxy:
   image:

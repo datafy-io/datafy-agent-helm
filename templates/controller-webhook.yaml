@@ -46,6 +46,12 @@ webhooks:
         operations: [ "CREATE" ]
         resources: [ "pods" ]
         scope: "*"
+    {{- $excluded := (((.Values.controller).webhook).excludedPods).labels | default dict }}
+    {{- range $key, $values := $excluded }}
+    {{- if and $values (not (kindIs "slice" $values)) }}
+    {{- fail (printf "controller.webhook.excludedPods.labels.%s must be a list of label values (with --set, escape dots in the label key: labels.app\\.kubernetes\\.io/name={...})" $key) }}
+    {{- end }}
+    {{- end }}
     objectSelector:
       matchExpressions:
         - key: "app.kubernetes.io/name"
@@ -55,7 +61,7 @@ webhooks:
             - datafy-agent
             - aws-cluster-autoscaler
             - aws-node
-            {{- range (((.Values.controller).webhook).excludedPods).appNames | default list | compact }}
+            {{- range get $excluded "app.kubernetes.io/name" | default list | compact }}
             - {{ . | quote }}
             {{- end }}
         - key: "k8s-app"
@@ -65,16 +71,20 @@ webhooks:
             - kube-proxy
             - coredns
             - aws-node
-            {{- range (((.Values.controller).webhook).excludedPods).k8sApps | default list | compact }}
+            {{- range get $excluded "k8s-app" | default list | compact }}
             - {{ . | quote }}
             {{- end }}
-        {{- with (((.Values.controller).webhook).excludedPods).apps | default list | compact }}
-        - key: "app"
+        {{- range $key := keys $excluded | sortAlpha }}
+        {{- if not (has $key (list "app.kubernetes.io/name" "k8s-app")) }}
+        {{- with get $excluded $key | default list | compact }}
+        - key: {{ $key | quote }}
           operator: "NotIn"
           values:
             {{- range . }}
             - {{ . | quote }}
             {{- end }}
+        {{- end }}
+        {{- end }}
         {{- end }}
     clientConfig:
       service:
