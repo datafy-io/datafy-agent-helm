@@ -172,12 +172,15 @@ controller:
   ## the webhook is unreachable, e.g. Istio ambient ztunnel or Calico:
   ##   --set "controller.webhook.excludedPods.appNames={ztunnel,istio-cni}"
   ##   --set "controller.webhook.excludedPods.k8sApps={calico-node,istio-cni-node}"
+  ##   --set "controller.webhook.excludedPods.apps={ztunnel}"
   webhook:
     excludedPods:
       ## @param controller.webhook.excludedPods.appNames Values of the app.kubernetes.io/name label to exclude
       appNames: []
       ## @param controller.webhook.excludedPods.k8sApps Values of the k8s-app label to exclude
       k8sApps: []
+      ## @param controller.webhook.excludedPods.apps Values of the app label to exclude
+      apps: []
 
 ebsCsiProxy:
   image:
