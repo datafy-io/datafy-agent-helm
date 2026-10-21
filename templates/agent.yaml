@@ -24,7 +24,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "datafy-agent.labels" . | nindent 8 }}
+        {{- include "datafy-agent.podLabels" . | nindent 8 }}
     spec:
       {{- $affinity := include "datafy-agent.agentAffinity" . | trim }}
       {{- if $affinity }}
