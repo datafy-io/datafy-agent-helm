@@ -23,6 +23,9 @@ spec:
   template:
     metadata:
       labels:
+        # The label the upstream chart puts on the pod template, and the one
+        # datafy-controller selects on (csidriver.go MatchingLabels{"app": …}).
+        app: ebs-csi-controller
         app.kubernetes.io/name: ebs-csi-controller
         app.kubernetes.io/version: "v0.0.0-fake"
     spec:
@@ -59,6 +62,9 @@ spec:
   template:
     metadata:
       labels:
+        # The label the upstream chart puts on the pod template, and the one
+        # datafy-controller selects on (csidriver.go MatchingLabels{"app": …}).
+        app: ebs-csi-node
         app.kubernetes.io/name: ebs-csi-node
         app.kubernetes.io/version: "v0.0.0-fake"
     spec:
