@@ -121,8 +121,9 @@ if render -f "$S/l-all.yaml" | sed -n '/agent-delete/,$p' | grep -qE 'ztunnel|ca
 # Default render must be byte-identical to the chart before this change
 if [[ -n ${BASELINE_REF:-} ]]; then
   tmp=$(mktemp -d); git -C "$CHART" archive "$BASELINE_REF" | tar -x -C "$tmp"
-  if diff <(helm template t "$tmp" "${BASE[@]}" -s templates/controller-webhook.yaml | grep -v -E 'tls\.(crt|key)|caBundle|helm.sh/chart') \
-          <(render | grep -v -E 'tls\.(crt|key)|caBundle|helm.sh/chart') >/dev/null; then
+  # installation-id is random per render
+  if diff <(helm template t "$tmp" "${BASE[@]}" -s templates/controller-webhook.yaml | grep -v -E 'tls\.(crt|key)|caBundle|helm.sh/chart|installation-id') \
+          <(render | grep -v -E 'tls\.(crt|key)|caBundle|helm.sh/chart|installation-id') >/dev/null; then
     ok "default render identical to $BASELINE_REF"; else bad "default render identical to $BASELINE_REF"; fi
   rm -rf "$tmp"
 fi
