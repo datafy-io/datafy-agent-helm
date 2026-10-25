@@ -27,9 +27,16 @@ if [[ ${#IMAGES[@]} -eq 0 ]]; then
   exit 1
 fi
 
+# Images are multi-arch. With Docker's containerd image store, `kind load docker-image`
+# exports the whole index but only this platform's blobs, and ctr import fails with
+# "content digest ... not found". Pull and save a single platform instead.
+PLATFORM=$(docker version -f '{{.Server.Os}}/{{.Server.Arch}}')
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+
 for img in "${IMAGES[@]}"; do
   for attempt in 1 2 3 4 5 6; do
-    if docker pull -q "$img"; then
+    if docker pull -q --platform "$PLATFORM" "$img"; then
       break
     fi
     if [[ $attempt -eq 6 ]]; then
@@ -40,5 +47,6 @@ for img in "${IMAGES[@]}"; do
     echo "Pull of $img failed (attempt $attempt), retrying in ${delay}s" >&2
     sleep "$delay"
   done
-  kind load docker-image "$img" --name "$CLUSTER"
+  docker save --platform "$PLATFORM" -o "$TMP/image.tar" "$img"
+  kind load image-archive "$TMP/image.tar" --name "$CLUSTER"
 done
