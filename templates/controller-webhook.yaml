@@ -71,9 +71,14 @@ webhooks:
             - kube-proxy
             - coredns
             - aws-node
+            - istio-cni-node
             {{- range get $excluded "k8s-app" | default list | compact }}
             - {{ . | quote }}
             {{- end }}
+        - key: "app"
+          operator: "NotIn"
+          values:
+            - ztunnel
         {{- range $key := keys $excluded | sortAlpha }}
         {{- if not (has $key (list "app.kubernetes.io/name" "k8s-app")) }}
         {{- with get $excluded $key | default list | compact }}
