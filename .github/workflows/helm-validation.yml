@@ -50,6 +50,26 @@ jobs:
       - name: Fake EC2 IMDS on Kind nodes
         run: bash scripts/helm-validation/setup-kind-fake-ec2-imds.sh
 
+      # Authenticated pulls from public ECR get a much higher rate limit than anonymous ones.
+      # Best effort: if the role can't be assumed (e.g. fork PRs), fall back to anonymous pulls with retries.
+      - name: Configure AWS credentials (ECR Public)
+        id: aws_creds
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+
+      - name: Log in to ECR Public
+        if: steps.aws_creds.outcome == 'success'
+        continue-on-error: true
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Preload images into kind
+        run: bash scripts/helm-validation/preload-kind-images.sh . --set agent.token=x --set agent.mode=${{ matrix.mode }}
+
       - name: Run chart-testing (install)
         id: ct_install
         run: |
@@ -92,7 +112,7 @@ jobs:
             --config .ct.yaml \
             --namespace "$NS" \
             --skip-clean-up \
-            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} --set agent.coreMockEnabled=true --set agent.hqMockEnabled=true"
+            --helm-extra-set-args "--debug --create-namespace --timeout 5m --set agent.dsoUrl='wss://dso-stg.datafy.io' --set agent.token=${{ secrets.STGN_SECRET }} --set agent.mode=${{ matrix.mode }} --set agent.coreMockEnabled=true --set agent.hqMockEnabled=true --set agent.image.pullPolicy=IfNotPresent"
 
       - name: Debug chart install failure
         if: failure() && steps.ct_install.outcome == 'failure'
@@ -169,6 +189,26 @@ jobs:
       - name: Fake EC2 IMDS on Kind nodes
         run: bash scripts/helm-validation/setup-kind-fake-ec2-imds.sh
 
+      - name: Configure AWS credentials (ECR Public)
+        id: aws_creds
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+
+      - name: Log in to ECR Public
+        if: steps.aws_creds.outcome == 'success'
+        continue-on-error: true
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Preload images into kind
+        run: |
+          bash scripts/helm-validation/preload-kind-images.sh datafyio/datafy-agent --set agent.token=x --set agent.mode=AutoScaler
+          bash scripts/helm-validation/preload-kind-images.sh . --set agent.token=x --set agent.mode=AutoScaler
+
       - name: Helm install (published chart)
         run: |
           set -euo pipefail
@@ -183,7 +223,8 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set agent.image.pullPolicy=IfNotPresent
 
       - name: Helm upgrade (PR branch chart)
         run: |
@@ -198,7 +239,8 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set agent.image.pullPolicy=IfNotPresent
 
       - name: Verify installation-id after upgrade
         run: |
@@ -220,7 +262,8 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set agent.image.pullPolicy=IfNotPresent
 
       - name: Verify installation-id changed after second upgrade
         run: |
@@ -282,6 +325,24 @@ jobs:
       - name: Fake EC2 IMDS on Kind nodes
         run: bash scripts/helm-validation/setup-kind-fake-ec2-imds.sh
 
+      - name: Configure AWS credentials (ECR Public)
+        id: aws_creds
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+
+      - name: Log in to ECR Public
+        if: steps.aws_creds.outcome == 'success'
+        continue-on-error: true
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Preload images into kind
+        run: bash scripts/helm-validation/preload-kind-images.sh . --set agent.token=x --set agent.mode=AutoScaler
+
       - name: Helm install (PR branch chart)
         run: |
           set -euo pipefail
@@ -295,7 +356,8 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set agent.image.pullPolicy=IfNotPresent
 
       - name: Verify installation-id after install
         run: |
@@ -324,7 +386,8 @@ jobs:
             --set agent.token=${{ secrets.STGN_SECRET }} \
             --set agent.mode=AutoScaler \
             --set agent.coreMockEnabled=true \
-            --set agent.hqMockEnabled=true
+            --set agent.hqMockEnabled=true \
+            --set agent.image.pullPolicy=IfNotPresent
 
       - name: Verify reinstall
         run: |
