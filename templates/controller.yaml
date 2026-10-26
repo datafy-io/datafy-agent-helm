@@ -7,7 +7,8 @@ metadata:
   name: datafy-controller
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
+  {{- include "datafy-agent.common.labels.withInstallationId" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -21,13 +22,15 @@ spec:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  # Immutable after install. The controller Services select on the same label.
   selector:
     matchLabels:
       app.kubernetes.io/name: datafy-controller
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: datafy-controller
+        {{- include "datafy-agent.controllerLabels" . | nindent 8 }}
+        {{- include "datafy-agent.common.labels.withoutInstallationId" . | nindent 8 }}
       annotations:
         checksum/controller-config: {{ $configChecksum }}
         checksum/datafy-token-secret: {{ $datafyTokenChecksum }}
@@ -153,7 +156,7 @@ metadata:
   name: datafy-controller-webhook
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.common.labels.withInstallationId" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
     argocd.argoproj.io/sync-options: Delete=false
@@ -174,7 +177,7 @@ metadata:
   name: datafy-controller
   namespace: {{ .Release.Namespace }}
   labels:
-  {{- include "datafy-agent.labels" . | nindent 4 }}
+  {{- include "datafy-agent.common.labels.withInstallationId" . | nindent 4 }}
   annotations:
     helm.sh/resource-policy: keep
   {{- with .Values.extraAnnotations }}
