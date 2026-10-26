@@ -83,6 +83,11 @@ jobs:
         with:
           aws-region: ${{ vars.AWS_DEFAULT_REGION }}
           role-to-assume: ${{ secrets.PRODUCTION_AWS_ROLE_ARN }}
+      # Pinned to Helm 3: the runner's Helm 4 refuses unverifiable git-sourced plugins like helm-s3.
+      - name: Set up Helm
+        uses: azure/setup-helm@v5.0.0
+        with:
+          version: v3.19.0
       - name: Add datafyio-s3 Helm repository
         run: |
           helm plugin install https://github.com/hypnoglow/helm-s3.git
