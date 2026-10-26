@@ -307,7 +307,6 @@ Identity labels of the agent DaemonSet and its pods.
 */}}
 {{- define "datafy-agent.agentLabels" -}}
 app.kubernetes.io/name: datafy-agent
-app.kubernetes.io/component: agent
 app.kubernetes.io/version: {{ include "datafy-agent.agentImageTag" . | quote }}
 {{- end -}}
 
@@ -316,6 +315,5 @@ Identity labels of the controller Deployment and its pods.
 */}}
 {{- define "datafy-agent.controllerLabels" -}}
 app.kubernetes.io/name: datafy-controller
-app.kubernetes.io/component: controller
 app.kubernetes.io/version: {{ include "datafy-agent.controllerImageTag" . | quote }}
 {{- end -}}

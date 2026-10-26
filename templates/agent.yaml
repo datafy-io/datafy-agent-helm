@@ -8,7 +8,6 @@ metadata:
   name: datafy-agent
   namespace: {{ .Release.Namespace | quote }}
   labels:
-    app: datafy-agent
   {{- include "datafy-agent.agentLabels" . | nindent 4 }}
   {{- include "datafy-agent.common.labels.withInstallationId" . | nindent 4 }}
   {{- with .Values.extraAnnotations }}

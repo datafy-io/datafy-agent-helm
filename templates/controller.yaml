@@ -7,7 +7,6 @@ metadata:
   name: datafy-controller
   namespace: {{ .Release.Namespace }}
   labels:
-    app: datafy-controller
   {{- include "datafy-agent.controllerLabels" . | nindent 4 }}
   {{- include "datafy-agent.common.labels.withInstallationId" . | nindent 4 }}
   annotations:
@@ -30,7 +29,6 @@ spec:
   template:
     metadata:
       labels:
-        app: datafy-controller
         {{- include "datafy-agent.controllerLabels" . | nindent 8 }}
         {{- include "datafy-agent.common.labels.withoutInstallationId" . | nindent 8 }}
       annotations:
