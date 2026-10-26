@@ -27,13 +27,6 @@ Controller image tag: same default as sidecar (second appVersion segment); overr
 {{- end -}}
 
 {{/*
-Return selector labels for the app
-*/}}
-{{- define "datafy-agent.selectorLabels" -}}
-app: datafy-agent
-{{- end -}}
-
-{{/*
 Normalized agent mode
 */}}
 {{- define "datafy-agent.agentModeNormalized" -}}
@@ -286,32 +279,43 @@ resources share it.
 {{- end -}}
 
 {{/*
-Common labels for all resources
+Common labels for resource metadata.
 */}}
-{{- define "datafy-agent.labels" -}}
+{{- define "datafy-agent.common.labels.withInstallationId" -}}
+{{ include "datafy-agent.common.labels.withoutInstallationId" . }}
 datafy.io/installation-id: {{ include "datafy-agent.installId" . | quote }}
-{{- $pod := include "datafy-agent.podLabels" . }}
-{{- if $pod }}
-{{ $pod }}
+{{- end -}}
+
+{{/*
+Common labels for pod templates. Excludes installation-id, which changes on every
+render and would restart the pods.
+*/}}
+{{- define "datafy-agent.common.labels.withoutInstallationId" -}}
+app.kubernetes.io/part-of: datafy
+{{- if ne .Release.Name "kustomize" }}
+app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/managed-by: {{ .Release.Service }}
+helm.sh/chart: {{ include "datafy-agent.chart" . }}
+{{- end }}
+{{- with .Values.extraLabels }}
+{{ toYaml . }}
 {{- end }}
 {{- end -}}
 
 {{/*
-Pod template labels: the common labels without installation-id, which changes on
-every render and would restart the pods.
+Identity labels of the agent DaemonSet and its pods.
 */}}
-{{- define "datafy-agent.podLabels" -}}
-{{- if ne .Release.Name "kustomize" -}}
-helm.sh/chart: {{ include "datafy-agent.chart" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/component: datafy-agent
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-app: datafy-agent
-app.agent.version: {{ include "datafy-agent.agentImageTag" . }}
-{{- end }}
-{{- if .Values.extraLabels }}
-{{ toYaml .Values.extraLabels }}
-{{- end }}
+{{- define "datafy-agent.agentLabels" -}}
+app.kubernetes.io/name: datafy-agent
+app.kubernetes.io/component: agent
+app.kubernetes.io/version: {{ include "datafy-agent.agentImageTag" . | quote }}
+{{- end -}}
+
+{{/*
+Identity labels of the controller Deployment and its pods.
+*/}}
+{{- define "datafy-agent.controllerLabels" -}}
+app.kubernetes.io/name: datafy-controller
+app.kubernetes.io/component: controller
+app.kubernetes.io/version: {{ include "datafy-agent.controllerImageTag" . | quote }}
 {{- end -}}
