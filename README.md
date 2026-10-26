@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 4.2.0](https://img.shields.io/badge/Version-4.2.0-informational?style=flat-square) ![AppVersion: 2.1.0_2.1.0](https://img.shields.io/badge/AppVersion-2.1.0_2.1.0-informational?style=flat-square)
+![Version: 4.2.0](https://img.shields.io/badge/Version-4.2.0-informational?style=flat-square) ![AppVersion: 2.2.0_2.2.0](https://img.shields.io/badge/AppVersion-2.2.0_2.2.0-informational?style=flat-square)
 
 **App Version:**
 
-2.1.0_2.1.0
+2.2.0_2.2.0
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -131,6 +131,7 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | controller.serviceAccount.roleArn | string | `nil` |  |
 | controller.serviceAccount.tokenless | bool | `false` |  |
 | controller.tolerations[0].operator | string | `"Exists"` |  |
+| controller.webhook.excludedPods.labels | object | `{}` |  |
 | ebsCsiProxy.image.pullPolicy | string | `"IfNotPresent"` |  |
 | ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |
 | ebsCsiProxy.image.tag | string | `nil` |  |
@@ -140,7 +141,7 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | ebsCsiProxy.resources.requests.cpu | string | `"10m"` |  |
 | ebsCsiProxy.resources.requests.memory | string | `"40Mi"` |  |
 | ebsCsiProxy.volumeResolution.source | string | `"tags"` |  |
-| extendedInstallOnSensor | bool | `true` |  |
+| extendedInstallOnSensor | bool | `false` |  |
 | extraAnnotations | object | `{}` |  |
 | extraLabels | object | `{}` |  |
 | imagePullSecrets | list | `[]` |  |
