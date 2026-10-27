@@ -53,10 +53,19 @@ spec:
       nodeSelector:
         {{- toYaml .Values.controller.nodeSelector | nindent 8 }}
       {{- end }}
-      {{- if .Values.controller.tolerations }}
       tolerations:
-        {{- toYaml .Values.controller.tolerations | nindent 8 }}
-      {{- end }}
+        - key: CriticalAddonsOnly
+          operator: Exists
+        - key: datafy.io
+          operator: Exists
+        - key: startup-taint.cluster-autoscaler.kubernetes.io/datafy.io
+          operator: Exists
+        - operator: Exists
+          effect: NoExecute
+          tolerationSeconds: 300
+        {{- with .Values.controller.tolerations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
