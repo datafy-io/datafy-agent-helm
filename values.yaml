@@ -157,11 +157,10 @@ controller:
   ## Ref: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/
   ##
   nodeSelector: {}
-  ## @param controller.tolerations Tolerations for pod assignment
+  ## @param controller.tolerations Extra tolerations, appended to the chart's built-in ones
   ## Ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
   ##
-  tolerations:
-    - operator: "Exists"
+  tolerations: []
 
   securityContext:
     runAsNonRoot: true
