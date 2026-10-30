@@ -1,6 +1,20 @@
 name: Release Chart
 
+# Publishes the chart to s3://helm.datafy.io/datafy-agent. Three ways in:
+#   - push of a tag v*: the release orchestrator (datafy-io/release-orchestrator) writes Chart.yaml on the
+#     release branch and tags it. The chart is packaged exactly as committed: 4.Y.Z-rcN for a candidate,
+#     4.Y.Z-pre at GA. Pre-release versions are invisible to `helm search repo` without --devel, so the
+#     published GA can be verified before customers see it.
+#   - repository_dispatch 'publish-chart' {ref, version, chart_version}: the orchestrator's promote, once the
+#     GA was verified. The release branch then carries the final Chart.yaml (4.Y.Z) and it becomes the default.
+#   - workflow_dispatch / workflow_call: the manual path (helm-version-promote.yml), unchanged: docs PR,
+#     then push to S3 from the default branch only.
 on:
+  push:
+    tags:
+      - 'v*'
+  repository_dispatch:
+    types: [publish-chart]
   workflow_dispatch:
   workflow_call:
     secrets:
@@ -17,8 +31,10 @@ permissions:
 env:
   TARGET_BRANCH: ${{ github.ref_name }}
   DOCS_PR_BRANCH: automation/release-helm-docs
-
-
+  # Orchestrated runs (tag push, publish-chart) publish what the release branch carries; manual runs keep
+  # the docs PR and the default-branch rule.
+  ORCHESTRATED: ${{ (github.event_name == 'push' || github.event_name == 'repository_dispatch') && 'true' || 'false' }}
+  CHECKOUT_REF: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.ref_name }}
 
 jobs:
   release:
@@ -27,14 +43,42 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ github.ref_name }}
+          ref: ${{ env.CHECKOUT_REF }}
           fetch-depth: 0
 
+      - name: Check the chart metadata matches the release (orchestrated runs)
+        if: env.ORCHESTRATED == 'true'
+        env:
+          PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
+          PAYLOAD_CHART_VERSION: ${{ github.event.client_payload.chart_version }}
+        run: |
+          chart=$(yq '.version' Chart.yaml)
+          app=$(yq '.appVersion' Chart.yaml)
+          echo "event=${{ github.event_name }} ref=${{ env.CHECKOUT_REF }} chart=$chart appVersion=$app"
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # tag vX.Y.Z[-rcN]: the agent and controller versions; the chart carries them as appVersion
+            v="${GITHUB_REF_NAME#v}"
+            [[ "$app" == "${v}_${v}" ]] || { echo "::error::appVersion '$app' does not match tag '$GITHUB_REF_NAME' (expected ${v}_${v}); the tag was not written by the release cut"; exit 1; }
+          else
+            # promote: the release branch must already carry the final chart version
+            [[ "$chart" != *-* ]] || { echo "::error::chart version '$chart' is still a pre-release; promote writes the final version before sending publish-chart"; exit 1; }
+            [[ -z "$PAYLOAD_CHART_VERSION" || "$chart" == "$PAYLOAD_CHART_VERSION" ]] || { echo "::error::chart version '$chart' on ${{ env.CHECKOUT_REF }} is not the requested '$PAYLOAD_CHART_VERSION'"; exit 1; }
+            [[ -z "$PAYLOAD_VERSION" || "$app" == "${PAYLOAD_VERSION}_${PAYLOAD_VERSION}" ]] || { echo "::error::appVersion '$app' does not match release '$PAYLOAD_VERSION'"; exit 1; }
+          fi
+          {
+            echo "## Chart publish (${{ github.event_name }})"
+            echo "- ref: \`${{ env.CHECKOUT_REF }}\` @ \`${GITHUB_SHA::8}\`"
+            echo "- chart: \`$chart\`, appVersion: \`$app\`"
+            [[ "$chart" == *-* ]] && echo "- pre-release: listed by \`helm search repo datafy-agent --devel\` only"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run helm-docs
+        if: env.ORCHESTRATED != 'true'
         uses: losisin/helm-docs-github-action@v1
 
       - name: Detect README changes
         id: diff
+        if: env.ORCHESTRATED != 'true'
         run: |
           if git diff --quiet -- README.md; then
             echo "No README.md changes after helm-docs generation."
@@ -53,7 +97,7 @@ jobs:
 
       - name: Create pull request for docs changes
         id: cpr_docs
-        if: steps.diff.outputs.docs_changed == 'true'
+        if: env.ORCHESTRATED != 'true' && steps.diff.outputs.docs_changed == 'true'
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
@@ -68,7 +112,7 @@ jobs:
             README.md
 
       - name: Merge docs pull request (admin bypass)
-        if: steps.diff.outputs.docs_changed == 'true' && steps.cpr_docs.outputs.pull-request-number
+        if: env.ORCHESTRATED != 'true' && steps.diff.outputs.docs_changed == 'true' && steps.cpr_docs.outputs.pull-request-number
         env:
           GH_TOKEN: ${{ secrets.GH_PUBLIC_ACCESS_TOKEN }}
         run: |
@@ -95,7 +139,10 @@ jobs:
       - name: Push Helm chart
         run: |
           helm package .
-          if [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
+          if [ "${{ env.ORCHESTRATED }}" = "true" ]; then
+            echo "Orchestrated publish of chart ${{ steps.read_chart_version.outputs.current_chart_version }} from ${{ env.CHECKOUT_REF }}"
+            helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+          elif [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
             echo " This is on the default branch"
             helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
           else
