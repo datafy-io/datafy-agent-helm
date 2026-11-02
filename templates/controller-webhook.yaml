@@ -50,16 +50,20 @@ webhooks:
     {{- if not (kindIs "slice" $excludedNamespaces) }}
     {{- fail "controller.webhook.excluded.namespaces must be a list of namespace names (with --set: excluded.namespaces={my-ns,other-ns})" }}
     {{- end }}
-    {{- with $excludedNamespaces | compact | uniq }}
     namespaceSelector:
       matchExpressions:
+        - key: "datafy.io/webhook"
+          operator: "NotIn"
+          values:
+            - "disabled"
+        {{- with $excludedNamespaces | compact | uniq }}
         - key: "kubernetes.io/metadata.name"
           operator: "NotIn"
           values:
             {{- range . }}
             - {{ . | quote }}
             {{- end }}
-    {{- end }}
+        {{- end }}
     {{- $podLabels := (((.Values.controller).webhook).excluded).podLabels | default dict }}
     {{- range $key, $values := $podLabels }}
     {{- if and $values (not (kindIs "slice" $values)) }}
@@ -69,10 +73,11 @@ webhooks:
     {{- $builtin := dict
         "app.kubernetes.io/name" (list "datafy-controller" "datafy-agent" "aws-cluster-autoscaler" "aws-node")
         "k8s-app" (list "kube-dns" "kube-proxy" "coredns" "aws-node" "istio-cni-node")
-        "app" (list "ztunnel") }}
+        "app" (list "ztunnel")
+        "datafy.io/webhook" (list "disabled") }}
     objectSelector:
       matchExpressions:
-        {{- range $key := list "app.kubernetes.io/name" "k8s-app" "app" }}
+        {{- range $key := list "app.kubernetes.io/name" "k8s-app" "app" "datafy.io/webhook" }}
         {{- $values := get $builtin $key }}
         {{- range get $podLabels $key | default list | compact }}
         {{- if not (has . $values) }}

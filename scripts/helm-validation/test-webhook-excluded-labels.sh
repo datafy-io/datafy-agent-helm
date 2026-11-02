@@ -13,7 +13,7 @@ N=controller.webhook.excluded.namespaces
 DEF_APP="datafy-controller,datafy-agent,aws-cluster-autoscaler,aws-node"
 DEF_K8S="kube-dns,kube-proxy,coredns,aws-node,istio-cni-node"
 DEF_APPL="ztunnel"
-KEYS0="app.kubernetes.io/name,k8s-app,app"
+KEYS0="app.kubernetes.io/name,k8s-app,app,datafy.io/webhook"
 pass=0; fail=0
 
 render() { helm template t "$CHART" "${BASE[@]}" -s templates/controller-webhook.yaml "$@"; }
@@ -36,12 +36,12 @@ keys_of() {
     END { print out }'
 }
 
-# Mutation webhook namespaceSelector only: values of the kubernetes.io/metadata.name NotIn list
+# Mutation webhook namespaceSelector only: values of the NotIn list for label key $1
 ns_list() {
-  awk '
+  awk -v want="\"$1\"" '
     /namespaceSelector:/ { inns=1; next }
     inns && /objectSelector:/ { exit }
-    inns && /- key:/ { inlist=($3 == "\"kubernetes.io/metadata.name\""); next }
+    inns && /- key:/ { inlist=($3 == want); next }
     inns && inlist && /^ *- / { v=$2; gsub(/"/, "", v); out = out (out ? "," : "") v }
     END { print out }'
 }
@@ -57,7 +57,8 @@ check() {
   IFS=';' read -ra arr <<<"$specs"
   for spec in "${arr[@]}"; do
     key=${spec%%=*}; want=${spec#*=}
-    if [[ $key == KEYS ]]; then got=$(keys_of <<<"$out"); elif [[ $key == NS ]]; then got=$(ns_list <<<"$out"); else got=$(list "$key" <<<"$out"); fi
+    if [[ $key == KEYS ]]; then got=$(keys_of <<<"$out"); elif [[ $key == NS ]]; then got=$(ns_list kubernetes.io/metadata.name <<<"$out");
+    elif [[ $key == NS_OPTOUT ]]; then got=$(ns_list datafy.io/webhook <<<"$out"); else got=$(list "$key" <<<"$out"); fi
     [[ $got == "$want" ]] || errs+=("$key got: $got" "$key want: $want")
   done
   if ((${#errs[@]})); then bad "$name" "${errs[@]}"; else ok "$name"; fi
@@ -132,10 +133,14 @@ check "only custom key boris-test"       "app.kubernetes.io/name=$DEF_APP;k8s-ap
 check "app extends built-in, no second expression" "app=$DEF_APPL,foo;KEYS=$KEYS0" --set "$P.app={foo}"
 check "duplicate values collapsed"       "app=$DEF_APPL,foo;k8s-app=$DEF_K8S,cilium;zz=a;KEYS=$KEYS0,zz" \
                                          --set "$P.app={foo,foo,ztunnel}" --set "$P.k8s-app={cilium,coredns,cilium}" --set "$P.zz={a,a}"
-check "namespaces: none excluded by default" "NS="
+check "namespaces: none excluded by default" "NS=;NS_OPTOUT=disabled"
 check "namespaces via --set, deduped"    "NS=calico-system,istio-system;$DEFAULTS" --set "$N={calico-system,istio-system,calico-system}"
 check "namespaces empty {}"              "NS=" --set "$N={}"
 check "namespaces blank item dropped"    "NS=calico-system" --set "$N={calico-system,}"
+check "namespaces keep opt-out label"     "NS=calico-system;NS_OPTOUT=disabled" --set "$N={calico-system}"
+check "pod opt-out label built in"       "datafy.io/webhook=disabled;KEYS=$KEYS0"
+check "pod opt-out label extended, not duplicated" "datafy.io/webhook=disabled,off;KEYS=$KEYS0" \
+                                         --set "$P.datafy\.io/webhook={disabled,off}"
 expect_error "namespaces plain string"   "excluded.namespaces must be a list" --set "$N=calico-system"
 expect_error "plain string instead of list" "must be a list" --set "$P.app=ztunnel"
 expect_error "unescaped dotted key"         "must be a list" --set "$P.app.kubernetes.io/name={ztunnel}"

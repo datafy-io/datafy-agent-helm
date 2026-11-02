@@ -169,6 +169,8 @@ controller:
   webhook:
     ## Pods the pod mutation webhook must skip. Use it for node-level datapath components
     ## (CNI, mesh) that must start even when the webhook is unreachable.
+    ## Without a chart change, label a namespace or a pod (template) to skip it:
+    ##   kubectl label namespace <ns> datafy.io/webhook=disabled
     excluded:
       ## Namespaces whose pods are skipped, matched by the kubernetes.io/metadata.name
       ## namespace label. Do not list the namespace running the EBS CSI driver (kube-system
