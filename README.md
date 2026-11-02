@@ -131,7 +131,8 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | controller.serviceAccount.roleArn | string | `nil` |  |
 | controller.serviceAccount.tokenless | bool | `false` |  |
 | controller.tolerations | list | `[]` |  |
-| controller.webhook.excludedPods.labels | object | `{}` |  |
+| controller.webhook.excluded.namespaces | list | `[]` |  |
+| controller.webhook.excluded.podLabels | object | `{}` |  |
 | ebsCsiProxy.image.pullPolicy | string | `"IfNotPresent"` |  |
 | ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |
 | ebsCsiProxy.image.tag | string | `nil` |  |

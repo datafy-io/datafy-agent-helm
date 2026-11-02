@@ -2,12 +2,14 @@
 # Usage: scripts/helm-validation/test-webhook-excluded-labels.sh [chart-dir]
 # Set BASELINE_REF=<git ref> to also check the default render is unchanged vs that ref.
 # Renders the controller webhook for every way of setting
-# controller.webhook.excludedPods.labels and checks the objectSelector NotIn lists.
+# controller.webhook.excluded.podLabels and controller.webhook.excluded.namespaces and checks
+# the objectSelector and namespaceSelector NotIn lists.
 set -u
 CHART=${1:-.}
 S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
 BASE=(--set-string agent.token=1 --set-string agent.image.tag=1)
-P=controller.webhook.excludedPods.labels
+P=controller.webhook.excluded.podLabels
+N=controller.webhook.excluded.namespaces
 DEF_APP="datafy-controller,datafy-agent,aws-cluster-autoscaler,aws-node"
 DEF_K8S="kube-dns,kube-proxy,coredns,aws-node,istio-cni-node"
 DEF_APPL="ztunnel"
@@ -34,6 +36,16 @@ keys_of() {
     END { print out }'
 }
 
+# Mutation webhook namespaceSelector only: values of the kubernetes.io/metadata.name NotIn list
+ns_list() {
+  awk '
+    /namespaceSelector:/ { inns=1; next }
+    inns && /objectSelector:/ { exit }
+    inns && /- key:/ { inlist=($3 == "\"kubernetes.io/metadata.name\""); next }
+    inns && inlist && /^ *- / { v=$2; gsub(/"/, "", v); out = out (out ? "," : "") v }
+    END { print out }'
+}
+
 ok()  { echo "PASS  $1"; pass=$((pass+1)); }
 bad() { echo "FAIL  $1"; shift; for l in "$@"; do echo "      $l"; done; fail=$((fail+1)); }
 
@@ -45,7 +57,7 @@ check() {
   IFS=';' read -ra arr <<<"$specs"
   for spec in "${arr[@]}"; do
     key=${spec%%=*}; want=${spec#*=}
-    if [[ $key == KEYS ]]; then got=$(keys_of <<<"$out"); else got=$(list "$key" <<<"$out"); fi
+    if [[ $key == KEYS ]]; then got=$(keys_of <<<"$out"); elif [[ $key == NS ]]; then got=$(ns_list <<<"$out"); else got=$(list "$key" <<<"$out"); fi
     [[ $got == "$want" ]] || errs+=("$key got: $got" "$key want: $want")
   done
   if ((${#errs[@]})); then bad "$name" "${errs[@]}"; else ok "$name"; fi
@@ -61,8 +73,8 @@ expect_error() {
 cat > "$S/l-all.yaml" <<'EOF'
 controller:
   webhook:
-    excludedPods:
-      labels:
+    excluded:
+      podLabels:
         app.kubernetes.io/name: [ztunnel, istio-cni]
         k8s-app: [istio-cni-node, calico-node]
         app: [ztunnel]
@@ -71,16 +83,16 @@ EOF
 cat > "$S/l-null.yaml" <<'EOF'
 controller:
   webhook:
-    excludedPods:
-      labels:
+    excluded:
+      podLabels:
         app:
         k8s-app:
 EOF
 cat > "$S/l-labels-null.yaml" <<'EOF'
 controller:
   webhook:
-    excludedPods:
-      labels:
+    excluded:
+      podLabels:
 EOF
 cat > "$S/l-no-webhook.yaml" <<'EOF'
 controller:
@@ -120,6 +132,11 @@ check "only custom key boris-test"       "app.kubernetes.io/name=$DEF_APP;k8s-ap
 check "app extends built-in, no second expression" "app=$DEF_APPL,foo;KEYS=$KEYS0" --set "$P.app={foo}"
 check "duplicate values collapsed"       "app=$DEF_APPL,foo;k8s-app=$DEF_K8S,cilium;zz=a;KEYS=$KEYS0,zz" \
                                          --set "$P.app={foo,foo,ztunnel}" --set "$P.k8s-app={cilium,coredns,cilium}" --set "$P.zz={a,a}"
+check "namespaces: none excluded by default" "NS="
+check "namespaces via --set, deduped"    "NS=calico-system,istio-system;$DEFAULTS" --set "$N={calico-system,istio-system,calico-system}"
+check "namespaces empty {}"              "NS=" --set "$N={}"
+check "namespaces blank item dropped"    "NS=calico-system" --set "$N={calico-system,}"
+expect_error "namespaces plain string"   "excluded.namespaces must be a list" --set "$N=calico-system"
 expect_error "plain string instead of list" "must be a list" --set "$P.app=ztunnel"
 expect_error "unescaped dotted key"         "must be a list" --set "$P.app.kubernetes.io/name={ztunnel}"
 
