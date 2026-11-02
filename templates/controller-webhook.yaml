@@ -52,36 +52,29 @@ webhooks:
     {{- fail (printf "controller.webhook.excludedPods.labels.%s must be a list of label values (with --set, escape dots in the label key: labels.app\\.kubernetes\\.io/name={...})" $key) }}
     {{- end }}
     {{- end }}
+    {{- $builtin := dict
+        "app.kubernetes.io/name" (list "datafy-controller" "datafy-agent" "aws-cluster-autoscaler" "aws-node")
+        "k8s-app" (list "kube-dns" "kube-proxy" "coredns" "aws-node" "istio-cni-node")
+        "app" (list "ztunnel") }}
     objectSelector:
       matchExpressions:
-        - key: "app.kubernetes.io/name"
+        {{- range $key := list "app.kubernetes.io/name" "k8s-app" "app" }}
+        {{- $values := get $builtin $key }}
+        {{- range get $excluded $key | default list | compact }}
+        {{- if not (has . $values) }}
+        {{- $values = append $values . }}
+        {{- end }}
+        {{- end }}
+        - key: {{ $key | quote }}
           operator: "NotIn"
           values:
-            - datafy-controller
-            - datafy-agent
-            - aws-cluster-autoscaler
-            - aws-node
-            {{- range get $excluded "app.kubernetes.io/name" | default list | compact }}
+            {{- range $values }}
             - {{ . | quote }}
             {{- end }}
-        - key: "k8s-app"
-          operator: "NotIn"
-          values:
-            - kube-dns
-            - kube-proxy
-            - coredns
-            - aws-node
-            - istio-cni-node
-            {{- range get $excluded "k8s-app" | default list | compact }}
-            - {{ . | quote }}
-            {{- end }}
-        - key: "app"
-          operator: "NotIn"
-          values:
-            - ztunnel
+        {{- end }}
         {{- range $key := keys $excluded | sortAlpha }}
-        {{- if not (has $key (list "app.kubernetes.io/name" "k8s-app")) }}
-        {{- with get $excluded $key | default list | compact }}
+        {{- if not (hasKey $builtin $key) }}
+        {{- with get $excluded $key | default list | compact | uniq }}
         - key: {{ $key | quote }}
           operator: "NotIn"
           values:

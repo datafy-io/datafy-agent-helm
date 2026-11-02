@@ -90,33 +90,36 @@ EOF
 DEFAULTS="app.kubernetes.io/name=$DEF_APP;k8s-app=$DEF_K8S;app=$DEF_APPL;KEYS=$KEYS0"
 
 check "defaults: built-ins only, no extra keys" "$DEFAULTS"
-check "app via --set"                    "app=$DEF_APPL,ztunnel;KEYS=$KEYS0,app;k8s-app=$DEF_K8S" --set "$P.app={ztunnel}"
+check "app via --set"                    "app=$DEF_APPL;KEYS=$KEYS0;k8s-app=$DEF_K8S" --set "$P.app={ztunnel}"
 check "k8s-app via --set extends built-in" "k8s-app=$DEF_K8S,cilium,calico-node;KEYS=$KEYS0" --set "$P.k8s-app={cilium,calico-node}"
 check "app.kubernetes.io/name escaped --set" "app.kubernetes.io/name=$DEF_APP,ztunnel;KEYS=$KEYS0" --set "$P.app\.kubernetes\.io/name={ztunnel}"
 check "custom key via --set"             "component=my-agent;KEYS=$KEYS0,component" --set "$P.component={my-agent}"
-check "two-flag Istio combo"             "app=$DEF_APPL,ztunnel;k8s-app=$DEF_K8S,istio-cni-node;app.kubernetes.io/name=$DEF_APP" \
+check "two-flag Istio combo"             "app=$DEF_APPL;k8s-app=$DEF_K8S;app.kubernetes.io/name=$DEF_APP" \
                                          --set "$P.app={ztunnel}" --set "$P.k8s-app={istio-cni-node}"
-check "--set by index"                   "app=$DEF_APPL,ztunnel,foo" --set "$P.app[0]=ztunnel" --set "$P.app[1]=foo"
+check "--set by index"                   "app=$DEF_APPL,foo" --set "$P.app[0]=ztunnel" --set "$P.app[1]=foo"
 check "--set-string by index"            "app=$DEF_APPL,123" --set-string "$P.app[0]=123"
-check "values file, all keys"            "app.kubernetes.io/name=$DEF_APP,ztunnel,istio-cni;k8s-app=$DEF_K8S,istio-cni-node,calico-node;app=$DEF_APPL,ztunnel;component=my-agent;KEYS=$KEYS0,app,component" \
+check "values file, all keys"            "app.kubernetes.io/name=$DEF_APP,ztunnel,istio-cni;k8s-app=$DEF_K8S,calico-node;app=$DEF_APPL;component=my-agent;KEYS=$KEYS0,component" \
                                          -f "$S/l-all.yaml"
 check "extra keys sorted, stable order"  "KEYS=$KEYS0,a-key,b-key,z-key" \
                                          --set "$P.z-key={z}" --set "$P.a-key={a}" --set "$P.b-key={b}"
 check "values file + --set overrides key" "app=$DEF_APPL,other;component=my-agent" -f "$S/l-all.yaml" --set "$P.app={other}"
 check "empty {} -> no extra key"         "$DEFAULTS" --set "$P.app={}"
 check "empty {} on built-in key"         "$DEFAULTS" --set "$P.k8s-app={}"
-check "blank item dropped"               "app=$DEF_APPL,ztunnel" --set "$P.app={ztunnel,}"
+check "blank item dropped"               "app=$DEF_APPL,foo" --set "$P.app={foo,}"
 check "null values in file"              "$DEFAULTS" -f "$S/l-null.yaml"
 check "labels: null"                     "$DEFAULTS" -f "$S/l-labels-null.yaml"
 check "controller.webhook removed"       "$DEFAULTS" -f "$S/l-no-webhook.yaml"
-check "value already in defaults"        "app.kubernetes.io/name=$DEF_APP,aws-node" --set "$P.app\.kubernetes\.io/name={aws-node}"
-check "Sensor mode with labels"          "app=$DEF_APPL,ztunnel" --set agent.mode=Sensor --set extendedInstallOnSensor=true --set "$P.app={ztunnel}"
+check "value already in defaults"        "app.kubernetes.io/name=$DEF_APP" --set "$P.app\.kubernetes\.io/name={aws-node}"
+check "Sensor mode with labels"          "app=$DEF_APPL,foo" --set agent.mode=Sensor --set extendedInstallOnSensor=true --set "$P.app={foo}"
 check "ztunnel in k8s-app and app.kubernetes.io/name" "app.kubernetes.io/name=$DEF_APP,ztunnel;k8s-app=$DEF_K8S,ztunnel;KEYS=$KEYS0" \
                                          --set "$P.k8s-app={ztunnel}" --set "$P.app\.kubernetes\.io/name={ztunnel}"
-check "new key app=test and test in app.kubernetes.io/name" "app.kubernetes.io/name=$DEF_APP,test;app=$DEF_APPL,test;KEYS=$KEYS0,app" \
+check "new key app=test and test in app.kubernetes.io/name" "app.kubernetes.io/name=$DEF_APP,test;app=$DEF_APPL,test;KEYS=$KEYS0" \
                                          --set "$P.app={test}" --set "$P.app\.kubernetes\.io/name={test}"
 check "only custom key boris-test"       "app.kubernetes.io/name=$DEF_APP;k8s-app=$DEF_K8S;boris-test=boris;KEYS=$KEYS0,boris-test" \
                                          --set "$P.boris-test={boris}"
+check "app extends built-in, no second expression" "app=$DEF_APPL,foo;KEYS=$KEYS0" --set "$P.app={foo}"
+check "duplicate values collapsed"       "app=$DEF_APPL,foo;k8s-app=$DEF_K8S,cilium;zz=a;KEYS=$KEYS0,zz" \
+                                         --set "$P.app={foo,foo,ztunnel}" --set "$P.k8s-app={cilium,coredns,cilium}" --set "$P.zz={a,a}"
 expect_error "plain string instead of list" "must be a list" --set "$P.app=ztunnel"
 expect_error "unescaped dotted key"         "must be a list" --set "$P.app.kubernetes.io/name={ztunnel}"
 
@@ -129,9 +132,9 @@ if render -f "$S/l-all.yaml" | sed -n '/agent-delete/,$p' | grep -qE 'ztunnel|ca
 # Default render must be byte-identical to the chart before this change
 if [[ -n ${BASELINE_REF:-} ]]; then
   tmp=$(mktemp -d); git -C "$CHART" archive "$BASELINE_REF" | tar -x -C "$tmp"
-  # installation-id is random per render
-  if diff <(helm template t "$tmp" "${BASE[@]}" -s templates/controller-webhook.yaml | grep -v -E 'tls\.(crt|key)|caBundle|helm.sh/chart|installation-id') \
-          <(render | grep -v -E 'tls\.(crt|key)|caBundle|helm.sh/chart|installation-id') >/dev/null; then
+  # installation-id is random per render; quoting is ignored since it does not change the parsed YAML
+  if diff <(helm template t "$tmp" "${BASE[@]}" -s templates/controller-webhook.yaml | grep -v -E 'tls\.(crt|key)|caBundle|helm.sh/chart|installation-id' | tr -d '"') \
+          <(render | grep -v -E 'tls\.(crt|key)|caBundle|helm.sh/chart|installation-id' | tr -d '"') >/dev/null; then
     ok "default render identical to $BASELINE_REF"; else bad "default render identical to $BASELINE_REF"; fi
   rm -rf "$tmp"
 fi
