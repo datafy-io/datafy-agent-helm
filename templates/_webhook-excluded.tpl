@@ -1,7 +1,6 @@
 {{/*
-Pods the pod mutation webhook skips by default, as an ordered list of objectSelector rules.
-Each rule renders "<key> NotIn <values>" and is extended by
-controller.webhook.excluded.podLabels.<key>.
+Pods the pod mutation webhook skips by default, as an ordered list of objectSelector label
+selector requirements in the shape of controller.webhook.excluded.podMatchExpressions.
 
 The webhook fails closed, so creating these pods must not depend on the controller being
 reachable: they are node-level components that other pods on the node need to start, get an
@@ -10,8 +9,8 @@ admission webhooks that fail closed themselves. Skipped pods get no Datafy toler
 Datafy handling of their volumes, so never list the EBS CSI driver pods (ebs-csi-node,
 ebs-csi-controller): the webhook injects the Datafy sidecar into them.
 */}}
-{{- define "datafy-agent.webhook.builtinExcludedPodLabels" -}}
-rules:
+{{- define "datafy-agent.webhook.builtinPodMatchExpressions" -}}
+expressions:
   - key: app.kubernetes.io/name
     values:
       # Datafy
@@ -86,15 +85,11 @@ namespaceSelector matchExpressions of the pod mutation webhook: the datafy.io/we
 opt-out label and controller.webhook.excluded.namespaces.
 */}}
 {{- define "datafy-agent.webhook.namespaceSelectorExpressions" -}}
-{{- $namespaces := (((.Values.controller).webhook).excluded).namespaces | default list }}
-{{- if not (kindIs "slice" $namespaces) }}
-{{- fail "controller.webhook.excluded.namespaces must be a list of namespace names (with --set: excluded.namespaces={my-ns,other-ns})" }}
-{{- end }}
 - key: "datafy.io/webhook"
   operator: "NotIn"
   values:
     - "disabled"
-{{- with $namespaces | compact | uniq }}
+{{- with (((.Values.controller).webhook).excluded).namespaces | default list | compact | uniq }}
 - key: "kubernetes.io/metadata.name"
   operator: "NotIn"
   values:
@@ -105,43 +100,34 @@ opt-out label and controller.webhook.excluded.namespaces.
 {{- end }}
 
 {{/*
-objectSelector matchExpressions of the pod mutation webhook: the built-in rules merged with
-controller.webhook.excluded.podLabels. User values for the key of a built-in rule extend that
-rule; every other user key renders one NotIn expression, sorted by key.
+objectSelector matchExpressions of the pod mutation webhook: the built-in expressions followed
+by controller.webhook.excluded.podMatchExpressions in order, one expression per entry. Entries
+are not merged by key: expressions are ANDed, so two NotIn expressions on one key skip the union
+of their values. The operator defaults to NotIn; values.schema.json restricts it to NotIn and
+DoesNotExist. Blank and repeated values of an entry are dropped.
 */}}
 {{- define "datafy-agent.webhook.objectSelectorExpressions" -}}
-{{- $podLabels := (((.Values.controller).webhook).excluded).podLabels | default dict }}
-{{- range $key, $values := $podLabels }}
-{{- if and $values (not (kindIs "slice" $values)) }}
-{{- fail (printf "controller.webhook.excluded.podLabels.%s must be a list of label values (with --set, escape dots in the label key: podLabels.app\\.kubernetes\\.io/name={...})" $key) }}
+{{- $builtin := (include "datafy-agent.webhook.builtinPodMatchExpressions" . | fromYaml).expressions }}
+{{- $user := (((.Values.controller).webhook).excluded).podMatchExpressions | default list }}
+{{- range $expr := concat $builtin $user }}
+{{- $operator := $expr.operator | default "NotIn" }}
+- key: {{ $expr.key | quote }}
+  operator: {{ $operator | quote }}
+{{- if eq $operator "NotIn" }}
+{{- $values := list }}
+{{- range $expr.values }}
+{{- $value := ternary "" (toString .) (kindIs "invalid" .) }}
+{{- if and $value (not (has $value $values)) }}
+{{- $values = append $values $value }}
 {{- end }}
 {{- end }}
-{{- $merged := list }}
-{{- range $rule := (include "datafy-agent.webhook.builtinExcludedPodLabels" . | fromYaml).rules }}
-{{- $merged = append $merged $rule.key }}
-{{- $values := $rule.values }}
-{{- range get $podLabels $rule.key | default list | compact }}
-{{- if not (has . $values) }}
-{{- $values = append $values . }}
+{{- if not $values }}
+{{- fail (printf "controller.webhook.excluded.podMatchExpressions: the NotIn expression on %q needs at least one non-empty value" $expr.key) }}
 {{- end }}
-{{- end }}
-- key: {{ $rule.key | quote }}
-  operator: "NotIn"
   values:
     {{- range $values }}
     - {{ . | quote }}
     {{- end }}
-{{- end }}
-{{- range $key := keys $podLabels | sortAlpha }}
-{{- if not (has $key $merged) }}
-{{- with get $podLabels $key | default list | compact | uniq }}
-- key: {{ $key | quote }}
-  operator: "NotIn"
-  values:
-    {{- range . }}
-    - {{ . | quote }}
-    {{- end }}
-{{- end }}
 {{- end }}
 {{- end }}
 {{- end }}

@@ -178,14 +178,19 @@ controller:
       ##   --set "controller.webhook.excluded.namespaces={calico-system,istio-system}"
       ## @param controller.webhook.excluded.namespaces Namespaces excluded from the pod mutation webhook
       namespaces: []
-      ## Map of label key -> list of label values, appended to the built-in exclusions;
-      ## each key becomes a "NotIn" expression (app.kubernetes.io/name, k8s-app and app
-      ## extend the built-in lists):
-      ##   --set "controller.webhook.excluded.podLabels.app={my-mesh-agent}"
-      ##   --set "controller.webhook.excluded.podLabels.k8s-app={calico-node}"
-      ##   --set "controller.webhook.excluded.podLabels.app\.kubernetes\.io/name={my-app}"
-      ## @param controller.webhook.excluded.podLabels Label key -> values of pods to exclude
-      podLabels: {}
+      ## Label selector requirements (as in a LabelSelector's matchExpressions) of pods to skip,
+      ## rendered after the built-in ones, one expression per entry. operator is optional and
+      ## defaults to NotIn; only NotIn (with values) and DoesNotExist (without values) are allowed.
+      ## A later values file replaces the whole list; --set with an index edits that entry of it.
+      ##   podMatchExpressions:
+      ##     - key: k8s-app
+      ##       values: [my-cni-agent]
+      ##     - key: s3.csi.aws.com/mountpoint-version
+      ##       operator: DoesNotExist
+      ##   --set "controller.webhook.excluded.podMatchExpressions[0].key=k8s-app" \
+      ##   --set "controller.webhook.excluded.podMatchExpressions[0].values={my-cni-agent}"
+      ## @param controller.webhook.excluded.podMatchExpressions Label selector requirements of pods to exclude
+      podMatchExpressions: []
 
 ebsCsiProxy:
   image:
