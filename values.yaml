@@ -167,14 +167,14 @@ controller:
     runAsUser: 1001
 
   webhook:
-    ## Pods the pod mutation webhook must skip. Use it for node-level datapath components
-    ## (CNI, mesh) that must start even when the webhook is unreachable.
-    ## Without a chart change, label a namespace or a pod (template) to skip it:
-    ##   kubectl label namespace <ns> datafy.io/webhook=disabled
+    ## Pods the pod mutation webhook must skip, on top of the built-in exclusions in
+    ## templates/_webhook-excluded.tpl (CNI, mesh datapath, DNS, node credentials, etc...).
+    ## Use it for node-level components that must start even when the webhook is unreachable.
+    ## Without a chart change, label a namespace or a pod to skip it: `datafy.io/webhook=disabled`
     excluded:
       ## Namespaces whose pods are skipped, matched by the kubernetes.io/metadata.name
-      ## namespace label. Do not list the namespace running the EBS CSI driver (kube-system
-      ## on EKS): its pods need the webhook to get the Datafy sidecar.
+      ## namespace label. Do not list the namespace running the EBS CSI driver (kube-system on EKS):
+      ## its pods need the webhook to get the Datafy sidecar.
       ##   --set "controller.webhook.excluded.namespaces={calico-system,istio-system}"
       ## @param controller.webhook.excluded.namespaces Namespaces excluded from the pod mutation webhook
       namespaces: []

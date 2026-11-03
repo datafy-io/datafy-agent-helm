@@ -78,6 +78,8 @@ Argo CD renders the chart with `helm template`, so it generates a new ID every t
 
 Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The chart renders both the uppercase and lowercase env vars (`HTTPS_PROXY`/`https_proxy`, `NO_PROXY`/`no_proxy`) on each chart-managed container.
 
+`noProxy` is a comma-separated list passed through verbatim. Because Helm's `--set` splits on commas, escape them or pass values via a values file.
+
 ## Pod mutation webhook
 
 The controller's pod mutation webhook fails closed: while the controller is unavailable, pods it matches cannot be created. Skip pods that must start without it (CNI, service mesh and other node-level datapath components) in one of these ways:
@@ -89,9 +91,9 @@ The controller's pod mutation webhook fails closed: while the controller is unav
 - `controller.webhook.excluded.namespaces`: namespaces to skip.
 - `controller.webhook.excluded.podLabels`: label key to list of values to skip, added to the built-in exclusions.
 
-Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Datafy volumes: the webhook injects the Datafy sidecar into the CSI pods and handles placement of pods with Datafy volumes.
+The built-in exclusions, listed in `templates/_webhook-excluded.tpl`, skip by label the node-level components that other pods on the node depend on: CNI (VPC CNI, Calico, Cilium, Flannel, Antrea, Multus, kube-router, Kube-OVN), mesh datapath (Istio CNI, ztunnel, istiod, Linkerd CNI, Kuma/Kong Mesh CNI, Consul), DNS and Service routing (CoreDNS, NodeLocal DNSCache, kube-proxy), EKS Pod Identity Agent, node volume mounts (EFS, FSx, Mountpoint for S3 CSI node, Secrets Store CSI), the NVIDIA device plugin, and Kyverno.
 
-`noProxy` is a comma-separated list passed through verbatim. Because Helm's `--set` splits on commas, escape them or pass values via a values file.
+Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Datafy volumes: the webhook injects the Datafy sidecar into the CSI pods and handles placement of pods with Datafy volumes.
 
 ---
 

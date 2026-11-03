@@ -10,9 +10,9 @@ S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
 BASE=(--set-string agent.token=1 --set-string agent.image.tag=1)
 P=controller.webhook.excluded.podLabels
 N=controller.webhook.excluded.namespaces
-DEF_APP="datafy-controller,datafy-agent,aws-cluster-autoscaler,aws-node"
-DEF_K8S="kube-dns,kube-proxy,coredns,aws-node,istio-cni-node"
-DEF_APPL="ztunnel"
+DEF_APP="datafy-controller,datafy-agent,aws-cluster-autoscaler,aws-node,cilium-operator,cilium-node-init,ztunnel-cilium,eks-pod-identity-agent,eks-pod-identity-agent-hybrid,eks-pod-identity-agent-hybrid-bottlerocket,nvidia-device-plugin,kyverno-admission-controller,kyverno-background-controller,kyverno-cleanup-controller,kyverno-reports-controller"
+DEF_K8S="kube-dns,kube-proxy,coredns,node-local-dns,aws-node,calico-node,calico-typha,canal,cilium,cilium-envoy,kube-router,kindnet,istio-cni-node,linkerd-cni"
+DEF_APPL="flannel,antrea,multus,kube-ovn-cni,kube-ovn-controller,ovn-central,ztunnel,istiod,kuma-cni,kong-mesh-cni,consul,efs-csi-node,fsx-csi-node,s3-csi-node,secrets-store-csi-driver,secrets-store-csi-driver-provider-aws"
 KEYS0="app.kubernetes.io/name,k8s-app,app,datafy.io/webhook"
 pass=0; fail=0
 
@@ -77,7 +77,7 @@ controller:
     excluded:
       podLabels:
         app.kubernetes.io/name: [ztunnel, istio-cni]
-        k8s-app: [istio-cni-node, calico-node]
+        k8s-app: [istio-cni-node, my-cni]
         app: [ztunnel]
         component: [my-agent]
 EOF
@@ -104,14 +104,14 @@ DEFAULTS="app.kubernetes.io/name=$DEF_APP;k8s-app=$DEF_K8S;app=$DEF_APPL;KEYS=$K
 
 check "defaults: built-ins only, no extra keys" "$DEFAULTS"
 check "app via --set"                    "app=$DEF_APPL;KEYS=$KEYS0;k8s-app=$DEF_K8S" --set "$P.app={ztunnel}"
-check "k8s-app via --set extends built-in" "k8s-app=$DEF_K8S,cilium,calico-node;KEYS=$KEYS0" --set "$P.k8s-app={cilium,calico-node}"
+check "k8s-app via --set extends built-in" "k8s-app=$DEF_K8S,weave-net,my-cni;KEYS=$KEYS0" --set "$P.k8s-app={weave-net,my-cni}"
 check "app.kubernetes.io/name escaped --set" "app.kubernetes.io/name=$DEF_APP,ztunnel;KEYS=$KEYS0" --set "$P.app\.kubernetes\.io/name={ztunnel}"
 check "custom key via --set"             "component=my-agent;KEYS=$KEYS0,component" --set "$P.component={my-agent}"
 check "two-flag Istio combo"             "app=$DEF_APPL;k8s-app=$DEF_K8S;app.kubernetes.io/name=$DEF_APP" \
                                          --set "$P.app={ztunnel}" --set "$P.k8s-app={istio-cni-node}"
 check "--set by index"                   "app=$DEF_APPL,foo" --set "$P.app[0]=ztunnel" --set "$P.app[1]=foo"
 check "--set-string by index"            "app=$DEF_APPL,123" --set-string "$P.app[0]=123"
-check "values file, all keys"            "app.kubernetes.io/name=$DEF_APP,ztunnel,istio-cni;k8s-app=$DEF_K8S,calico-node;app=$DEF_APPL;component=my-agent;KEYS=$KEYS0,component" \
+check "values file, all keys"            "app.kubernetes.io/name=$DEF_APP,ztunnel,istio-cni;k8s-app=$DEF_K8S,my-cni;app=$DEF_APPL;component=my-agent;KEYS=$KEYS0,component" \
                                          -f "$S/l-all.yaml"
 check "extra keys sorted, stable order"  "KEYS=$KEYS0,a-key,b-key,z-key" \
                                          --set "$P.z-key={z}" --set "$P.a-key={a}" --set "$P.b-key={b}"
@@ -131,8 +131,8 @@ check "new key app=test and test in app.kubernetes.io/name" "app.kubernetes.io/n
 check "only custom key boris-test"       "app.kubernetes.io/name=$DEF_APP;k8s-app=$DEF_K8S;boris-test=boris;KEYS=$KEYS0,boris-test" \
                                          --set "$P.boris-test={boris}"
 check "app extends built-in, no second expression" "app=$DEF_APPL,foo;KEYS=$KEYS0" --set "$P.app={foo}"
-check "duplicate values collapsed"       "app=$DEF_APPL,foo;k8s-app=$DEF_K8S,cilium;zz=a;KEYS=$KEYS0,zz" \
-                                         --set "$P.app={foo,foo,ztunnel}" --set "$P.k8s-app={cilium,coredns,cilium}" --set "$P.zz={a,a}"
+check "duplicate values collapsed"       "app=$DEF_APPL,foo;k8s-app=$DEF_K8S,my-cni;zz=a;KEYS=$KEYS0,zz" \
+                                         --set "$P.app={foo,foo,ztunnel}" --set "$P.k8s-app={my-cni,coredns,my-cni}" --set "$P.zz={a,a}"
 check "namespaces: none excluded by default" "NS=;NS_OPTOUT=disabled"
 check "namespaces via --set, deduped"    "NS=calico-system,istio-system;$DEFAULTS" --set "$N={calico-system,istio-system,calico-system}"
 check "namespaces empty {}"              "NS=" --set "$N={}"
@@ -151,6 +151,9 @@ if render --set agent.mode=Sensor --set extendedInstallOnSensor=false 2>/dev/nul
 if render -f "$S/l-all.yaml" | sed -n '/agent-delete/,$p' | grep -qE 'ztunnel|calico|my-agent'; then
   bad "agent-delete webhook untouched"; else ok "agent-delete webhook untouched"; fi
 
+if render | sed -n '/objectSelector:/,/clientConfig:/p' | grep -q 'ebs-csi'; then
+  bad "EBS CSI driver pods never excluded"; else ok "EBS CSI driver pods never excluded"; fi
+
 # Default render must be byte-identical to the chart before this change
 if [[ -n ${BASELINE_REF:-} ]]; then
   tmp=$(mktemp -d); git -C "$CHART" archive "$BASELINE_REF" | tar -x -C "$tmp"
@@ -162,7 +165,7 @@ if [[ -n ${BASELINE_REF:-} ]]; then
 fi
 
 if helm lint "$CHART" "${BASE[@]}" -f "$S/l-all.yaml" >/dev/null 2>&1; then ok "helm lint with values"; else bad "helm lint with values"; fi
-if grep -n -E ' +$' "$CHART/values.yaml" "$CHART/templates/controller-webhook.yaml" >/dev/null; then bad "no trailing spaces"; else ok "no trailing spaces"; fi
+if grep -n -E ' +$' "$CHART/values.yaml" "$CHART/templates/controller-webhook.yaml" "$CHART/templates/_webhook-excluded.tpl" >/dev/null; then bad "no trailing spaces"; else ok "no trailing spaces"; fi
 
 echo; echo "passed: $pass  failed: $fail"
 [[ $fail -eq 0 ]]
