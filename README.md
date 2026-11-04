@@ -84,11 +84,10 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 
 The controller's pod mutation webhook fails closed: while the controller is unavailable, pods it matches cannot be created. Skip pods that must start without it (CNI, service mesh and other node-level datapath components) in one of these ways:
 
-- Label the namespace or the pod (template) with `datafy.io/webhook=disabled`. This takes effect without a chart upgrade:
+- Label the pod template with `datafy.io/webhook=disabled`. This takes effect without a chart upgrade, for pods created after the change (patching the template rolls the workload):
   ```bash
-  kubectl label namespace <namespace> datafy.io/webhook=disabled
+  kubectl patch daemonset <name> -n <namespace> -p '{"spec":{"template":{"metadata":{"labels":{"datafy.io/webhook":"disabled"}}}}}'
   ```
-- `controller.webhook.excluded.namespaces`: namespaces to skip.
 - `controller.webhook.excluded.podMatchExpressions`: label selector requirements of pods to skip, rendered after the built-in ones. `operator` defaults to `NotIn`; only `NotIn` and `DoesNotExist` are accepted, because `In` and `Exists` would restrict the webhook to the matching pods instead of skipping them:
   ```yaml
   controller:
@@ -156,7 +155,6 @@ Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Data
 | controller.serviceAccount.roleArn | string | `nil` |  |
 | controller.serviceAccount.tokenless | bool | `false` |  |
 | controller.tolerations | list | `[]` |  |
-| controller.webhook.excluded.namespaces | list | `[]` |  |
 | controller.webhook.excluded.podMatchExpressions | list | `[]` |  |
 | ebsCsiProxy.image.pullPolicy | string | `"IfNotPresent"` |  |
 | ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |

@@ -46,9 +46,6 @@ webhooks:
         operations: [ "CREATE" ]
         resources: [ "pods" ]
         scope: "*"
-    namespaceSelector:
-      matchExpressions:
-        {{- include "datafy-agent.webhook.namespaceSelectorExpressions" . | trim | nindent 8 }}
     objectSelector:
       matchExpressions:
         {{- include "datafy-agent.webhook.objectSelectorExpressions" . | trim | nindent 8 }}

@@ -2,15 +2,13 @@
 # Usage: scripts/helm-validation/test-webhook-excluded-labels.sh [chart-dir]
 # Set BASELINE_REF=<git ref> to also check the default render is unchanged vs that ref.
 # Renders the controller webhook for every way of setting
-# controller.webhook.excluded.podMatchExpressions and controller.webhook.excluded.namespaces and
-# checks the objectSelector and namespaceSelector expressions, and that values.schema.json rejects
-# invalid values.
+# controller.webhook.excluded.podMatchExpressions and checks the objectSelector expressions and
+# that values.schema.json rejects invalid values.
 set -u
 CHART=${1:-.}
 S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
 BASE=(--set-string agent.token=1 --set-string agent.image.tag=1)
 P=controller.webhook.excluded.podMatchExpressions
-N=controller.webhook.excluded.namespaces
 DEF_APP="datafy-controller,datafy-agent,aws-cluster-autoscaler,aws-node,cilium-operator,cilium-node-init,ztunnel-cilium,eks-pod-identity-agent,eks-pod-identity-agent-hybrid,eks-pod-identity-agent-hybrid-bottlerocket,nvidia-device-plugin,kyverno-admission-controller,kyverno-background-controller,kyverno-cleanup-controller,kyverno-reports-controller"
 DEF_K8S="kube-dns,kube-proxy,coredns,node-local-dns,aws-node,calico-node,calico-typha,canal,cilium,cilium-envoy,kube-router,kindnet,istio-cni-node,linkerd-cni"
 DEF_APPL="flannel,antrea,multus,kube-ovn-cni,kube-ovn-controller,ovn-central,ztunnel,istiod,kuma-cni,kong-mesh-cni,consul,efs-csi-node,fsx-csi-node,s3-csi-node,secrets-store-csi-driver,secrets-store-csi-driver-provider-aws"
@@ -47,20 +45,10 @@ keys_of() {
     END { print out }'
 }
 
-# Mutation webhook namespaceSelector only: values of the NotIn list for label key $1
-ns_list() {
-  awk -v want="\"$1\"" '
-    /namespaceSelector:/ { inns=1; next }
-    inns && /objectSelector:/ { exit }
-    inns && /- key:/ { inlist=($3 == want); next }
-    inns && inlist && /^ *- / { v=$2; gsub(/"/, "", v); out = out (out ? "," : "") v }
-    END { print out }'
-}
-
 ok()  { echo "PASS  $1"; pass=$((pass+1)); }
 bad() { echo "FAIL  $1"; shift; for l in "$@"; do echo "      $l"; done; fail=$((fail+1)); }
 
-# check name "key=expected;OP:key=expected;KEYS=...;NS=...;NS_OPTOUT=..." helm-args...
+# check name "key=expected;OP:key=expected;KEYS=..." helm-args...
 check() {
   local name=$1 specs=$2; shift 2
   local out; if ! out=$(render "$@" 2>&1); then bad "$name" "render error: $out"; return; fi
@@ -68,8 +56,7 @@ check() {
   IFS=';' read -ra arr <<<"$specs"
   for spec in "${arr[@]}"; do
     key=${spec%%=*}; want=${spec#*=}
-    if [[ $key == KEYS ]]; then got=$(keys_of <<<"$out"); elif [[ $key == NS ]]; then got=$(ns_list kubernetes.io/metadata.name <<<"$out");
-    elif [[ $key == NS_OPTOUT ]]; then got=$(ns_list datafy.io/webhook <<<"$out");
+    if [[ $key == KEYS ]]; then got=$(keys_of <<<"$out");
     elif [[ $key == OP:* ]]; then got=$(op_of "${key#OP:}" <<<"$out"); else got=$(list "$key" <<<"$out"); fi
     [[ $got == "$want" ]] || errs+=("$key got: $got" "$key want: $want")
   done
@@ -161,11 +148,6 @@ check "Sensor mode with expressions"         "app=$DEF_APPL,foo" --set agent.mod
                                              --set "$P[0].key=app" --set "$P[0].values={foo}"
 check "pod opt-out label extended by a second expression" "datafy.io/webhook=disabled,off;KEYS=$KEYS0,datafy.io/webhook" \
                                              --set "$P[0].key=datafy.io/webhook" --set "$P[0].values={off}"
-check "namespaces: none excluded by default" "NS=;NS_OPTOUT=disabled"
-check "namespaces via --set, deduped"        "NS=calico-system,istio-system;$DEFAULTS" --set "$N={calico-system,istio-system,calico-system}"
-check "namespaces empty {}"                  "NS=" --set "$N={}"
-check "namespaces blank item dropped"        "NS=calico-system" --set "$N={calico-system,}"
-check "namespaces keep opt-out label"        "NS=calico-system;NS_OPTOUT=disabled" --set "$N={calico-system}"
 
 expect_error "operator In rejected"          'must be one of the following: "NotIn", "DoesNotExist"' \
                                              --set "$P[0].key=app" --set "$P[0].operator=In" --set "$P[0].values={x}"
@@ -181,7 +163,8 @@ expect_error "unknown field in an entry"     "Additional property value is not a
 expect_error "map instead of list"           "podMatchExpressions: Invalid type" --set "$P.app={x}"
 expect_error "old podLabels key"             "Additional property podLabels is not allowed" \
                                              --set "controller.webhook.excluded.podLabels.app={x}"
-expect_error "namespaces plain string"       "excluded.namespaces: Invalid type" --set "$N=calico-system"
+expect_error "excluded.namespaces removed"   "Additional property namespaces is not allowed" \
+                                             --set "controller.webhook.excluded.namespaces={calico-system}"
 
 # entries name yaml: writes a values file whose podMatchExpressions list items are the given
 # YAML lines (indented as list items) and prints its path
@@ -242,9 +225,6 @@ expect_error "value over 63 characters"      "podMatchExpressions.0.values.0: St
                                              --set "$P[0].key=app" --set "$P[0].values={$X64}"
 expect_error "bad value after a good one"    "podMatchExpressions.0.values.1: Does not match pattern" \
                                              --set "$P[0].key=app" --set "$P[0].values={ok,not ok}"
-# Bad namespaces
-expect_error "namespace with uppercase and _" "namespaces.0: Does not match pattern" --set "$N={Calico_System}"
-expect_error "namespace over 63 characters"  "namespaces.0: String length must be less than or equal to 63" --set "$N={$X64}"
 
 # Boundaries that must be accepted
 check "DoesNotExist with empty values list"  "OP:$MP=DoesNotExist;$MP=" \
@@ -260,6 +240,8 @@ if render --set agent.mode=Sensor --set extendedInstallOnSensor=false 2>/dev/nul
 
 if render -f "$S/e-all.yaml" | sed -n '/agent-delete/,$p' | grep -qE 'istio-cni|mountpoint|my-agent'; then
   bad "agent-delete webhook untouched"; else ok "agent-delete webhook untouched"; fi
+
+if render | grep -q 'namespaceSelector'; then bad "no namespaceSelector"; else ok "no namespaceSelector"; fi
 
 if render | sed -n '/objectSelector:/,/clientConfig:/p' | grep -q 'ebs-csi'; then
   bad "EBS CSI driver pods never excluded"; else ok "EBS CSI driver pods never excluded"; fi

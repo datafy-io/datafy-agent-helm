@@ -60,19 +60,6 @@
               "type": "object",
               "additionalProperties": false,
               "properties": {
-                "namespaces": {
-                  "type": [
-                    "array",
-                    "null"
-                  ],
-                  "items": {
-                    "type": "string",
-                    "maxLength": 63,
-                    "pattern": "^([a-z0-9]([-a-z0-9]*[a-z0-9])?)?$",
-                    "description": "Namespace name (RFC 1123 label); blank items are ignored"
-                  },
-                  "description": "Namespaces excluded from the pod mutation webhook, matched by the kubernetes.io/metadata.name namespace label"
-                },
                 "podMatchExpressions": {
                   "type": [
                     "array",

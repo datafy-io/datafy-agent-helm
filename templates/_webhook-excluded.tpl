@@ -81,25 +81,6 @@ expressions:
 {{- end }}
 
 {{/*
-namespaceSelector matchExpressions of the pod mutation webhook: the datafy.io/webhook=disabled
-opt-out label and controller.webhook.excluded.namespaces.
-*/}}
-{{- define "datafy-agent.webhook.namespaceSelectorExpressions" -}}
-- key: "datafy.io/webhook"
-  operator: "NotIn"
-  values:
-    - "disabled"
-{{- with (((.Values.controller).webhook).excluded).namespaces | default list | compact | uniq }}
-- key: "kubernetes.io/metadata.name"
-  operator: "NotIn"
-  values:
-    {{- range . }}
-    - {{ . | quote }}
-    {{- end }}
-{{- end }}
-{{- end }}
-
-{{/*
 objectSelector matchExpressions of the pod mutation webhook: the built-in expressions followed
 by controller.webhook.excluded.podMatchExpressions in order, one expression per entry. Entries
 are not merged by key: expressions are ANDed, so two NotIn expressions on one key skip the union
