@@ -2,3 +2,6 @@
 {{ include "datafy-agent.validation.mode" . }}
 {{ include "datafy-agent.validation.token" . }}
 {{- end }}
+{{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
+{{ include "datafy-agent.validation.webhookKeepsEbsCsiPods" . }}
+{{- end }}
