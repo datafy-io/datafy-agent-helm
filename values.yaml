@@ -166,18 +166,31 @@ controller:
     runAsNonRoot: true
     runAsUser: 1001
 
-  ## Pods the pod mutation webhook must skip, appended to the built-in exclusions.
-  ## Use it for node-level datapath components (CNI, mesh) that must start even when
-  ## the webhook is unreachable, e.g. Istio ambient ztunnel or Calico.
-  ## Map of label key -> list of label values; each key becomes a "NotIn" expression
-  ## (app.kubernetes.io/name and k8s-app extend the built-in lists):
-  ##   --set "controller.webhook.excludedPods.labels.app={ztunnel}"
-  ##   --set "controller.webhook.excludedPods.labels.k8s-app={istio-cni-node,calico-node}"
-  ##   --set "controller.webhook.excludedPods.labels.app\.kubernetes\.io/name={my-app}"
   webhook:
-    excludedPods:
-      ## @param controller.webhook.excludedPods.labels Label key -> values of pods to exclude
-      labels: {}
+    ## Pods the pod mutation webhook must skip, on top of the built-in exclusions in
+    ## templates/_webhook-excluded.tpl (CNI, mesh datapath, DNS, node credentials, etc...).
+    ## Use it for node-level components that must start even when the webhook is unreachable.
+    ## Without a chart change, label a pod (template) to skip it: `datafy.io/webhook=disabled`
+    excluded:
+      ## The default built-in exclusions (Datafy's own pods and AWS-native components: VPC CNI,
+      ## kube-proxy, CoreDNS, EKS Pod Identity Agent, EFS/FSx/Mountpoint for S3/Secrets Store CSI node
+      ## pods) always apply. Set to false to drop the extra built-in ones: non-AWS CNIs, service mesh
+      ## (Istio, Linkerd, Kuma, Consul), NodeLocal DNSCache, the NVIDIA device plugin and Kyverno.
+      ## @param controller.webhook.excluded.extraEnabled Also skip the extra built-in non-AWS node-level components
+      extraEnabled: true
+      ## Label selector requirements (as in a LabelSelector's matchExpressions) of pods to skip,
+      ## rendered after the built-in ones, one expression per entry. operator is optional and
+      ## defaults to NotIn; only NotIn (with values) and DoesNotExist (without values) are allowed.
+      ## A later values file replaces the whole list; --set with an index edits that entry of it.
+      ##   podMatchExpressions:
+      ##     - key: k8s-app
+      ##       values: [my-cni-agent]
+      ##     - key: s3.csi.aws.com/mountpoint-version
+      ##       operator: DoesNotExist
+      ##   --set "controller.webhook.excluded.podMatchExpressions[0].key=k8s-app" \
+      ##   --set "controller.webhook.excluded.podMatchExpressions[0].values={my-cni-agent}"
+      ## @param controller.webhook.excluded.podMatchExpressions Label selector requirements of pods to exclude
+      podMatchExpressions: []
 
 ebsCsiProxy:
   image:

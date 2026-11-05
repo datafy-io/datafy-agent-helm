@@ -80,6 +80,30 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 
 `noProxy` is a comma-separated list passed through verbatim. Because Helm's `--set` splits on commas, escape them or pass values via a values file.
 
+## Pod mutation webhook
+
+The controller's pod mutation webhook fails closed: while the controller is unavailable, pods it matches cannot be created. Skip pods that must start without it (CNI, service mesh and other node-level datapath components) in one of these ways:
+
+- Label the pod template with `datafy.io/webhook=disabled`. This takes effect without a chart upgrade, for pods created after the change (patching the template rolls the workload):
+  ```bash
+  kubectl patch daemonset <name> -n <namespace> -p '{"spec":{"template":{"metadata":{"labels":{"datafy.io/webhook":"disabled"}}}}}'
+  ```
+- `controller.webhook.excluded.podMatchExpressions`: label selector requirements of pods to skip, rendered after the built-in ones. `operator` defaults to `NotIn`; only `NotIn` and `DoesNotExist` are accepted, because `In` and `Exists` would restrict the webhook to the matching pods instead of skipping them:
+  ```yaml
+  controller:
+    webhook:
+      excluded:
+        podMatchExpressions:
+          - key: k8s-app
+            values: [my-cni-agent]
+          - key: s3.csi.aws.com/mountpoint-version
+            operator: DoesNotExist
+  ```
+
+The built-in exclusions are listed in `templates/_webhook-excluded.tpl`, in two lists. The default list always applies: Datafy's own pods and AWS-native components (VPC CNI, kube-proxy, CoreDNS, EKS Pod Identity Agent, and the EFS, FSx, Mountpoint for S3 and Secrets Store CSI node pods). The extra list applies unless `controller.webhook.excluded.extraEnabled` is `false`: non-AWS CNIs (Calico, Cilium, Flannel, Antrea, Multus, kube-router, Kube-OVN), service mesh (Istio CNI, ztunnel, istiod, Linkerd CNI, Kuma/Kong Mesh CNI, Consul), NodeLocal DNSCache, the NVIDIA device plugin, and Kyverno.
+
+Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Datafy volumes: the webhook injects the Datafy sidecar into the CSI pods and handles placement of pods with Datafy volumes.
+
 ---
 
 ## Values
@@ -131,7 +155,8 @@ Set `proxy.httpsProxy` and `proxy.noProxy` to run behind an HTTPS proxy. The cha
 | controller.serviceAccount.roleArn | string | `nil` |  |
 | controller.serviceAccount.tokenless | bool | `false` |  |
 | controller.tolerations | list | `[]` |  |
-| controller.webhook.excludedPods.labels | object | `{}` |  |
+| controller.webhook.excluded.extraEnabled | bool | `true` |  |
+| controller.webhook.excluded.podMatchExpressions | list | `[]` |  |
 | ebsCsiProxy.image.pullPolicy | string | `"IfNotPresent"` |  |
 | ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |
 | ebsCsiProxy.image.tag | string | `nil` |  |

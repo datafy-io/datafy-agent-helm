@@ -52,6 +52,95 @@
               "description": "IAM role ARN for tokenless (IRSA) mode, attached to the controller ServiceAccount via the eks.amazonaws.com/role-arn annotation"
             }
           }
+        },
+        "webhook": {
+          "type": "object",
+          "properties": {
+            "excluded": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "extraEnabled": {
+                  "type": "boolean",
+                  "description": "Also skip the extra built-in non-AWS node-level components (CNIs, service mesh, NodeLocal DNSCache, device plugins, Kyverno) listed in templates/_webhook-excluded.tpl"
+                },
+                "podMatchExpressions": {
+                  "type": [
+                    "array",
+                    "null"
+                  ],
+                  "description": "Label selector requirements of pods excluded from the pod mutation webhook, rendered after the built-in ones. Only exclusion operators are allowed: In and Exists would restrict the webhook to the matching pods instead",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "key"
+                    ],
+                    "properties": {
+                      "key": {
+                        "type": "string",
+                        "maxLength": 317,
+                        "pattern": "^([a-z0-9]([-a-z0-9]*[a-z0-9])?(\\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*/)?[A-Za-z0-9]([-A-Za-z0-9_.]{0,61}[A-Za-z0-9])?$",
+                        "description": "Label key: an optional DNS subdomain prefix and '/', then a name of at most 63 characters"
+                      },
+                      "operator": {
+                        "type": "string",
+                        "enum": [
+                          "NotIn",
+                          "DoesNotExist"
+                        ],
+                        "description": "Defaults to NotIn"
+                      },
+                      "values": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": [
+                            "string",
+                            "number",
+                            "boolean"
+                          ],
+                          "maxLength": 63,
+                          "pattern": "^(([A-Za-z0-9][-A-Za-z0-9_.]*)?[A-Za-z0-9])?$",
+                          "description": "Label value: at most 63 characters"
+                        }
+                      }
+                    },
+                    "if": {
+                      "required": [
+                        "operator"
+                      ],
+                      "properties": {
+                        "operator": {
+                          "const": "DoesNotExist"
+                        }
+                      }
+                    },
+                    "then": {
+                      "properties": {
+                        "values": {
+                          "maxItems": 0
+                        }
+                      }
+                    },
+                    "else": {
+                      "required": [
+                        "values"
+                      ],
+                      "properties": {
+                        "values": {
+                          "type": "array",
+                          "minItems": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         }
       }
     },
