@@ -1,75 +1,26 @@
 {{/*
-Pods the pod mutation webhook skips by default, as an ordered list of objectSelector label
-selector requirements in the shape of controller.webhook.excluded.podMatchExpressions.
-
-The webhook fails closed, so creating these pods must not depend on the controller being
-reachable: they are node-level components that other pods on the node need to start, get an
-IP, resolve names, reach Services, mount volumes, get AWS credentials or use devices, plus
-admission webhooks that fail closed themselves. Skipped pods get no Datafy tolerations and no
-Datafy handling of their volumes, so never list the EBS CSI driver pods (ebs-csi-node,
-ebs-csi-controller): the webhook injects the Datafy sidecar into them.
+Pods the pod mutation webhook always skips: Datafy's own pods and AWS-native node components.
+Never list the EBS CSI driver pods: the webhook injects the Datafy sidecar into them.
 */}}
-{{- define "datafy-agent.webhook.builtinPodMatchExpressions" -}}
+{{- define "datafy-agent.webhook.defaultPodMatchExpressions" -}}
 expressions:
   - key: app.kubernetes.io/name
     values:
-      # Datafy
       - datafy-controller
       - datafy-agent
-      # Node provisioning
       - aws-cluster-autoscaler
-      # Pod networking
       - aws-node
-      - cilium-operator
-      - cilium-node-init
-      # Mesh datapath
-      - ztunnel-cilium
-      # Node credentials
       - eks-pod-identity-agent
       - eks-pod-identity-agent-hybrid
       - eks-pod-identity-agent-hybrid-bottlerocket
-      # Device plugins
-      - nvidia-device-plugin
-      # Admission webhooks that fail closed
-      - kyverno-admission-controller
-      - kyverno-background-controller
-      - kyverno-cleanup-controller
-      - kyverno-reports-controller
   - key: k8s-app
     values:
-      # DNS and Service routing
       - kube-dns
       - kube-proxy
       - coredns
-      - node-local-dns
-      # Pod networking
       - aws-node
-      - calico-node
-      - calico-typha
-      - canal
-      - cilium
-      - cilium-envoy
-      - kube-router
-      - kindnet
-      # Mesh datapath
-      - istio-cni-node
-      - linkerd-cni
   - key: app
     values:
-      # Pod networking
-      - flannel
-      - antrea
-      - multus
-      - kube-ovn-cni
-      - kube-ovn-controller
-      - ovn-central
-      # Mesh datapath and its control plane (certificates, injection)
-      - ztunnel
-      - istiod
-      - kuma-cni
-      - kong-mesh-cni
-      - consul
-      # Node volume mounts
       - efs-csi-node
       - fsx-csi-node
       - s3-csi-node
@@ -81,20 +32,65 @@ expressions:
 {{- end }}
 
 {{/*
-objectSelector matchExpressions of the pod mutation webhook: the built-in expressions followed
-by controller.webhook.excluded.podMatchExpressions in order, one expression per entry. Entries
-are not merged by key: expressions are ANDed, so two NotIn expressions on one key skip the union
+Pods the pod mutation webhook also skips unless controller.webhook.excluded.extraEnabled is false:
+non-AWS node components (CNIs, service mesh, DNS cache, device plugins) and Kyverno.
+*/}}
+{{- define "datafy-agent.webhook.extraPodMatchExpressions" -}}
+expressions:
+  - key: app.kubernetes.io/name
+    values:
+      - cilium-operator
+      - cilium-node-init
+      - ztunnel-cilium
+      - nvidia-device-plugin
+      - kyverno-admission-controller
+      - kyverno-background-controller
+      - kyverno-cleanup-controller
+      - kyverno-reports-controller
+  - key: k8s-app
+    values:
+      - node-local-dns
+      - calico-node
+      - calico-typha
+      - canal
+      - cilium
+      - cilium-envoy
+      - kube-router
+      - kindnet
+      - istio-cni-node
+      - linkerd-cni
+  - key: app
+    values:
+      - flannel
+      - antrea
+      - multus
+      - kube-ovn-cni
+      - kube-ovn-controller
+      - ovn-central
+      - ztunnel
+      - kuma-cni
+      - kong-mesh-cni
+      - consul
+      - istiod
+{{- end }}
+
+{{/*
+objectSelector matchExpressions of the pod mutation webhook: the default expressions, then the extra
+ones unless controller.webhook.excluded.extraEnabled is false, then
+controller.webhook.excluded.podMatchExpressions in order, one expression per entry. Entries are
+not merged by key: expressions are ANDed, so two NotIn expressions on one key skip the union
 of their values. The operator defaults to NotIn; values.schema.json restricts it to NotIn and
 DoesNotExist. Blank and repeated values of an entry are dropped.
 */}}
 {{- define "datafy-agent.webhook.objectSelectorExpressions" -}}
-{{- $builtin := (include "datafy-agent.webhook.builtinPodMatchExpressions" . | fromYaml).expressions }}
-{{- $user := (((.Values.controller).webhook).excluded).podMatchExpressions | default list }}
-{{- range $expr := concat $builtin $user }}
+{{- $excluded := ((.Values.controller).webhook).excluded | default dict }}
+{{- $expressions := (include "datafy-agent.webhook.defaultPodMatchExpressions" . | fromYaml).expressions }}
+{{- if ne $excluded.extraEnabled false }}
+{{- $expressions = concat $expressions (include "datafy-agent.webhook.extraPodMatchExpressions" . | fromYaml).expressions }}
+{{- end }}
+{{- $user := $excluded.podMatchExpressions | default list }}
+{{- range $expr := concat $expressions $user }}
 {{- $operator := $expr.operator | default "NotIn" }}
-- key: {{ $expr.key | quote }}
-  operator: {{ $operator | quote }}
-{{- if eq $operator "NotIn" }}
 {{- $values := list }}
 {{- range $expr.values }}
 {{- $value := ternary "" (toString .) (kindIs "invalid" .) }}
@@ -102,9 +98,12 @@ DoesNotExist. Blank and repeated values of an entry are dropped.
 {{- $values = append $values $value }}
 {{- end }}
 {{- end }}
-{{- if not $values }}
+{{- if and (eq $operator "NotIn") (not $values) }}
 {{- fail (printf "controller.webhook.excluded.podMatchExpressions: the NotIn expression on %q needs at least one non-empty value" $expr.key) }}
 {{- end }}
+- key: {{ $expr.key | quote }}
+  operator: {{ $operator | quote }}
+{{- if eq $operator "NotIn" }}
   values:
     {{- range $values }}
     - {{ . | quote }}

@@ -9,10 +9,19 @@ CHART=${1:-.}
 S=$(mktemp -d); trap 'rm -rf "$S"' EXIT
 BASE=(--set-string agent.token=1 --set-string agent.image.tag=1)
 P=controller.webhook.excluded.podMatchExpressions
-DEF_APP="datafy-controller,datafy-agent,aws-cluster-autoscaler,aws-node,cilium-operator,cilium-node-init,ztunnel-cilium,eks-pod-identity-agent,eks-pod-identity-agent-hybrid,eks-pod-identity-agent-hybrid-bottlerocket,nvidia-device-plugin,kyverno-admission-controller,kyverno-background-controller,kyverno-cleanup-controller,kyverno-reports-controller"
-DEF_K8S="kube-dns,kube-proxy,coredns,node-local-dns,aws-node,calico-node,calico-typha,canal,cilium,cilium-envoy,kube-router,kindnet,istio-cni-node,linkerd-cni"
-DEF_APPL="flannel,antrea,multus,kube-ovn-cni,kube-ovn-controller,ovn-central,ztunnel,istiod,kuma-cni,kong-mesh-cni,consul,efs-csi-node,fsx-csi-node,s3-csi-node,secrets-store-csi-driver,secrets-store-csi-driver-provider-aws"
-KEYS0="app.kubernetes.io/name,k8s-app,app,datafy.io/webhook"
+# Default built-in values (always rendered) and extra ones (controller.webhook.excluded.extraEnabled)
+DEFAULT_APP="datafy-controller,datafy-agent,aws-cluster-autoscaler,aws-node,eks-pod-identity-agent,eks-pod-identity-agent-hybrid,eks-pod-identity-agent-hybrid-bottlerocket"
+DEFAULT_K8S="kube-dns,kube-proxy,coredns,aws-node"
+DEFAULT_APPL="efs-csi-node,fsx-csi-node,s3-csi-node,secrets-store-csi-driver,secrets-store-csi-driver-provider-aws"
+EXTRA_APP="cilium-operator,cilium-node-init,ztunnel-cilium,nvidia-device-plugin,kyverno-admission-controller,kyverno-background-controller,kyverno-cleanup-controller,kyverno-reports-controller"
+EXTRA_K8S="node-local-dns,calico-node,calico-typha,canal,cilium,cilium-envoy,kube-router,kindnet,istio-cni-node,linkerd-cni"
+EXTRA_APPL="flannel,antrea,multus,kube-ovn-cni,kube-ovn-controller,ovn-central,ztunnel,kuma-cni,kong-mesh-cni,consul,istiod"
+DEF_APP="$DEFAULT_APP,$EXTRA_APP"
+DEF_K8S="$DEFAULT_K8S,$EXTRA_K8S"
+DEF_APPL="$DEFAULT_APPL,$EXTRA_APPL"
+KEYS_DEFAULT="app.kubernetes.io/name,k8s-app,app,datafy.io/webhook"
+KEYS0="$KEYS_DEFAULT,app.kubernetes.io/name,k8s-app,app"
+X=controller.webhook.excluded.extraEnabled
 MP=s3.csi.aws.com/mountpoint-version
 pass=0; fail=0
 
@@ -99,6 +108,12 @@ controller:
     excluded:
       podMatchExpressions: []
 EOF
+cat > "$S/e-no-extra.yaml" <<'EOF'
+controller:
+  webhook:
+    excluded:
+      extraEnabled: false
+EOF
 cat > "$S/e-null.yaml" <<'EOF'
 controller:
   webhook:
@@ -119,12 +134,19 @@ controller:
 EOF
 
 DEFAULTS="app.kubernetes.io/name=$DEF_APP;k8s-app=$DEF_K8S;app=$DEF_APPL;datafy.io/webhook=disabled;KEYS=$KEYS0"
-NOTIN4="OP:app.kubernetes.io/name=NotIn;OP:k8s-app=NotIn;OP:app=NotIn;OP:datafy.io/webhook=NotIn"
+NOTIN4="OP:app.kubernetes.io/name=NotIn,NotIn;OP:k8s-app=NotIn,NotIn;OP:app=NotIn,NotIn;OP:datafy.io/webhook=NotIn"
+DEFAULT_ONLY="app.kubernetes.io/name=$DEFAULT_APP;k8s-app=$DEFAULT_K8S;app=$DEFAULT_APPL;datafy.io/webhook=disabled;KEYS=$KEYS_DEFAULT"
 
-check "defaults: built-ins only, all NotIn"  "$DEFAULTS;$NOTIN4"
-check "operator defaults to NotIn"           "app=$DEF_APPL,foo;OP:app=NotIn,NotIn;KEYS=$KEYS0,app" \
+check "defaults: default and extra built-ins, all NotIn" "$DEFAULTS;$NOTIN4"
+check "extraEnabled=true same as default"   "$DEFAULTS" --set "$X=true"
+check "extraEnabled=false: default list only" "$DEFAULT_ONLY" --set "$X=false"
+check "extraEnabled=false from a values file" "$DEFAULT_ONLY" -f "$S/e-no-extra.yaml"
+check "extraEnabled=false keeps user expressions" "app=$DEFAULT_APPL,foo;KEYS=$KEYS_DEFAULT,app" \
+                                             --set "$X=false" --set "$P[0].key=app" --set "$P[0].values={foo}"
+check "extraEnabled=null uses the default"  "$DEFAULTS" --set "$X=null"
+check "operator defaults to NotIn"           "app=$DEF_APPL,foo;OP:app=NotIn,NotIn,NotIn;KEYS=$KEYS0,app" \
                                              --set "$P[0].key=app" --set "$P[0].values={foo}"
-check "explicit NotIn"                       "app=$DEF_APPL,foo;OP:app=NotIn,NotIn;KEYS=$KEYS0,app" \
+check "explicit NotIn"                       "app=$DEF_APPL,foo;OP:app=NotIn,NotIn,NotIn;KEYS=$KEYS0,app" \
                                              --set "$P[0].key=app" --set "$P[0].operator=NotIn" --set "$P[0].values={foo}"
 check "DoesNotExist renders without values"  "OP:$MP=DoesNotExist;$MP=;KEYS=$KEYS0,$MP" \
                                              --set "$P[0].key=$MP" --set "$P[0].operator=DoesNotExist"
@@ -163,6 +185,28 @@ expect_error "unknown field in an entry"     "Additional property value is not a
 expect_error "map instead of list"           "podMatchExpressions: Invalid type" --set "$P.app={x}"
 expect_error "old podLabels key"             "Additional property podLabels is not allowed" \
                                              --set "controller.webhook.excluded.podLabels.app={x}"
+# Expressions that would skip the EBS CSI driver pods
+EBS="which must reach the pod mutation webhook to get the Datafy sidecar"
+expect_error "skip ebs-csi-node by app"      "\"app NotIn [foo, ebs-csi-node]\" would skip the ebs-csi-node pods, $EBS" \
+                                             --set "$P[0].key=app" --set "$P[0].values={foo,ebs-csi-node}"
+expect_error "skip ebs-csi-controller by app" "would skip the ebs-csi-controller pods" \
+                                             --set "$P[0].key=app" --set "$P[0].values={ebs-csi-controller}"
+expect_error "skip by app.kubernetes.io/name" "\"app.kubernetes.io/name NotIn [aws-ebs-csi-driver]\" would skip" \
+                                             --set "$P[0].key=app.kubernetes.io/name" --set "$P[0].values={aws-ebs-csi-driver}"
+expect_error "skip by install label value"   "\"datafy.io/install NotIn [AutoScaler]\" would skip" \
+                                             --set "$P[0].key=datafy.io/install" --set "$P[0].values={AutoScaler}"
+expect_error "skip by install label DoesNotExist" "\"datafy.io/install DoesNotExist\" would skip" \
+                                             --set "$P[0].key=datafy.io/install" --set "$P[0].operator=DoesNotExist"
+expect_error "skip by app DoesNotExist"      "\"app DoesNotExist\" would skip" --set "$P[0].key=app" --set "$P[0].operator=DoesNotExist"
+expect_error "skip in a later entry"         "would skip the ebs-csi-node pods" \
+                                             --set "$P[0].key=app" --set "$P[0].values={foo}" --set "$P[1].key=app" --set "$P[1].values={ebs-csi-node}"
+expect_error "disableValidation keeps the EBS CSI check" "would skip the ebs-csi-node pods" --set disableValidation=true \
+                                             --set "$P[0].key=app" --set "$P[0].values={ebs-csi-node}"
+check "similar app value is allowed"         "app=$DEF_APPL,ebs-csi,ebs-csi-node-x" --set "$P[0].key=app" --set "$P[0].values={ebs-csi,ebs-csi-node-x}"
+check "DoesNotExist on another key is allowed" "OP:$MP=DoesNotExist" --set "$P[0].key=$MP" --set "$P[0].operator=DoesNotExist"
+
+expect_error "extraEnabled as a string"     "extraEnabled: Invalid type. Expected: boolean, given: string" --set-string "$X=false"
+expect_error "extraEnabled as a number"     "extraEnabled: Invalid type. Expected: boolean, given: integer" --set "$X=0"
 expect_error "excluded.namespaces removed"   "Additional property namespaces is not allowed" \
                                              --set "controller.webhook.excluded.namespaces={calico-system}"
 
@@ -242,6 +286,11 @@ if render -f "$S/e-all.yaml" | sed -n '/agent-delete/,$p' | grep -qE 'istio-cni|
   bad "agent-delete webhook untouched"; else ok "agent-delete webhook untouched"; fi
 
 if render | grep -q 'namespaceSelector'; then bad "no namespaceSelector"; else ok "no namespaceSelector"; fi
+
+for v in true false; do
+  vals=$(render --set "$X=$v" | sed -n '/objectSelector:/,/clientConfig:/p' | grep -E '^ +- "' | sort | uniq -d | grep -v '"aws-node"' | paste -sd, -)
+  [[ -z $vals ]] && ok "no value repeated across lists (extraEnabled=$v)" || bad "no value repeated across lists (extraEnabled=$v)" "repeated: $vals"
+done
 
 if render | sed -n '/objectSelector:/,/clientConfig:/p' | grep -q 'ebs-csi'; then
   bad "EBS CSI driver pods never excluded"; else ok "EBS CSI driver pods never excluded"; fi

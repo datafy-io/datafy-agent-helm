@@ -41,3 +41,27 @@
     {{- end }}
   {{- end }}
 {{- end }}
+
+{{/*
+Fails when an expression of the pod mutation webhook's objectSelector would skip an EBS CSI driver
+pod: the webhook injects the Datafy sidecar into them. Pod labels are those of the EBS CSI driver
+add-on and Helm chart pods; "*" stands for any value (the datafy.io/install value is the agent mode).
+*/}}
+{{- define "datafy-agent.validation.webhookKeepsEbsCsiPods" }}
+  {{- $pods := dict
+      "ebs-csi-node" (dict "app" "ebs-csi-node" "app.kubernetes.io/name" "aws-ebs-csi-driver" "datafy.io/install" "*")
+      "ebs-csi-controller" (dict "app" "ebs-csi-controller" "app.kubernetes.io/name" "aws-ebs-csi-driver" "datafy.io/install" "*") }}
+  {{- range $expr := include "datafy-agent.webhook.objectSelectorExpressions" . | fromYamlArray }}
+    {{- $values := $expr.values | default list }}
+    {{- range $pod := keys $pods | sortAlpha }}
+      {{- $labels := get $pods $pod }}
+      {{- if hasKey $labels $expr.key }}
+        {{- $value := get $labels $expr.key }}
+        {{- if or (eq $expr.operator "DoesNotExist") (eq $value "*") (has $value $values) }}
+          {{- $expression := ternary (printf "%s DoesNotExist" $expr.key) (printf "%s NotIn [%s]" $expr.key (join ", " $values)) (eq $expr.operator "DoesNotExist") }}
+          {{ fail (printf "invalid value: controller.webhook.excluded: \"%s\" would skip the %s pods, which must reach the pod mutation webhook to get the Datafy sidecar" $expression $pod) }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}

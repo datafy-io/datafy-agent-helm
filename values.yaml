@@ -172,6 +172,12 @@ controller:
     ## Use it for node-level components that must start even when the webhook is unreachable.
     ## Without a chart change, label a pod (template) to skip it: `datafy.io/webhook=disabled`
     excluded:
+      ## The default built-in exclusions (Datafy's own pods and AWS-native components: VPC CNI,
+      ## kube-proxy, CoreDNS, EKS Pod Identity Agent, EFS/FSx/Mountpoint for S3/Secrets Store CSI node
+      ## pods) always apply. Set to false to drop the extra built-in ones: non-AWS CNIs, service mesh
+      ## (Istio, Linkerd, Kuma, Consul), NodeLocal DNSCache, the NVIDIA device plugin and Kyverno.
+      ## @param controller.webhook.excluded.extraEnabled Also skip the extra built-in non-AWS node-level components
+      extraEnabled: true
       ## Label selector requirements (as in a LabelSelector's matchExpressions) of pods to skip,
       ## rendered after the built-in ones, one expression per entry. operator is optional and
       ## defaults to NotIn; only NotIn (with values) and DoesNotExist (without values) are allowed.

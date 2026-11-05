@@ -100,7 +100,7 @@ The controller's pod mutation webhook fails closed: while the controller is unav
             operator: DoesNotExist
   ```
 
-The built-in exclusions, listed in `templates/_webhook-excluded.tpl`, skip by label the node-level components that other pods on the node depend on: CNI (VPC CNI, Calico, Cilium, Flannel, Antrea, Multus, kube-router, Kube-OVN), mesh datapath (Istio CNI, ztunnel, istiod, Linkerd CNI, Kuma/Kong Mesh CNI, Consul), DNS and Service routing (CoreDNS, NodeLocal DNSCache, kube-proxy), EKS Pod Identity Agent, node volume mounts (EFS, FSx, Mountpoint for S3 CSI node, Secrets Store CSI), the NVIDIA device plugin, and Kyverno.
+The built-in exclusions are listed in `templates/_webhook-excluded.tpl`, in two lists. The default list always applies: Datafy's own pods and AWS-native components (VPC CNI, kube-proxy, CoreDNS, EKS Pod Identity Agent, and the EFS, FSx, Mountpoint for S3 and Secrets Store CSI node pods). The extra list applies unless `controller.webhook.excluded.extraEnabled` is `false`: non-AWS CNIs (Calico, Cilium, Flannel, Antrea, Multus, kube-router, Kube-OVN), service mesh (Istio CNI, ztunnel, istiod, Linkerd CNI, Kuma/Kong Mesh CNI, Consul), NodeLocal DNSCache, the NVIDIA device plugin, and Kyverno.
 
 Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Datafy volumes: the webhook injects the Datafy sidecar into the CSI pods and handles placement of pods with Datafy volumes.
 
@@ -155,6 +155,7 @@ Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Data
 | controller.serviceAccount.roleArn | string | `nil` |  |
 | controller.serviceAccount.tokenless | bool | `false` |  |
 | controller.tolerations | list | `[]` |  |
+| controller.webhook.excluded.extraEnabled | bool | `true` |  |
 | controller.webhook.excluded.podMatchExpressions | list | `[]` |  |
 | ebsCsiProxy.image.pullPolicy | string | `"IfNotPresent"` |  |
 | ebsCsiProxy.image.repository | string | `"public.ecr.aws/datafy-io/ebs-csi-controller"` |  |
