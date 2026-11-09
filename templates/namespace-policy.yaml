@@ -1,0 +1,61 @@
+{{- if eq (include "datafy-agent.extendedInstallEnabled" .) "true" }}
+{{- $name := "datafy-namespace-protection" -}}
+{{- $bindingName := "datafy-namespace-protection-binding" -}}
+# Denies deleting the release namespace while this binding exists. Deleting the
+# namespace kills the controller before its teardown runs, stranding the cluster-scoped
+# resources pointing into it -- among them a failurePolicy=Fail pod webhook that then
+# rejects pod creation cluster-wide.
+#
+# Kept across helm uninstall: the teardown it protects runs after the uninstall. The
+# teardown points both objects at its cluster role binding, so garbage collection
+# removes them together with the controller Deployment, which lifts the block.
+#
+# No paramKind: the API server serves a built-in paramKind from its shared informer
+# factory and stops that informer once the last policy using it is deleted, without
+# restarting it for the next one. Every later policy then reads a frozen store, and a
+# missing param fails open.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicy
+metadata:
+  name: {{ $name }}
+  labels:
+  {{- include "datafy-agent.common.labels.withInstallationId" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Delete=false
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  failurePolicy: Fail
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [ "" ]
+        apiVersions: [ "v1" ]
+        operations: [ "DELETE" ]
+        resources: [ "namespaces" ]
+        resourceNames: [ {{ .Release.Namespace | quote }} ]
+  validations:
+    - expression: "false"
+      messageExpression: >-
+        'namespace ' + request.name + ' still runs the datafy-controller.' +
+        ' Run `helm uninstall` and wait for the controller to finish its cleanup' +
+        ' and delete itself, then retry. To force it: kubectl delete validatingadmissionpolicybinding {{ $bindingName }}'
+      reason: Forbidden
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionPolicyBinding
+metadata:
+  name: {{ $bindingName }}
+  labels:
+  {{- include "datafy-agent.common.labels.withInstallationId" . | nindent 4 }}
+  annotations:
+    helm.sh/resource-policy: keep
+    argocd.argoproj.io/sync-options: Delete=false
+  {{- with .Values.extraAnnotations }}
+  {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  policyName: {{ $name }}
+  validationActions: [ "Deny" ]
+{{- end }}
