@@ -16,20 +16,26 @@ echo "Deleting Datafy [namespace ${NS}] kept resources"
 kubectl delete service datafy-controller-webhook -n "${NS}" --ignore-not-found
 kubectl delete service datafy-controller -n "${NS}" --ignore-not-found
 kubectl delete deployment datafy-controller -n "${NS}" --ignore-not-found
+kubectl delete daemonset datafy-agent -n "${NS}" --ignore-not-found
 kubectl delete configmap datafy-controller-config -n "${NS}" --ignore-not-found
 kubectl delete secret datafy-controller-webhook-tls -n "${NS}" --ignore-not-found
 kubectl delete secret datafy-controller-webhook-certificate -n "${NS}" --ignore-not-found
 kubectl delete secret datafy-token -n "${NS}" --ignore-not-found
 kubectl delete serviceaccount datafy-controller-sa -n "${NS}" --ignore-not-found
+kubectl delete serviceaccount datafy-agent-sa -n "${NS}" --ignore-not-found
 kubectl delete lease datafy-controller-leader -n "${NS}" --ignore-not-found
 
 # Cluster-scoped resources
 kubectl delete clusterrolebinding datafy-controller-binding --ignore-not-found
 kubectl delete clusterrole datafy-controller-role --ignore-not-found
+kubectl delete clusterrolebinding datafy-agent-binding --ignore-not-found
+kubectl delete clusterrole datafy-agent-role --ignore-not-found
 kubectl delete mutatingwebhookconfiguration datafy-controller-webhook --ignore-not-found
 kubectl delete mutatingwebhookconfiguration datafy-controller-mutating-webhook --ignore-not-found
-kubectl delete validatingadmissionpolicybinding datafy-pvc-autoscaling-native --ignore-not-found
-kubectl delete validatingadmissionpolicy datafy-pvc-autoscaling-native --ignore-not-found
+kubectl delete validatingadmissionpolicybinding datafy-pvc-binding --ignore-not-found
+kubectl delete validatingadmissionpolicy datafy-pvc --ignore-not-found
+kubectl delete validatingadmissionpolicybinding datafy-namespace-protection-binding --ignore-not-found
+kubectl delete validatingadmissionpolicy datafy-namespace-protection --ignore-not-found
 
 csi_namespace=$(kubectl get deployment,daemonset -A -o custom-columns=NS:.metadata.namespace,NAME:.metadata.name,KIND:.kind --no-headers 2>/dev/null \
   | awk '($2=="ebs-csi-controller" && $3=="Deployment") || ($2=="ebs-csi-node" && $3=="DaemonSet") {print $1}' \
