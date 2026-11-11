@@ -6,6 +6,9 @@ on:
       - opened
       - synchronize
       - reopened
+  # Release Chart runs these tests on the release tag before it publishes the chart: that is the first
+  # time the chart is installed with the images of its own version.
+  workflow_call:
 
 permissions:
   id-token: write

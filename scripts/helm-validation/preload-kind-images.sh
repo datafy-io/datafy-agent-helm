@@ -5,6 +5,7 @@
 #
 # Usage: preload-kind-images.sh <chart> [helm template args...]
 # Env:   KIND_CLUSTER (default: chart-testing, the helm/kind-action default)
+#        LIST_ONLY=1: print the images the chart renders and stop (Release Chart waits for them)
 set -euo pipefail
 
 CHART=${1:?usage: $0 <chart> [helm template args...]}
@@ -25,6 +26,11 @@ mapfile -t IMAGES < <(
 if [[ ${#IMAGES[@]} -eq 0 ]]; then
   echo "No images found in rendered chart $CHART" >&2
   exit 1
+fi
+
+if [[ -n ${LIST_ONLY:-} ]]; then
+  printf '%s\n' "${IMAGES[@]}"
+  exit 0
 fi
 
 # Images are multi-arch. With Docker's containerd image store, `kind load docker-image`

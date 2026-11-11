@@ -2,9 +2,15 @@ name: Release Chart
 
 # Publishes the chart to s3://helm.datafy.io/datafy-agent. Three ways in:
 #   - push of a tag v*: the release orchestrator (datafy-io/release-orchestrator) writes Chart.yaml on the
-#     release branch and tags it. The chart is packaged exactly as committed: 4.Y.Z-rcN for a candidate,
-#     4.Y.Z-pre at GA. Pre-release versions are invisible to `helm search repo` without --devel, so the
-#     published GA can be verified before customers see it.
+#     release branch and tags it together with the agent and controller repos. The tag is the release and
+#     this run publishes it, in this order:
+#       1. wait until every image the chart names is in the registry (the agent and controller build them
+#          on the same tag; the agent build takes 25 to 40 minutes),
+#       2. Test Chart on kind with those images,
+#       3. push the chart exactly as committed: 4.Y.Z-rcN for a candidate, 4.Y.Z-pre at GA.
+#     Images that never arrive or a failed test mean nothing is published: fix the build, then re-run the
+#     failed jobs of this run. Pre-release versions are invisible to `helm search repo` without --devel,
+#     so the published GA can be verified before customers see it.
 #   - repository_dispatch 'publish-chart' {ref, version, chart_version}: the orchestrator's promote, once the
 #     GA was verified. The release branch then carries the final Chart.yaml (4.Y.Z) and it becomes the default.
 #   - workflow_dispatch / workflow_call: the manual path (helm-version-promote.yml), unchanged: docs PR,
@@ -37,7 +43,60 @@ env:
   CHECKOUT_REF: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.ref_name }}
 
 jobs:
+  # Tag push only. The chart names images that the agent and controller repos build on this same tag.
+  images:
+    name: Wait for the images
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5.0.0
+
+      - name: Wait until every image the chart renders is in the registry
+        shell: bash
+        env:
+          WAIT_MINUTES: 60
+        run: |
+          mapfile -t images < <(for mode in Sensor AutoScaler; do
+            LIST_ONLY=1 bash scripts/helm-validation/preload-kind-images.sh . --set agent.token=x --set agent.mode="$mode"
+          done | sort -u)
+          [[ ${#images[@]} -gt 0 ]] || { echo "::error::the chart renders no images"; exit 1; }
+          deadline=$((SECONDS + WAIT_MINUTES * 60))
+          while :; do
+            # A registry error (429 included) counts as "not there yet" and is asked again on the next round.
+            missing=()
+            for img in "${images[@]}"; do
+              docker manifest inspect "$img" > /dev/null 2>&1 || missing+=("$img")
+            done
+            [[ ${#missing[@]} -eq 0 ]] && break
+            if (( SECONDS >= deadline )); then
+              echo "::error::Not in the registry after ${WAIT_MINUTES} min: ${missing[*]}. Nothing was published. Fix the build that produces them, then re-run the failed jobs of this run."
+              exit 1
+            fi
+            echo "$(date -u +%H:%M:%S) waiting for: ${missing[*]}"
+            sleep 60
+          done
+          echo "Every image of this chart is in the registry:"
+          printf '  %s\n' "${images[@]}"
+
+  # Tag push only: install, upgrade from the published latest and reinstall on kind, with those images.
+  test:
+    name: Test Chart
+    needs: images
+    if: github.event_name == 'push'
+    uses: ./.github/workflows/helm-validation.yml
+    secrets: inherit
+
   release:
+    needs: [images, test]
+    # A tag push publishes only after the two jobs above passed. The other triggers skip them, as before.
+    if: ${{ !cancelled() && (github.event_name != 'push' || needs.test.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
