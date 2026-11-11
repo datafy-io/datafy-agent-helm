@@ -2,21 +2,54 @@ name: Release Chart
 
 # Publishes the chart to s3://helm.datafy.io/datafy-agent. Three ways in:
 #   - push of a tag v*: the release orchestrator (datafy-io/release-orchestrator) writes Chart.yaml on the
-#     release branch and tags it. The chart is packaged exactly as committed: 4.Y.Z-rcN for a candidate,
-#     4.Y.Z-pre at GA. Pre-release versions are invisible to `helm search repo` without --devel, so the
-#     published GA can be verified before customers see it.
-#   - repository_dispatch 'publish-chart' {ref, version, chart_version}: the orchestrator's promote, once the
-#     GA was verified. The release branch then carries the final Chart.yaml (4.Y.Z) and it becomes the default.
-#   - workflow_dispatch / workflow_call: the manual path (helm-version-promote.yml), unchanged: docs PR,
-#     then push to S3 from the default branch only.
+#     release branch and tags it together with the agent and controller repos. This run only VALIDATES the
+#     chart (metadata, lint, render). Nothing is published: the images the chart names are still being
+#     built at that point (the agent build takes 25 to 40 minutes), so a chart published now would be
+#     broken until they land and would never have been installed with them.
+#   - workflow_dispatch with publish_version: the orchestrator again, once every build on the tag is green
+#     (ref = the tag; the chart is 4.Y.Z-rcN for a candidate, 4.Y.Z-pre at GA), and its promote once the GA
+#     was verified (ref = the release branch, which then carries the final 4.Y.Z). The run checks that
+#     every image the chart names exists, runs Test Chart on kind with those images, and only then pushes
+#     (dry_run: everything but the push, to rehearse the path).
+#     Pre-release versions are invisible to `helm search repo` without --devel, so the published GA can be
+#     verified before customers see it.
+#   - workflow_dispatch without inputs / workflow_call: the manual path (helm-version-promote.yml),
+#     unchanged: docs PR, then push to S3 from the default branch only.
 on:
   push:
     tags:
       - 'v*'
-  repository_dispatch:
-    types: [publish-chart]
   workflow_dispatch:
+    inputs:
+      publish_version:
+        description: "Release orchestrator only: the release this chart is published for (4.3.0-rc3, 4.3.0). Empty = manual path"
+        required: false
+        type: string
+        default: ''
+      chart_version:
+        description: "Release orchestrator only: the chart version Chart.yaml must carry on this ref"
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        description: "With publish_version: run every check and the chart test, then only simulate the push (rehearsal)"
+        required: false
+        type: boolean
+        default: false
   workflow_call:
+    inputs:
+      publish_version:
+        required: false
+        type: string
+        default: ''
+      chart_version:
+        required: false
+        type: string
+        default: ''
+      dry_run:
+        required: false
+        type: boolean
+        default: false
     secrets:
       PRODUCTION_AWS_ROLE_ARN:
         required: true
@@ -31,46 +64,116 @@ permissions:
 env:
   TARGET_BRANCH: ${{ github.ref_name }}
   DOCS_PR_BRANCH: automation/release-helm-docs
-  # Orchestrated runs (tag push, publish-chart) publish what the release branch carries; manual runs keep
-  # the docs PR and the default-branch rule.
-  ORCHESTRATED: ${{ (github.event_name == 'push' || github.event_name == 'repository_dispatch') && 'true' || 'false' }}
-  CHECKOUT_REF: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.ref_name }}
+  # Orchestrated publishes push what the ref carries (a release tag or branch); manual runs keep the docs PR
+  # and the default-branch rule.
+  ORCHESTRATED: ${{ inputs.publish_version != '' && 'true' || 'false' }}
 
 jobs:
+  # Tag push and orchestrated publish: is this the chart the release cut wrote, and does it render?
+  validate:
+    name: Validate chart
+    if: github.event_name == 'push' || inputs.publish_version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check the chart metadata matches the release
+        env:
+          PUBLISH_VERSION: ${{ inputs.publish_version }}
+          CHART_VERSION: ${{ inputs.chart_version }}
+        run: |
+          chart=$(yq '.version' Chart.yaml)
+          app=$(yq '.appVersion' Chart.yaml)
+          echo "event=${{ github.event_name }} ref=$GITHUB_REF chart=$chart appVersion=$app"
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            # tag vX.Y.Z[-rcN]: the agent and controller versions; the chart carries them as appVersion
+            v="${GITHUB_REF_NAME#v}"
+            what="validated only; the release orchestrator publishes it once the agent and controller builds on $GITHUB_REF_NAME are green"
+          else
+            v="$PUBLISH_VERSION"
+            what="to be published after the image check and Test Chart"
+            [[ -n "$CHART_VERSION" ]] || { echo "::error::chart_version is required with publish_version"; exit 1; }
+            [[ "$chart" == "$CHART_VERSION" ]] || { echo "::error::chart version '$chart' on $GITHUB_REF_NAME is not the requested '$CHART_VERSION'"; exit 1; }
+            if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$v" ]]; then
+              echo "::error::release $v cannot be published from tag $GITHUB_REF_NAME"; exit 1
+            fi
+          fi
+          [[ "$app" == "${v}_${v}" ]] || { echo "::error::appVersion '$app' does not match release '$v' (expected ${v}_${v}); Chart.yaml on this ref was not written by the release cut"; exit 1; }
+          {
+            echo "## Chart ${chart} (${{ github.event_name }})"
+            echo "- ref: \`$GITHUB_REF_NAME\` @ \`${GITHUB_SHA::8}\`"
+            echo "- chart: \`$chart\`, appVersion: \`$app\`"
+            echo "- $what"
+            [[ "$chart" == *-* ]] && echo "- pre-release: listed by \`helm search repo datafy-agent --devel\` only"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5.0.0
+
+      - name: Lint and render the chart
+        run: |
+          for mode in Sensor AutoScaler; do
+            echo "::group::$mode"
+            helm lint . --set agent.token=x --set agent.mode="$mode"
+            helm template datafy-agent . --set agent.token=x --set agent.mode="$mode" > /dev/null
+            echo "::endgroup::"
+          done
+
+  # Orchestrated publish only: the builds of this release must have produced every image the chart names.
+  images:
+    name: Images exist
+    needs: validate
+    if: github.event_name != 'push' && inputs.publish_version != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v5.0.0
+
+      - name: Every image the chart renders is in the registry
+        run: |
+          for mode in Sensor AutoScaler; do
+            echo "== $mode"
+            bash scripts/helm-validation/check-images-exist.sh . --set agent.token=x --set agent.mode="$mode"
+          done
+
+  # Orchestrated publish only: install, upgrade from the published latest, reinstall, on kind, with those images.
+  test:
+    name: Test Chart
+    needs: images
+    if: github.event_name != 'push' && inputs.publish_version != ''
+    uses: ./.github/workflows/helm-validation.yml
+    secrets: inherit
+
   release:
+    needs: [validate, images, test]
+    # Never on a tag push. Manual path: as before. Orchestrated publish: only after the three jobs above passed.
+    if: >-
+      !cancelled() && github.event_name != 'push' &&
+      (inputs.publish_version == '' ||
+       (needs.validate.result == 'success' && needs.images.result == 'success' && needs.test.result == 'success'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          ref: ${{ env.CHECKOUT_REF }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
-      - name: Check the chart metadata matches the release (orchestrated runs)
+      - name: The ref still carries the validated chart (orchestrated runs)
         if: env.ORCHESTRATED == 'true'
         env:
-          PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
-          PAYLOAD_CHART_VERSION: ${{ github.event.client_payload.chart_version }}
+          CHART_VERSION: ${{ inputs.chart_version }}
         run: |
           chart=$(yq '.version' Chart.yaml)
-          app=$(yq '.appVersion' Chart.yaml)
-          echo "event=${{ github.event_name }} ref=${{ env.CHECKOUT_REF }} chart=$chart appVersion=$app"
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            # tag vX.Y.Z[-rcN]: the agent and controller versions; the chart carries them as appVersion
-            v="${GITHUB_REF_NAME#v}"
-            [[ "$app" == "${v}_${v}" ]] || { echo "::error::appVersion '$app' does not match tag '$GITHUB_REF_NAME' (expected ${v}_${v}); the tag was not written by the release cut"; exit 1; }
-          else
-            # promote: the release branch must already carry the final chart version
-            [[ "$chart" != *-* ]] || { echo "::error::chart version '$chart' is still a pre-release; promote writes the final version before sending publish-chart"; exit 1; }
-            [[ -z "$PAYLOAD_CHART_VERSION" || "$chart" == "$PAYLOAD_CHART_VERSION" ]] || { echo "::error::chart version '$chart' on ${{ env.CHECKOUT_REF }} is not the requested '$PAYLOAD_CHART_VERSION'"; exit 1; }
-            [[ -z "$PAYLOAD_VERSION" || "$app" == "${PAYLOAD_VERSION}_${PAYLOAD_VERSION}" ]] || { echo "::error::appVersion '$app' does not match release '$PAYLOAD_VERSION'"; exit 1; }
-          fi
-          {
-            echo "## Chart publish (${{ github.event_name }})"
-            echo "- ref: \`${{ env.CHECKOUT_REF }}\` @ \`${GITHUB_SHA::8}\`"
-            echo "- chart: \`$chart\`, appVersion: \`$app\`"
-            [[ "$chart" == *-* ]] && echo "- pre-release: listed by \`helm search repo datafy-agent --devel\` only"
-          } >> "$GITHUB_STEP_SUMMARY"
+          [[ "$chart" == "$CHART_VERSION" ]] || { echo "::error::chart version on ${{ github.ref_name }} changed to '$chart' while the tests ran (expected '$CHART_VERSION')"; exit 1; }
 
       - name: Run helm-docs
         if: env.ORCHESTRATED != 'true'
@@ -139,9 +242,18 @@ jobs:
       - name: Push Helm chart
         run: |
           helm package .
+          chart="${{ steps.read_chart_version.outputs.current_chart_version }}"
           if [ "${{ env.ORCHESTRATED }}" = "true" ]; then
-            echo "Orchestrated publish of chart ${{ steps.read_chart_version.outputs.current_chart_version }} from ${{ env.CHECKOUT_REF }}"
-            helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
+            echo "Orchestrated publish of chart $chart from ${{ github.ref_name }}"
+            flags=(--relative)
+            # A candidate or -pre chart is cut from an immutable tag: publishing it twice is a no-op, not an error.
+            # A final version is never republished.
+            [[ "$chart" == *-* ]] && flags+=(--ignore-if-exists)
+            if [ "${{ inputs.dry_run }}" = "true" ]; then
+              flags+=(--dry-run)
+              echo "::notice::Rehearsal: chart $chart passed every check; the push is simulated, the index is not touched"
+            fi
+            helm s3 push datafy-agent-*.tgz datafyio-s3 "${flags[@]}"
           elif [ "${{ github.ref_name }}" = "${{ github.event.repository.default_branch }}" ]; then
             echo " This is on the default branch"
             helm s3 push datafy-agent-*.tgz datafyio-s3 --relative
