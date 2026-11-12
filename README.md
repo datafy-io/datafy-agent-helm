@@ -1,10 +1,10 @@
 # datafy-agent
 
-![Version: 4.2.0](https://img.shields.io/badge/Version-4.2.0-informational?style=flat-square) ![AppVersion: 2.2.0_2.2.0](https://img.shields.io/badge/AppVersion-2.2.0_2.2.0-informational?style=flat-square)
+![Version: 4.3.0-rc2](https://img.shields.io/badge/Version-4.3.0--rc2-informational?style=flat-square) ![AppVersion: 4.3.0-rc2_4.3.0-rc2](https://img.shields.io/badge/AppVersion-4.3.0--rc2_4.3.0--rc2-informational?style=flat-square)
 
 **App Version:**
 
-2.2.0_2.2.0
+4.3.0-rc2_4.3.0-rc2
 
 This guide explains how to add the Datafy Helm repo and install the `datafy-agent`.
 
@@ -29,7 +29,7 @@ helm repo update
 
 ### 2. Install
 ```bash
-helm install datafy-agent --version 4.2.0 datafyio/datafy-agent \
+helm install datafy-agent --version 4.3.0-rc2 datafyio/datafy-agent \
 --namespace datafy-agent --create-namespace \
 --set agent.mode="sensor/autoscaler" \
 --set agent.token=<your_token> \
@@ -39,12 +39,12 @@ helm install datafy-agent --version 4.2.0 datafyio/datafy-agent \
 ## Upgrade
 ```bash
 helm repo update
-helm upgrade --install datafy-agent --version 4.2.0 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
+helm upgrade --install datafy-agent --version 4.3.0-rc2 datafyio/datafy-agent -n <namespace> --reuse-values --atomic
 ```
 
 Switch mode:
 ```bash
-helm upgrade --install datafy-agent --version 4.2.0 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
+helm upgrade --install datafy-agent --version 4.3.0-rc2 datafyio/datafy-agent -n <namespace> --set agent.mode=autoscaler --atomic
 ```
 
 Rollback:
@@ -104,6 +104,16 @@ The built-in exclusions are listed in `templates/_webhook-excluded.tpl`, in two 
 
 Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Datafy volumes: the webhook injects the Datafy sidecar into the CSI pods and handles placement of pods with Datafy volumes.
 
+## Custom environment variables
+
+Set `agent.env`, a map of `NAME: value`, to add env vars to the agent `core` and `shell` containers. They are appended after the chart's own env vars. Don't reuse a name the chart already sets (`DATAFY_*`, `HTTPS_PROXY`, `NO_PROXY`, `NODE_NAME`, `HELM_*`); use the dedicated values for those.
+
+```yaml
+agent:
+  env:
+    LOG_LEVEL: debug
+```
+
 ---
 
 ## Values
@@ -113,6 +123,7 @@ Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Data
 | agent.affinity | object | `{}` |  |
 | agent.converterVersion | string | `nil` |  |
 | agent.dsoUrl | string | `"wss://dso.datafy.io"` |  |
+| agent.env | object | `{}` |  |
 | agent.externalTokenSecret.key | string | `nil` |  |
 | agent.externalTokenSecret.name | string | `nil` |  |
 | agent.image.pullPolicy | string | `"Always"` |  |

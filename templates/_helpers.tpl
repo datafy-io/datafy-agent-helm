@@ -266,6 +266,18 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
+User-supplied env vars for the agent's core and shell containers: agent.env, a map
+of NAME: value, sorted by name. Appended after the chart's own vars; names the chart
+already sets should not be reused.
+*/}}
+{{- define "datafy-agent.agentEnv" -}}
+{{- range $name, $value := .Values.agent.env }}
+- name: {{ $name }}
+  value: {{ $value | toString | quote }}
+{{- end }}
+{{- end -}}
+
+{{/*
 installId identifies this install: the datafy.io/installation-id label on every
 resource and DATAFY_INSTALLATION_ID on the controller. The controller only deletes
 resources carrying its own ID. A new random ID per render, computed once so all

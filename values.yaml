@@ -28,12 +28,17 @@ proxy:
 
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
-## @param agent.env Environment variables to add to datafy-agent daemon set
+## @param agent.env Extra env vars for the agent core and shell containers, as a map of NAME: value
+## Appended after the chart's own env vars; don't reuse a name the chart already sets (DATAFY_*, HTTPS_PROXY, NO_PROXY, NODE_NAME, HELM_*).
+##   agent:
+##     env:
+##       LOG_LEVEL: debug
 ##
 agent:
   token:
   mode: AutoScaler
   dsoUrl: wss://dso.datafy.io
+  env: {}
 
   ## @param agent.converterVersion (default: "latest")
   converterVersion:
