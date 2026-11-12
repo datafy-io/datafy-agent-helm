@@ -105,6 +105,28 @@ The built-in exclusions are listed in `templates/_webhook-excluded.tpl`, in two 
 
 Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Datafy volumes: the webhook injects the Datafy sidecar into the CSI pods and handles placement of pods with Datafy volumes.
 
+## Custom environment variables
+
+- `agent.env`: map of `NAME: value`, added to the agent `core` and `shell` containers.
+- `agent.extraEnv`: list of Kubernetes `EnvVar` (supports `valueFrom`), added to the same containers.
+- `controller.extraEnv`: list of Kubernetes `EnvVar`, added to the controller container.
+
+They are appended after the chart's own env vars. Don't reuse a name the chart already sets (`DATAFY_*`, `HTTPS_PROXY`, `NO_PROXY`, `NODE_NAME`, `HELM_*`); use the dedicated values for those.
+
+```yaml
+agent:
+  env:
+    LOG_LEVEL: debug
+  extraEnv:
+    - name: MY_SECRET
+      valueFrom:
+        secretKeyRef: { name: my-secret, key: value }
+controller:
+  extraEnv:
+    - name: MY_FLAG
+      value: "on"
+```
+
 ---
 
 {{ template "chart.valuesSection" . }}

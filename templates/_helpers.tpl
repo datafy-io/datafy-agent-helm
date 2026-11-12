@@ -266,6 +266,32 @@ Render proxy env vars (HTTPS_PROXY/NO_PROXY plus lowercase).
 {{- end -}}
 
 {{/*
+User-supplied env vars for the agent's core and shell containers:
+agent.env (map of NAME: value, sorted by name) then agent.extraEnv (list of
+Kubernetes EnvVar, so valueFrom works). Appended after the chart's own vars; names
+the chart already sets should not be reused.
+*/}}
+{{- define "datafy-agent.agentExtraEnv" -}}
+{{- range $name, $value := .Values.agent.env }}
+- name: {{ $name }}
+  value: {{ $value | toString | quote }}
+{{- end }}
+{{- with .Values.agent.extraEnv }}
+{{ toYaml . }}
+{{- end }}
+{{- end -}}
+
+{{/*
+User-supplied env vars for the controller container: controller.extraEnv (list of
+Kubernetes EnvVar). Rendered after the chart's own vars.
+*/}}
+{{- define "datafy-agent.controllerExtraEnv" -}}
+{{- with .Values.controller.extraEnv }}
+{{ toYaml . }}
+{{- end }}
+{{- end -}}
+
+{{/*
 installId identifies this install: the datafy.io/installation-id label on every
 resource and DATAFY_INSTALLATION_ID on the controller. The controller only deletes
 resources carrying its own ID. A new random ID per render, computed once so all
