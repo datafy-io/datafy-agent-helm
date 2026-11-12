@@ -29,22 +29,16 @@ proxy:
 ## @param agent.token Datafy agent token
 ## @param agent.mode The mode of agent to install. Valid values: "Sensor", "AutoScaler"
 ## @param agent.env Extra env vars for the agent core and shell containers, as a map of NAME: value
-## @param agent.extraEnv Extra env vars for the agent core and shell containers, as a list of Kubernetes EnvVar (supports valueFrom)
-## Both are appended after the chart's own env vars; don't reuse a name the chart already sets (DATAFY_*, HTTPS_PROXY, NO_PROXY, NODE_NAME, HELM_*).
+## Appended after the chart's own env vars; don't reuse a name the chart already sets (DATAFY_*, HTTPS_PROXY, NO_PROXY, NODE_NAME, HELM_*).
 ##   agent:
 ##     env:
 ##       LOG_LEVEL: debug
-##     extraEnv:
-##       - name: MY_SECRET
-##         valueFrom:
-##           secretKeyRef: { name: my-secret, key: value }
 ##
 agent:
   token:
   mode: AutoScaler
   dsoUrl: wss://dso.datafy.io
   env: {}
-  extraEnv: []
 
   ## @param agent.converterVersion (default: "latest")
   converterVersion:
@@ -125,10 +119,6 @@ monitor:
 
 controller:
   replicas: 2
-
-  ## @param controller.extraEnv Extra env vars for the controller container, as a list of Kubernetes EnvVar (supports valueFrom).
-  ## Appended after the chart's own env vars; don't reuse a name the chart already sets (DATAFY_*, HTTPS_PROXY, NO_PROXY).
-  extraEnv: []
 
   serviceAccount:
     ## @param controller.serviceAccount.name Name of the controller ServiceAccount

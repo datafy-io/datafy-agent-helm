@@ -108,7 +108,7 @@ spec:
               value: "true"
             {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
-            {{- with (include "datafy-agent.agentExtraEnv" . | trim) }}{{ . | nindent 12 }}{{- end }}
+            {{- with (include "datafy-agent.agentEnv" . | trim) }}{{ . | nindent 12 }}{{- end }}
           {{- if ne $tokenMode "static" }}
           volumeMounts:
             - name: {{ $tokenVolume }}
@@ -164,7 +164,7 @@ spec:
               value: "true"
             {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
-            {{- with (include "datafy-agent.agentExtraEnv" . | trim) }}{{ . | nindent 12 }}{{- end }}
+            {{- with (include "datafy-agent.agentEnv" . | trim) }}{{ . | nindent 12 }}{{- end }}
           {{- if ne $tokenMode "static" }}
           volumeMounts:
             - name: {{ $tokenVolume }}

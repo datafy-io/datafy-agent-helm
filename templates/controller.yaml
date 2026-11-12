@@ -114,7 +114,6 @@ spec:
             - name: DATAFY_WEBHOOK_CERTIFICATE_DIR
               value: /etc/datafy-controller/certificate
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
-            {{- with (include "datafy-agent.controllerExtraEnv" . | trim) }}{{ . | nindent 12 }}{{- end }}
           resources:
             requests:
               cpu: 10m

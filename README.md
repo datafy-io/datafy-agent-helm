@@ -106,24 +106,12 @@ Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Data
 
 ## Custom environment variables
 
-- `agent.env`: map of `NAME: value`, added to the agent `core` and `shell` containers.
-- `agent.extraEnv`: list of Kubernetes `EnvVar` (supports `valueFrom`), added to the same containers.
-- `controller.extraEnv`: list of Kubernetes `EnvVar`, added to the controller container.
-
-They are appended after the chart's own env vars. Don't reuse a name the chart already sets (`DATAFY_*`, `HTTPS_PROXY`, `NO_PROXY`, `NODE_NAME`, `HELM_*`); use the dedicated values for those.
+Set `agent.env`, a map of `NAME: value`, to add env vars to the agent `core` and `shell` containers. They are appended after the chart's own env vars. Don't reuse a name the chart already sets (`DATAFY_*`, `HTTPS_PROXY`, `NO_PROXY`, `NODE_NAME`, `HELM_*`); use the dedicated values for those.
 
 ```yaml
 agent:
   env:
     LOG_LEVEL: debug
-  extraEnv:
-    - name: MY_SECRET
-      valueFrom:
-        secretKeyRef: { name: my-secret, key: value }
-controller:
-  extraEnv:
-    - name: MY_FLAG
-      value: "on"
 ```
 
 ---
@@ -138,7 +126,6 @@ controller:
 | agent.env | object | `{}` |  |
 | agent.externalTokenSecret.key | string | `nil` |  |
 | agent.externalTokenSecret.name | string | `nil` |  |
-| agent.extraEnv | list | `[]` |  |
 | agent.image.pullPolicy | string | `"Always"` |  |
 | agent.image.repository | string | `"public.ecr.aws/datafy-io/datafy-agent"` |  |
 | agent.image.tag | string | `nil` |  |
@@ -157,7 +144,6 @@ controller:
 | agent.updateStrategy.rollingUpdate.maxUnavailable | int | `1` |  |
 | agent.updateStrategy.type | string | `"RollingUpdate"` |  |
 | controller.affinity | string | `nil` |  |
-| controller.extraEnv | list | `[]` |  |
 | controller.health.enabled | bool | `true` |  |
 | controller.health.livenessProbe.failureThreshold | int | `5` |  |
 | controller.health.livenessProbe.initialDelaySeconds | int | `20` |  |
