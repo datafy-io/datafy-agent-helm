@@ -1,5 +1,7 @@
 {{- $enableCore := and (eq (include "datafy-agent.agentModeNormalized" . ) "autoscaler") (not .Values.agent.coreMockEnabled) }}
 {{- $tokenMode := include "datafy-agent.tokenMode" . }}
+{{- /* static and external: the agent gets the API token as DATAFY_TOKEN and exchanges it for an OIDC token itself. irsa and none: the controller writes the OIDC token into the mounted token file. */}}
+{{- $envToken := has $tokenMode (list "static" "external") }}
 {{- $tokenVolume := "datafy-token" }}
 {{- $tokenDir := "/etc/datafy" }}
 apiVersion: apps/v1
@@ -97,7 +99,7 @@ spec:
             - name: DATAFY_CONVERTER_VERSION
               value: {{ .Values.agent.converterVersion | quote }}
             {{- end }}
-            {{- if eq $tokenMode "static" }}
+            {{- if $envToken }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -109,7 +111,7 @@ spec:
             {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
             {{- with (include "datafy-agent.agentEnv" . | trim) }}{{ . | nindent 12 }}{{- end }}
-          {{- if ne $tokenMode "static" }}
+          {{- if not $envToken }}
           volumeMounts:
             - name: {{ $tokenVolume }}
               mountPath: {{ $tokenDir }}
@@ -153,7 +155,7 @@ spec:
               value: {{ .Chart.Version | quote }}
             - name: HELM_RELEASE_REVISION
               value: {{ .Release.Revision | quote }}
-            {{- if eq $tokenMode "static" }}
+            {{- if $envToken }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -165,7 +167,7 @@ spec:
             {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
             {{- with (include "datafy-agent.agentEnv" . | trim) }}{{ . | nindent 12 }}{{- end }}
-          {{- if ne $tokenMode "static" }}
+          {{- if not $envToken }}
           volumeMounts:
             - name: {{ $tokenVolume }}
               mountPath: {{ $tokenDir }}
@@ -199,7 +201,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
-            {{- if eq $tokenMode "static" }}
+            {{- if $envToken }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
@@ -211,7 +213,7 @@ spec:
             {{- end }}
             {{- include "datafy-agent.proxyEnv" . | trim | nindent 12 }}
           volumeMounts:
-            {{- if ne $tokenMode "static" }}
+            {{- if not $envToken }}
             - name: {{ $tokenVolume }}
               mountPath: {{ $tokenDir }}
               readOnly: true
@@ -224,7 +226,7 @@ spec:
               memory: 40Mi
         {{- end }}
       volumes:
-        {{- if ne $tokenMode "static" }}
+        {{- if not $envToken }}
         - name: {{ $tokenVolume }}
           secret:
             secretName: {{ include "datafy-agent.tokenSecretName" . }}
