@@ -104,16 +104,6 @@ The built-in exclusions are listed in `templates/_webhook-excluded.tpl`, in two 
 
 Do not skip the EBS CSI driver pods (in `kube-system` on EKS) or pods using Datafy volumes: the webhook injects the Datafy sidecar into the CSI pods and handles placement of pods with Datafy volumes.
 
-## Custom environment variables
-
-Set `agent.env`, a map of `NAME: value`, to add env vars to the agent `core` and `shell` containers. They are appended after the chart's own env vars. Don't reuse a name the chart already sets (`DATAFY_*`, `HTTPS_PROXY`, `NO_PROXY`, `NODE_NAME`, `HELM_*`); use the dedicated values for those.
-
-```yaml
-agent:
-  env:
-    LOG_LEVEL: debug
-```
-
 ---
 
 ## Values
@@ -123,7 +113,6 @@ agent:
 | agent.affinity | object | `{}` |  |
 | agent.converterVersion | string | `nil` |  |
 | agent.dsoUrl | string | `"wss://dso.datafy.io"` |  |
-| agent.env | object | `{}` |  |
 | agent.externalTokenSecret.key | string | `nil` |  |
 | agent.externalTokenSecret.name | string | `nil` |  |
 | agent.image.pullPolicy | string | `"Always"` |  |
