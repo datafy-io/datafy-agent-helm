@@ -96,12 +96,12 @@ spec:
               value: {{ include "datafy-agent.tokenSecretKey" . | quote }}
             - name: DATAFY_TOKEN_MODE
               value: {{ include "datafy-agent.tokenMode" . | quote }}
-            {{- if eq (include "datafy-agent.tokenMode" .) "static" }}
+            {{- if has (include "datafy-agent.tokenMode" .) (list "static" "external") }}
             - name: DATAFY_TOKEN
               valueFrom:
                 secretKeyRef:
-                  name: {{ default "datafy-token" .Values.agent.externalTokenSecret.name }}
-                  key: {{ default "token" .Values.agent.externalTokenSecret.key }}
+                  name: {{ include "datafy-agent.tokenSecretName" . }}
+                  key: {{ include "datafy-agent.tokenSecretKey" . }}
             {{- end }}
             - name: DATAFY_IAC_URL
               value: {{ .Values.agent.dsoUrl | replace "wss://dso" "https://iac" | replace "ws://dso" "http://iac" }}
