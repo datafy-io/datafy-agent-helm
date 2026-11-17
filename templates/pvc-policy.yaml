@@ -42,11 +42,15 @@ spec:
       expression: "variables.newAnn[?'datafy.io/performance'].orValue('')"
     - name: tier
       expression: "variables.newAnn[?'datafy.io/performance-tier'].orValue('')"
+    # Presence, not value: csi-proxy treats an empty tier as set (and invalid).
+    - name: hasTier
+      expression: "'datafy.io/performance-tier' in variables.newAnn"
     # Untouched by this request -- such a pair is grandfathered so an unrelated update to an
     # already-bad PVC is not rejected.
     - name: pairUnchanged
       expression: >-
         variables.perf == variables.oldAnn[?'datafy.io/performance'].orValue('') &&
+        variables.hasTier == ('datafy.io/performance-tier' in variables.oldAnn) &&
         variables.tier == variables.oldAnn[?'datafy.io/performance-tier'].orValue('')
   validations:
     # 1. Whenever a boolean annotation is written, the value must be "true" or "false".
@@ -63,17 +67,22 @@ spec:
     #    are not among the legal values: that is what a volume with no performance
     #    optimization already has.
     - expression: >-
-        variables.tier == '' || variables.pairUnchanged ||
+        !variables.hasTier || variables.pairUnchanged ||
         variables.tier in ['4', '6', '8']
       message: "datafy.io/performance-tier must be 4, 6 or 8"
       reason: Invalid
-    # 3. An array is what performance optimization IS, so the tier means nothing without
-    #    the flag. The converse (the flag without a tier) is refused by csi-proxy, which
-    #    also sees the StorageClass parameters this policy cannot.
+    # 3. An array is what performance optimization IS, so neither the flag nor the tier
+    #    means anything without the other. Mirrors csi-proxy, which reads a claim only when
+    #    its StorageClass states none of these keys, so a class never completes a claim.
     - expression: >-
-        variables.tier == '' || variables.pairUnchanged ||
+        !variables.hasTier || variables.pairUnchanged ||
         variables.perf == 'true'
       message: "datafy.io/performance-tier is only valid when datafy.io/performance is \"true\""
+      reason: Invalid
+    - expression: >-
+        variables.perf != 'true' || variables.pairUnchanged ||
+        variables.hasTier
+      message: "datafy.io/performance-tier must be set when datafy.io/performance is \"true\""
       reason: Invalid
     # 4. None of them can be added once a volume is bound -- the request has already been
     #    honored, or was never seen. Removal stays allowed: that is how csi-proxy clears them.
