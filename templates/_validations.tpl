@@ -5,6 +5,20 @@
   {{- end }}
 {{- end }}
 
+{{/*
+A driver swap stops the agent on purpose; a monitor older than this would label and taint the node meanwhile.
+Monitor tags that are not plain versions (dev builds) are not checked.
+*/}}
+{{- define "datafy-agent.validation.driverHotSwap" }}
+  {{- if .Values.agent.driverHotSwap }}
+    {{- $minMonitor := "2.3.0" }}
+    {{- $tag := include "datafy-agent.monitorImageTag" . }}
+    {{- if and (regexMatch "^v?[0-9]+\\.[0-9]+\\.[0-9]+$" $tag) (semverCompare (printf "<%s" $minMonitor) $tag) }}
+      {{ fail (printf "invalid values: agent.driverHotSwap needs monitor %s or later, got '%s'" $minMonitor $tag) }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+
 {{- define "datafy-agent.validation.token" }}
   {{- $hasToken := not (empty (trim (default "" .Values.agent.token))) }}
   {{- $hasExternalSecretName := not (empty (trim (default "" .Values.agent.externalTokenSecret.name))) }}
