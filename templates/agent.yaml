@@ -97,6 +97,10 @@ spec:
             - name: DATAFY_CONVERTER_VERSION
               value: {{ .Values.agent.converterVersion | quote }}
             {{- end }}
+            {{- if .Values.agent.driverHotSwap }}
+            - name: DATAFY_DRIVER_HOT_SWAP
+              value: "true"
+            {{- end }}
             {{- if eq $tokenMode "static" }}
             - name: DATAFY_TOKEN
               valueFrom:
