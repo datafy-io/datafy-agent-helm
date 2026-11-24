@@ -11,10 +11,14 @@ name: Release Chart
 #     Images that never arrive or a failed test mean nothing is published: fix the build, then re-run the
 #     failed jobs of this run. Pre-release versions are invisible to `helm search repo` without --devel,
 #     so the published GA can be verified before customers see it.
-#   - repository_dispatch 'publish-chart' {ref, version, chart_version}: the orchestrator's promote, once the
-#     GA was verified. The release branch then carries the final Chart.yaml (4.Y.Z) and it becomes the default.
-#   - workflow_dispatch / workflow_call: the manual path (helm-version-promote.yml), unchanged: docs PR,
-#     then push to S3 from the default branch only.
+#   - workflow_dispatch on the release branch with the input chart_version: the orchestrator's promote, once
+#     the GA was verified. The release branch then carries the final Chart.yaml (4.Y.Z) and it becomes the
+#     default. GitHub runs the workflow file of the branch it is started on, so this works before the release
+#     branch is merged back to master: promote completes first, the merge-back then carries the final chart.
+#   - repository_dispatch 'publish-chart' {ref, version, chart_version}: the same publish, started by event.
+#     GitHub starts it from the default branch only, so it works only once this file is on master.
+#   - workflow_dispatch without chart_version / workflow_call: the manual path (helm-version-promote.yml),
+#     unchanged: docs PR, then push to S3 from the default branch only.
 on:
   push:
     tags:
@@ -22,6 +26,15 @@ on:
   repository_dispatch:
     types: [publish-chart]
   workflow_dispatch:
+    inputs:
+      chart_version:
+        description: "Promote only (release orchestrator): the final chart version the branch must carry, e.g. 4.3.0. Leave empty for the manual path."
+        required: false
+        type: string
+      version:
+        description: "Promote only: the release version X.Y.Z"
+        required: false
+        type: string
   workflow_call:
     secrets:
       PRODUCTION_AWS_ROLE_ARN:
@@ -37,9 +50,9 @@ permissions:
 env:
   TARGET_BRANCH: ${{ github.ref_name }}
   DOCS_PR_BRANCH: automation/release-helm-docs
-  # Orchestrated runs (tag push, publish-chart) publish what the release branch carries; manual runs keep
+  # Orchestrated runs (tag push, promote) publish what the release branch carries; manual runs keep
   # the docs PR and the default-branch rule.
-  ORCHESTRATED: ${{ (github.event_name == 'push' || github.event_name == 'repository_dispatch') && 'true' || 'false' }}
+  ORCHESTRATED: ${{ (github.event_name == 'push' || github.event_name == 'repository_dispatch' || (github.event_name == 'workflow_dispatch' && inputs.chart_version != '')) && 'true' || 'false' }}
   CHECKOUT_REF: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.ref || github.ref_name }}
 
 jobs:
@@ -108,8 +121,8 @@ jobs:
       - name: Check the chart metadata matches the release (orchestrated runs)
         if: env.ORCHESTRATED == 'true'
         env:
-          PAYLOAD_VERSION: ${{ github.event.client_payload.version }}
-          PAYLOAD_CHART_VERSION: ${{ github.event.client_payload.chart_version }}
+          PAYLOAD_VERSION: ${{ github.event.client_payload.version || inputs.version }}
+          PAYLOAD_CHART_VERSION: ${{ github.event.client_payload.chart_version || inputs.chart_version }}
         run: |
           chart=$(yq '.version' Chart.yaml)
           app=$(yq '.appVersion' Chart.yaml)
@@ -120,6 +133,10 @@ jobs:
             [[ "$app" == "${v}_${v}" ]] || { echo "::error::appVersion '$app' does not match tag '$GITHUB_REF_NAME' (expected ${v}_${v}); the tag was not written by the release cut"; exit 1; }
           else
             # promote: the release branch must already carry the final chart version
+            if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+              # started on a branch: only a release branch or the default branch may publish
+              [[ "$GITHUB_REF_NAME" == release-* || "$GITHUB_REF_NAME" == "${{ github.event.repository.default_branch }}" ]] || { echo "::error::a publish with chart_version runs on a release-* branch or the default branch, not on '$GITHUB_REF_NAME'"; exit 1; }
+            fi
             [[ "$chart" != *-* ]] || { echo "::error::chart version '$chart' is still a pre-release; promote writes the final version before sending publish-chart"; exit 1; }
             [[ -z "$PAYLOAD_CHART_VERSION" || "$chart" == "$PAYLOAD_CHART_VERSION" ]] || { echo "::error::chart version '$chart' on ${{ env.CHECKOUT_REF }} is not the requested '$PAYLOAD_CHART_VERSION'"; exit 1; }
             [[ -z "$PAYLOAD_VERSION" || "$app" == "${PAYLOAD_VERSION}_${PAYLOAD_VERSION}" ]] || { echo "::error::appVersion '$app' does not match release '$PAYLOAD_VERSION'"; exit 1; }
