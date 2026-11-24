@@ -145,7 +145,8 @@ jobs:
             echo "## Chart publish (${{ github.event_name }})"
             echo "- ref: \`${{ env.CHECKOUT_REF }}\` @ \`${GITHUB_SHA::8}\`"
             echo "- chart: \`$chart\`, appVersion: \`$app\`"
-            [[ "$chart" == *-* ]] && echo "- pre-release: listed by \`helm search repo datafy-agent --devel\` only"
+            # "if", not "&&": as the last command of the step, a false test would fail the step for a final version
+            if [[ "$chart" == *-* ]]; then echo "- pre-release: listed by \`helm search repo datafy-agent --devel\` only"; fi
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Run helm-docs
