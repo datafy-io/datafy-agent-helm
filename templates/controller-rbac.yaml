@@ -111,7 +111,7 @@ rules:
 
   # admissionregistration.k8s.io API group
   - apiGroups: [ "admissionregistration.k8s.io" ]
-    resources: [ "mutatingwebhookconfigurations" ]
+    resources: [ "mutatingwebhookconfigurations", "validatingadmissionpolicies", "validatingadmissionpolicybindings" ]
     verbs: [ "list", "watch" ]
   - apiGroups: [ "admissionregistration.k8s.io" ]
     resources: [ "mutatingwebhookconfigurations" ]
@@ -119,6 +119,14 @@ rules:
       - "datafy-controller-mutating-webhook" # future webhook; allow the controller to rollback and delete it if it exists
       - "datafy-controller-webhook"
     verbs: [ "get", "update", "patch", "delete" ]
+  - apiGroups: [ "admissionregistration.k8s.io" ]
+    resources: [ "validatingadmissionpolicies" ]
+    resourceNames: [ "datafy-namespace-protection" ]
+    verbs: [ "get", "patch" ]
+  - apiGroups: [ "admissionregistration.k8s.io" ]
+    resources: [ "validatingadmissionpolicybindings" ]
+    resourceNames: [ "datafy-namespace-protection-binding" ]
+    verbs: [ "get", "patch" ]
 
   # coordination.k8s.io API group
   - apiGroups: [ "coordination.k8s.io" ]
