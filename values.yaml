@@ -57,6 +57,10 @@ agent:
   ##
   skipUpgradeMatrixCheck: false
 
+  ## @param agent.driverHotSwap Replace a loaded incp driver with the new image's driver in place when the agent pod restarts, instead of on the next reboot. Needs a monitor image that honours the driver swap marker.
+  ##
+  driverHotSwap: false
+
   # @ignored
   coreMockEnabled: false
   # @ignored
